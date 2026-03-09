@@ -5,14 +5,14 @@
 import json
 import os
 from datetime import datetime
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from states.storyState import MainState
-from prompts.storyPrompts import PROMPT_FORMAT
-from config import MODEL_NAME, TEMPERATURE, OUTPUT_DIR, generate_filename
+from config.config import MODEL_NAME, TEMPERATURE, OUTPUT_DIR, generate_filename
+
+from config.config import llm_precise
 
 # 初始化 LLM
-llm = ChatOpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
+llm = llm_precise
 
 
 def format_node(state: MainState) -> dict:

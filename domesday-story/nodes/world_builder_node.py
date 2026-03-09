@@ -4,14 +4,13 @@
 """
 import json
 import re
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from states.storyState import MainState
 from prompts.storyPrompts import PROMPT_WORLD_BUILDER
-from config import MODEL_NAME, TEMPERATURE
+from config.config import llm_default  # ✅ 直接导入预创建的 LLM 实例
 
 # 初始化 LLM
-llm = ChatOpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
+llm = llm_default
 
 
 def parse_json_response(content: str) -> dict:

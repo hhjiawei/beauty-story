@@ -1104,4 +1104,17 @@ E:\pycode\AIStory\ApocalypseStoryTeam\
 
 
 
-
+四、LLM 使用建议对照表
+节点类型	推荐 LLM	温度	原因
+世界观设定	llm_default	0.7	需要平衡创意和逻辑
+金手指设计	llm_creative	0.9	需要更多创意
+人物关系	llm_default	0.7	需要逻辑自洽
+剧情策划	llm_default	0.7	需要平衡创意和结构
+分块写作	llm_creative	0.9	需要文学创造性
+连贯性整合	llm_precise	0.3	需要精确检查
+节奏控制	llm_default	0.7	需要平衡
+感官修饰	llm_creative	0.9	需要文学性
+幽默注入	llm_creative	0.9	需要创意
+格式标准化	llm_precise	0.3	需要精确格式
+节点品控	llm_precise	0.3	需要客观稳定
+终稿质检	llm_precise	0.3	需要客观稳定

@@ -4,14 +4,13 @@
 """
 import json
 import re
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from states.storyState import MainState
 from prompts.storyPrompts import PROMPT_SEGMENT_WRITER
-from config import MODEL_NAME, TEMPERATURE
+from config.config import llm_creative  # ✅ 使用创意 LLM，温度更高
 
 # 初始化 LLM
-llm = ChatOpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
+llm = llm_creative
 
 
 def extract_text_and_summary(content: str) -> tuple:
