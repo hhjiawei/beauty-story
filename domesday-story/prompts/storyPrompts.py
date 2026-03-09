@@ -1,53 +1,7 @@
-# beauty-story
-ai create stories
 
-# 【末日爽文工厂】专业写作团队架构 3.0 版
-## 精细化部门职责 + 丰富提示词 + 连贯性保障体系
 
----
-
-## 一、优化后的组织架构（12 部门）
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        创作总监 (Creative Director)              │
-│                   负责整体创意方向、连贯性监督与最终决策               │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌───────────────┐    ┌───────────────┐    ┌───────────────┐
-│   前期中台     │    │   生产流水线    │    │   后期工坊      │
-│  (4 个部门)    │    │  (3 个部门)    │    │  (2 个部门)    │
-└───────────────┘    └───────────────┘    └───────────────┘
-        │                     │                     │
-        └─────────────────────┼─────────────────────┘
-                              │
-                              ▼
-                    ┌───────────────┐
-                    │   品控中心     │
-                    │  (3 个部门)    │
-                    └───────────────┘
-```
-
----
-
-## 二、各部门详细职责与提示词
-
-### 📌 前期中台（创意策划层）
-
-#### 1. 世界观设定部 (World Building Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 设计末日来源、世界规则、时间线、地理环境 |
-| **输入** | 用户主题、市场热点 |
-| **输出** | 《世界观设定文档》(800-1000 字) |
-| **连贯性保障** | ①明确末日爆发具体日期 ②定义变异规则边界 ③标注关键地点 |
-
-**系统提示词：**
-```python
+# 📌 前期中台（创意策划层）
+# 1. 世界观设定部 (World Building Dept)
 PROMPT_WORLD_BUILDER = """
 你是一名资深世界观架构师，负责设计末日爽文的世界基础设定。
 
@@ -92,21 +46,8 @@ PROMPT_WORLD_BUILDER = """
 
 用户输入：{user_input}
 """
-```
 
----
-
-#### 2. 金手指设计部 (Golden Finger Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 设计主角能力系统，确保开局巅峰且有合理限制 |
-| **输入** | 世界观设定文档 |
-| **输出** | 《金手指配置单》(500-700 字) |
-| **连贯性保障** | ①能力与世界观兼容 ②使用条件明确 ③成长路径清晰 |
-
-**系统提示词：**
-```python
+# 2. 金手指设计部 (Golden Finger Dept)
 PROMPT_GOLDEN_FINGER = """
 你是一名金手指系统设计师，负责打造主角的"开局巅峰"配置。
 
@@ -147,21 +88,8 @@ PROMPT_GOLDEN_FINGER = """
 
 世界观设定：{world_building}
 """
-```
 
----
-
-#### 3. 人物关系部 (Character Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 设计主角、仇人、盟友的完整档案和关系网 |
-| **输入** | 世界观设定、金手指配置 |
-| **输出** | 《人物关系图谱》(800-1000 字) |
-| **连贯性保障** | ①每人有完整时间线 ②关系变化有因果 ③状态追踪清晰 |
-
-**系统提示词：**
-```python
+# 3. 人物关系部 (Character Dept)
 PROMPT_CHARACTER = """
 你是一名人物关系架构师，负责设计完整的人物档案和关系网络。
 
@@ -242,26 +170,14 @@ PROMPT_CHARACTER = """
 世界观设定：{world_building}
 金手指配置：{golden_finger}
 """
-```
 
----
 
-#### 4. 剧情策划部 (Plot Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 规划 6000 字情绪曲线、爽点分布、时间地点流程 |
-| **输入** | 世界观、金手指、人物关系 |
-| **输出** | 《千字情绪大纲》(6 段×1000 字，含时间地点标注) |
-| **连贯性保障** | ①每段有时间地点标注 ②人物状态连续 ③剧情因果清晰 |
-
-**系统提示词：**
-```python
+# 4. 剧情策划部 (Plot Dept)
 PROMPT_PLOT_PLANNER = """
 你是一名剧情策划专家，负责规划 6000 字的完整情绪曲线和剧情流程。
 
 【核心任务】
-将剧情拆解为 6 个段落，每段约 1000 字，确保时间、地点、人物状态连贯。
+将剧情拆解为 6 个段落，每段约 1000 字，确保时间、地点、人物状态连贯，字数可多于但是不可少于6000字。
 
 【必须包含的要素】
 1. **段落结构**（6 段）：
@@ -329,23 +245,10 @@ PROMPT_PLOT_PLANNER = """
 金手指配置：{golden_finger}
 人物关系：{character}
 """
-```
 
----
 
-### 📌 生产流水线（内容生成层）
-
-#### 5. 分块写作部 (Segment Writing Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 按大纲分 6 段撰写，严格遵循时间地点人物状态 |
-| **输入** | 千字情绪大纲、人物关系图谱、前文摘要 |
-| **输出** | 6 个独立段落草稿（每段 800-1000 字） |
-| **连贯性保障** | ①承接前文摘要 ②更新时间地点状态 ③输出段落摘要供下一段使用 |
-
-**系统提示词：**
-```python
+# 📌 生产流水线（内容生成层）
+# 5. 分块写作部 (Segment Writing Dept)
 PROMPT_SEGMENT_WRITER = """
 你是一名末日爽文主笔作家，负责撰写指定段落的正文内容。
 
@@ -373,7 +276,7 @@ PROMPT_SEGMENT_WRITER = """
    - 开篇即进入情节，无废话铺垫
 
 3. **字数控制**：
-   - 目标 800-1000 字
+   - 目标 800-1200 字
    - 允许±10% 误差
 
 4. **结尾钩子**：
@@ -387,7 +290,7 @@ PROMPT_SEGMENT_WRITER = """
    ❌ 不能时间地点跳跃无交代
    ❌ 不能剧情因果断裂
 
-【输出格式】
+【输出格式】   ！！！ 这里要改为格式化输出格式
 只输出正文内容，不要任何解释、标题或标记。
 正文结束后，另起一行输出：
 ===段落摘要===
@@ -402,21 +305,9 @@ PROMPT_SEGMENT_WRITER = """
 【风格要求】
 {style_guide}
 """
-```
 
----
 
-#### 6. 连贯性整合部 (Continuity Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 检查 6 段之间的时间、地点、人物、道具连贯性 |
-| **输入** | 6 个段落草稿及摘要 |
-| **输出** | 连贯初稿 + 连贯性检查报告 |
-| **连贯性保障** | ①时间线校验 ②地点转换校验 ③人物状态校验 ④道具追踪校验 |
-
-**系统提示词：**
-```python
+# 6. 连贯性整合部 (Continuity Dept)
 PROMPT_CONTINUITY = """
 你是一名连贯性检查专家，负责确保 6 个段落之间的逻辑连续性。
 
@@ -465,21 +356,8 @@ PROMPT_CONTINUITY = """
 【待检查的 6 个段落及摘要】
 {segments_with_summaries}
 """
-```
 
----
-
-#### 7. 节奏控制部 (Rhythm Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 优化叙事节奏，确保快节奏强冲突，删除注水内容 |
-| **输入** | 连贯初稿 + 连贯性检查报告 |
-| **输出** | 节奏优化稿 + 节奏分析报告 |
-| **连贯性保障** | ①保持时间地点信息 ②不删除关键剧情 ③只优化表达方式 |
-
-**系统提示词：**
-```python
+# 7. 节奏控制部 (Rhythm Dept)
 PROMPT_RHYTHM = """
 你是一名叙事节奏控制专家，负责优化文本的阅读节奏。
 
@@ -515,23 +393,11 @@ PROMPT_RHYTHM = """
 【待优化的连贯初稿】
 {continuity_draft}
 """
-```
 
----
 
-### 📌 后期工坊（润色包装层）
 
-#### 8. 感官修饰部 (Sensory Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 增加成人向感官张力，提升阅读粘性 |
-| **输入** | 节奏优化稿 |
-| **输出** | 感官增强稿 + 感官描写标注 |
-| **连贯性保障** | ①不改变剧情 ②不破坏时间线 ③合规无违规 |
-
-**系统提示词：**
-```python
+# 📌 后期工坊（润色包装层）
+# 8. 感官修饰部 (Sensory Dept)
 PROMPT_SENSORY = """
 你是一名感官与氛围修饰专家，负责提升文本的感官张力和艺术格调。
 
@@ -570,21 +436,9 @@ PROMPT_SENSORY = """
 【待润色的节奏优化稿】
 {rhythm_draft}
 """
-```
 
----
 
-#### 9. 幽默注入部 (Humor Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 植入黑色幽默和吐槽，缓解压抑 |
-| **输入** | 感官增强稿 |
-| **输出** | 幽默增强稿 + 笑点标注 |
-| **连贯性保障** | ①不破坏紧张感 ②符合人设 ③不影响剧情 |
-
-**系统提示词：**
-```python
+# 9. 幽默注入部 (Humor Dept)
 PROMPT_HUMOR = """
 你是一名黑色幽默专家，负责在残酷末世中植入幽默元素。
 
@@ -617,23 +471,9 @@ PROMPT_HUMOR = """
 【待润色的感官增强稿】
 {sensory_draft}
 """
-```
 
----
-
-### 📌 品控中心（质量控制层）
-
-#### 10. 节点品控部 (Node QA Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 每个节点完成后立即检查，不合格即退回 |
-| **输入** | 各部门交付物 |
-| **输出** | 品控报告 (通过/退回) |
-| **连贯性保障** | ①100% 节点覆盖 ②连贯性专项检查 ③问题定位精准 |
-
-**系统提示词：**
-```python
+# 📌 品控中心（质量控制层）
+# 10. 节点品控部 (Node QA Dept)
 PROMPT_NODE_QA = """
 你是一名节点品控专家，负责检查当前节点的交付质量。
 
@@ -673,21 +513,9 @@ PROMPT_NODE_QA = """
 【前文状态记录】
 {previous_state_records}
 """
-```
 
----
 
-#### 11. 终稿质检部 (Final QA Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 对照六大核心特征最终验收 |
-| **输入** | 标准格式终稿 |
-| **输出** | 最终质检报告 (PASS/REJECT) |
-| **连贯性保障** | ①全文连贯性终审 ②六大特征评分 ③合规审查 |
-
-**系统提示词：**
-```python
+# 11. 终稿质检部 (Final QA Dept)
 PROMPT_FINAL_QA = """
 你是一名终稿质检专家，负责对照六大核心特征进行最终验收。
 
@@ -747,21 +575,9 @@ PROMPT_FINAL_QA = """
 【全流程状态记录】
 {full_process_records}
 """
-```
 
----
 
-#### 12. 格式标准化部 (Format Dept)
-
-| 项目 | 详细说明 |
-|------|----------|
-| **核心职责** | 统一格式，适配手机阅读，准备发布 |
-| **输入** | 幽默增强稿 + 终稿质检报告 |
-| **输出** | 标准格式终稿 (MD/JSON) |
-| **连贯性保障** | ①元数据完整 ②版本可追溯 ③格式统一 |
-
-**系统提示词：**
-```python
+# 12. 格式标准化部 (Format Dept)
 PROMPT_FORMAT = """
 你是一名格式标准化专家，负责将稿件转换为发布格式。
 
@@ -816,67 +632,10 @@ PROMPT_FORMAT = """
 【全流程状态记录】
 {full_process_records}
 """
-```
 
----
 
-## 三、连贯性保障机制
 
-### 1. 状态追踪表（贯穿全流程）
-
-```python
-class ContinuityTracker:
-    """连贯性追踪器"""
-    
-    def __init__(self):
-        self.timeline = []          # 时间线记录
-        self.locations = []         # 地点转换记录
-        self.character_states = {}  # 人物状态字典
-        self.prop_inventory = {}    # 道具清单
-        self.plot_causality = []    # 剧情因果链
-    
-    def update_time(self, time_point, event):
-        """更新时间线"""
-        self.timeline.append({"time": time_point, "event": event})
-    
-    def update_location(self, character, from_loc, to_loc):
-        """更新地点"""
-        self.locations.append({
-            "character": character,
-            "from": from_loc,
-            "to": to_loc,
-            "transition": "转换方式"
-        })
-    
-    def update_character_state(self, character, state_change):
-        """更新人物状态"""
-        if character not in self.character_states:
-            self.character_states[character] = []
-        self.character_states[character].append(state_change)
-    
-    def update_prop(self, prop_name, action, owner):
-        """更新道具"""
-        if prop_name not in self.prop_inventory:
-            self.prop_inventory[prop_name] = []
-        self.prop_inventory[prop_name].append({
-            "action": action,
-            "owner": owner,
-            "time": len(self.timeline)
-        })
-    
-    def check_consistency(self):
-        """检查连贯性"""
-        issues = []
-        # 检查时间是否倒流
-        # 检查地点是否瞬移
-        # 检查人物状态是否突变
-        # 检查道具是否凭空出现
-        return issues
-```
-
-### 2. 每段输出必须包含的摘要
-
-```python
+# 2. 每段输出必须包含的摘要
 SEGMENT_SUMMARY_TEMPLATE = """
 ===段落摘要===
 时间：{current_time}
@@ -889,108 +648,10 @@ SEGMENT_SUMMARY_TEMPLATE = """
 道具使用：{prop_usage}
 过渡到下一段：{transition_hint}
 """
-```
 
----
 
-## 四、LangGraph 状态定义更新
 
-```python
-from typing import TypedDict, List, Dict, Any, Optional
 
-# 连贯性追踪状态
-class ContinuityTrackerState(TypedDict):
-    timeline: List[Dict]              # 时间线记录
-    locations: List[Dict]             # 地点转换记录
-    character_states: Dict[str, List] # 人物状态字典
-    prop_inventory: Dict[str, List]   # 道具清单
-    plot_causality: List[Dict]        # 剧情因果链
 
-# 主状态增加连贯性追踪
-class MainState(TypedDict):
-    # 输入
-    user_input: str
-    
-    # 前期中台
-    world_building: WorldBuildingState
-    golden_finger: GoldenFingerState
-    character: CharacterState
-    plot: PlotState
-    
-    # 生产流水线
-    segments: List[SegmentState]
-    continuity: ContinuityState
-    rhythm: RhythmState
-    
-    # 后期工坊
-    sensory: SensoryState
-    humor: HumorState
-    format: FormatState
-    
-    # 品控中心
-    node_qa_records: List[NodeQAState]
-    final_qa: FinalQAState
-    
-    # 连贯性追踪（新增）
-    continuity_tracker: ContinuityTrackerState
-    
-    # 流程控制
-    iteration_count: int
-    current_stage: str
-```
 
----
-
-## 五、项目目录结构
-
-```text
-E:\pycode\AIStory\ApocalypseStoryTeam\
-├── main.py                          # 入口文件
-├── config/
-│   ├── __init__.py
-│   ├── settings.py                  # 全局配置
-│   └── qa_standards.py              # 品控标准
-├── states/
-│   ├── __init__.py
-│   ├── storyState.py                # 主状态定义
-│   └── continuity.py                # 连贯性追踪状态
-├── nodes/
-│   ├── __init__.py
-│   ├── world_builder.py             # 世界观设定
-│   ├── golden_finger.py             # 金手指设计
-│   ├── character.py                 # 人物关系
-│   ├── plot_planner.py              # 剧情策划
-│   ├── segment_writer.py            # 分块写作
-│   ├── continuity.py                # 连贯性整合
-│   ├── rhythm.py                    # 节奏控制
-│   ├── sensory.py                   # 感官修饰
-│   ├── humor.py                     # 幽默注入
-│   ├── format.py                    # 格式标准化
-│   └── qa.py                        # 品控节点
-├── graph/
-│   ├── __init__.py
-│   └── storyGraph.py                # 图谱构建
-├── utils/
-│   ├── __init__.py
-│   ├── continuity_tracker.py        # 连贯性追踪工具
-│   └── file_manager.py              # 文件管理
-└── outputs/                         # 输出目录
-```
-
----
-
-## 六、质量保证机制总结
-
-| 机制 | 说明 | 执行频率 | 连贯性保障 |
-|------|------|----------|------------|
-| **10 个节点品控** | 每个部门后设品控点 | 每篇必检 | 每节点检查连贯性 |
-| **连贯性追踪器** | 全程追踪时间地点人物道具 | 实时更新 | 核心保障机制 |
-| **段落摘要传递** | 每段输出摘要供下段使用 | 每段必做 | 确保段间连贯 |
-| **六大特征评分** | 终稿对照评分表验收 | 每篇必检 | 包含连贯性评分 |
-| **三级品控体系** | 自检→节点检→终检 | 全流程 | 层层把关 |
-| **标准作业程序** | 每部门有明确 SOP | 持续执行 | 规范化操作 |
-
----
-
-这套架构通过**12 个专业部门**的精细化分工，配合**丰富的提示词**和**连贯性追踪机制**，可确保产出高质量、逻辑自洽、无低智化的末日爽文！🎯
 
