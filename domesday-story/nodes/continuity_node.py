@@ -50,6 +50,8 @@ def continuity_node(state: MainState) -> dict:
         segments_text.append(
             f"===段落{seg['segment_index'] + 1}===\n{seg['content']}\n摘要：{seg['summary']}"
         )
+        print(f"===段落{seg['segment_index'] + 1}===\n{seg['content']}\n摘要：{seg['summary']}")
+
 
     # 构建消息
     messages = [

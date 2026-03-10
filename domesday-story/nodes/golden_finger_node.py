@@ -9,7 +9,7 @@ from states.storyState import MainState
 from prompts.storyPrompts import PROMPT_GOLDEN_FINGER
 from config.config import llm_creative
 
-# 初始化 LLM
+# 初始化 LLM 创造性的llm
 llm = llm_creative
 
 

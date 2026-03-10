@@ -1023,11 +1023,11 @@ E:\pycode\AIStory\ApocalypseStoryTeam\
                                      ▼
                             ┌───────────────┐
                             │ plot_planner  │
-                            │  剧情策划部    │
+                            │  剧情策划部     │
                             └───────┬───────┘
                                     │
                     ╔═══════════════════════════════════╗
-                    ║       生产流水线 (内容生成层)       ║
+                    ║       生产流水线 (内容生成层)         ║
                     ╚═══════════════════════════════════╝
                                     │
                                     ▼
@@ -1103,6 +1103,46 @@ E:\pycode\AIStory\ApocalypseStoryTeam\
                     └─────────────┘
 
 
+## 分块写作部
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        分块写作部 - 信息流整合                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│ world_builder│    │golden_finger │    │  character   │    │ plot_planner │
+│  世界观设定   │    │  金手指设计   │    │  人物关系    │    │  剧情策划    │
+└──────┬───────┘    └──────┬───────┘    └──────┬───────┘    └──────┬───────┘
+       │                   │                   │                   │
+       │ 末日规则          │ 能力设定          │ 人物档案          │ 段落大纲
+       │ 爆发时间          │ 使用限制          │ 仇人弱点          │ 时间地点
+       │ 关键地点          │ 复仇优势          │ 关系变化          │ 爽点分布
+       │                   │                   │                   │
+       └───────────────────┼───────────────────┼───────────────────┘
+                           │                   │
+                           ▼                   ▼
+                  ┌─────────────────────────────────┐
+                  │   segment_writer_node           │
+                  │   分块写作部节点                 │
+                  │                                 │
+                  │  ✅ 整合所有前期信息             │
+                  │  ✅ 消除信息孤岛                 │
+                  │  ✅ 保证设定一致性               │
+                  └────────────────┬────────────────┘
+                                   │
+                                   ▼
+                  ┌─────────────────────────────────┐
+                  │   输出：段落正文 + 段落摘要      │
+                  │   - 严格遵循世界观              │
+                  │   - 正确使用金手指              │
+                  │   - 人物性格一致                │
+                  │   - 时间地点连贯                │
+                  └─────────────────────────────────┘
+
+
+
+
+
 
 四、LLM 使用建议对照表
 节点类型	推荐 LLM	温度	原因
@@ -1118,3 +1158,254 @@ E:\pycode\AIStory\ApocalypseStoryTeam\
 格式标准化	llm_precise	0.3	需要精确格式
 节点品控	llm_precise	0.3	需要客观稳定
 终稿质检	llm_precise	0.3	需要客观稳定
+
+
+##  测试代码
+# test_segment_writer.py
+    """
+    测试分块写作部节点
+    """
+    from nodes.segment_writer_node import segment_writer_node
+    from states.storyState import MainState
+    
+    def test_segment_writer():
+        print("="*60)
+        print("测试分块写作部节点")
+        print("="*60)
+        
+        test_state = {
+            "user_input": "女主重生复仇",
+            "world_building": {
+                "apocalypse_name": "足癣真菌末日",
+                "apocalypse_source": "一种源自脚气真菌的变异菌株...",
+                "outbreak_date": "2024 年 7 月 15 日凌晨 3 点",
+                "transmission_rules": "空气和接触传播...",
+                "mutation_symptoms": "感染者跺脚、挠地...",
+                "key_locations": [{"name": "主角公寓"}, {"name": "沃尔玛超市"}],
+                "special_rules": "无",
+            },
+            "golden_finger": {
+                "ability_type": "重生 + 空间异能",
+                "activation_condition": "重生瞬间激活",
+                "functions": [{"name": "空间存储", "description": "1000 立方米"}],
+                "limitations": "不能存储生命体",
+                "revenge_advantages": ["提前囤货", "隐藏物资"],
+            },
+            "character": {
+                "protagonist": {
+                    "name": "苏晚",
+                    "age": 25,
+                    "profession": "金融分析师",
+                    "personality": ["冷静", "果断", "腹黑"],
+                    "death_info": {"time": "末世第 30 天", "cause": "被推入丧尸群"},
+                    "rebirth_info": {"time": "末世前 30 天"},
+                },
+                "villains": [
+                    {
+                        "name": "林薇薇",
+                        "relationship": "闺蜜",
+                        "weakness": "洁癖 + 贪生怕死",
+                        "betrayal_info": {"action": "推入丧尸群"},
+                        "fate": "被断供物资饿死",
+                    }
+                ],
+                "allies": [],
+            },
+            "plot": {
+                "beat_sheet": [
+                    {
+                        "segment": 1,
+                        "time": "末世前 30 天",
+                        "location": "苏晚公寓",
+                        "characters": ["苏晚"],
+                        "character_states": {"苏晚": "震惊→冷静"},
+                        "plot_summary": "重生觉醒，激活金手指，开始制定计划",
+                        "key_props": ["空间异能"],
+                    }
+                ],
+            },
+            "segments": [],
+            "current_segment_index": 0,
+        }
+        
+        result = segment_writer_node(test_state)
+        print(f"\n写作结果：")
+        print(f"段落数：{len(result.get('segments', []))}")
+        print(f"当前索引：{result.get('current_segment_index', 0)}")
+        if result.get('segments'):
+            print(f"第一段字数：{result['segments'][0].get('word_count', 0)}")
+            print(f"第一段摘要：{result['segments'][0].get('summary', '')}")
+    
+    if __name__ == "__main__":
+        test_segment_writer()
+
+
+
+### 剧情策划部节点 更新
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    plot_planner_node - 信息流整合                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│ world_builder│    │golden_finger │    │  character   │
+│  世界观设定   │    │  金手指设计   │    │  人物关系    │
+└──────┬───────┘    └──────┬───────┘    └──────┬───────┘
+       │                   │                   │
+       │ 末日规则          │ 能力设定          │ 人物档案
+       │ 爆发时间          │ 使用限制          │ 仇人弱点
+       │ 关键地点          │ 复仇优势          │ 关系变化
+       │                   │                   │
+       └───────────────────┼───────────────────┘
+                           │
+                           ▼
+                  ┌─────────────────────────────────┐
+                  │   plot_planner_node             │
+                  │   剧情策划部节点                 │
+                  │                                 │
+                  │  ✅ 整合所有前期信息             │
+                  │  ✅ 消除信息孤岛                 │
+                  │  ✅ 保证设定一致性               │
+                  │  ✅ 添加连贯性检查               │
+                  └────────────────┬────────────────┘
+                                   │
+                                   ▼
+                  ┌─────────────────────────────────┐
+                  │   输出：6 段大纲 + 一致性检查     │
+                  │   - 时间线连贯                  │
+                  │   - 地点连贯                    │
+                  │   - 人物连贯                    │
+                  │   - 金手指连贯                  │
+                  │   - 末日规则连贯                │
+                  └─────────────────────────────────┘
+                                   │
+                                   ▼
+                  ┌─────────────────────────────────┐
+                  │   segment_writer_node           │
+                  │   分块写作部节点                 │
+                  │                                 │
+                  │  ✅ 接收完整大纲                 │
+                  │  ✅ 继承所有前期信息             │
+                  │  ✅ 保证写作一致性               │
+                  └─────────────────────────────────┘
+
+输出示例
+
+{
+    "beat_sheet": [
+        {
+            "segment": 1,
+            "word_range": "0-1000",
+            "time": "末世爆发前 30 天（2024 年 6 月 15 日）",
+            "location": "苏晚公寓",
+            "characters": ["苏晚"],
+            "character_states": {"苏晚": "震惊→冷静→决心复仇"},
+            "plot_summary": "苏晚从末世第 30 天被推入丧尸群的经历中惊醒，发现自己重生回到末世前 30 天。她立即激活空间异能，开始清点资产，制定搞钱计划。",
+            "hook_points": ["重生觉醒的震惊", "激活金手指的爽感"],
+            "key_props": ["空间异能"],
+            "golden_finger_usage": "空间异能激活，1000 立方米容量",
+            "apocalypse_rules": "无（爆发前）",
+            "transition_to_next": "苏晚打开电脑，开始列物资清单"
+        },
+        {
+            "segment": 2,
+            "word_range": "1000-2000",
+            "time": "末世爆发前 25 天（2024 年 6 月 20 日）",
+            "location": "沃尔玛超市、苏晚公寓",
+            "characters": ["苏晚"],
+            "character_states": {"苏晚": "专注、冷静"},
+            "plot_summary": "苏晚利用空间异能疯狂囤货，从食品到药品到武器，事无巨细。同时改造公寓，加装防盗门、太阳能板、空气过滤系统。",
+            "hook_points": ["囤货的满足感", "安全屋改造的成就感"],
+            "key_props": ["空间异能", "物资", "改造工具"],
+            "golden_finger_usage": "使用空间异能存储物资",
+            "apocalypse_rules": "无（爆发前）",
+            "transition_to_next": "安全屋改造完成，苏晚等待末日降临"
+        }
+    ],
+    "opening_hook": "苏晚睁开眼睛，熟悉的天花板映入眼帘，但她知道，一切都不同了",
+    "ending_hook": "她启动车辆，检测仪屏幕闪烁着绿光，驶向未知的远方",
+    "timeline_summary": "2024 年 6 月 15 日重生→6 月 20 日囤货→7 月 15 日爆发→7 月 20 日仇人求助→7 月 25 日复仇高潮→8 月 15 日收尾",
+    "consistency_check": {
+        "world_building": "PASS",
+        "golden_finger": "PASS",
+        "character": "PASS",
+        "timeline": "PASS",
+        "location": "PASS"
+    }
+}
+
+
+# 测试代码
+# test_plot_planner.py
+    """
+    测试剧情策划部节点
+    """
+    from nodes.plot_planner_node import plot_planner_node
+    from states.storyState import MainState
+    
+    def test_plot_planner():
+        print("="*60)
+        print("测试剧情策划部节点")
+        print("="*60)
+        
+        test_state = {
+            "user_input": "女主重生复仇",
+            "world_building": {
+                "apocalypse_name": "足癣真菌末日",
+                "apocalypse_source": "一种源自脚气真菌的变异菌株...",
+                "outbreak_date": "2024 年 7 月 15 日凌晨 3 点",
+                "transmission_rules": "空气和接触传播...",
+                "mutation_symptoms": "感染者跺脚、挠地...",
+                "key_locations": [
+                    {"name": "苏晚公寓", "type": "安全屋"},
+                    {"name": "沃尔玛超市", "type": "资源点"},
+                    {"name": "城郊温泉度假村", "type": "危险区"}
+                ],
+                "special_rules": "无",
+            },
+            "golden_finger": {
+                "ability_type": "重生 + 空间异能",
+                "activation_condition": "重生瞬间激活",
+                "functions": [{"name": "空间存储", "description": "1000 立方米"}],
+                "limitations": "不能存储生命体",
+                "revenge_advantages": ["提前囤货", "隐藏物资"],
+            },
+            "character": {
+                "protagonist": {
+                    "name": "苏晚",
+                    "age": 25,
+                    "profession": "金融分析师",
+                    "personality": ["冷静", "果断", "腹黑"],
+                    "death_info": {"time": "末世第 30 天", "cause": "被推入丧尸群"},
+                    "rebirth_info": {"time": "末世前 30 天"},
+                },
+                "villains": [
+                    {
+                        "name": "林薇薇",
+                        "relationship": "闺蜜",
+                        "weakness": "洁癖 + 贪生怕死",
+                        "betrayal_info": {"action": "推入丧尸群"},
+                        "fate": "被断供物资饿死",
+                    },
+                    {
+                        "name": "陈浩",
+                        "relationship": "男友",
+                        "weakness": "好色 + 严重脚气",
+                        "betrayal_info": {"action": "抢夺物资"},
+                        "fate": "被变异者拖走",
+                    }
+                ],
+                "allies": [],
+            },
+        }
+        
+        result = plot_planner_node(test_state)
+        plot = result.get('plot', {})
+        print(f"\n策划结果：")
+        print(f"段落数：{len(plot.get('beat_sheet', []))}")
+        print(f"开篇钩子：{plot.get('opening_hook', '')[:50]}...")
+        print(f"时间线：{plot.get('timeline_summary', '')[:50]}...")
+        print(f"一致性检查：{plot.get('consistency_check', {})}")
+    
+    if __name__ == "__main__":
+        test_plot_planner()

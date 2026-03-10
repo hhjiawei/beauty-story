@@ -203,9 +203,6 @@ def final_qa_node(state: MainState) -> dict:
     if final_qa["word_count"] < 5000:
         final_qa["compliance_issues"].append(f"字数不足：{final_qa['word_count']} < 5000")
         final_qa["final_status"] = "REJECT"
-    elif final_qa["word_count"] > 7000:
-        final_qa["compliance_issues"].append(f"字数超标：{final_qa['word_count']} > 7000")
-        final_qa["final_status"] = "REJECT"
 
     # 8. 自动校验六大特征总分
     if final_qa["total_score"] < 55:

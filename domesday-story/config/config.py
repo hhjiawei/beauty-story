@@ -4,15 +4,17 @@
 """
 import os
 from datetime import datetime
+from langchain_ollama import ChatOllama
+# from langchain_deepseek import ChatDeepSeek
 from langchain_openai import ChatOpenAI
 
 # ================= API 配置 =================
 # 请替换为你的实际 API Key
-OPENAI_API_KEY = "your-api-key-here"
-OPENAI_API_BASE = "https://api.openai.com/v1"
-MODEL_NAME = "gpt-4-turbo"
+OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
+OPENAI_API_BASE = "https://api.deepseek.com"
+MODEL_NAME = "deepseek-chat"
 TEMPERATURE = 0.7
-MAX_TOKENS = 4000
+MAX_TOKENS = 10000
 TIMEOUT = 60
 
 # 设置环境变量
@@ -89,12 +91,17 @@ def get_llm(model_name=None, temperature=None, cache=True):
         return _llm_cache[cache_key]
 
     # 创建新实例
-    llm = ChatOpenAI(
-        model=model_name,
-        temperature=temperature,
-        max_tokens=MAX_TOKENS,
-        timeout=TIMEOUT,
-        max_retries=2,
+    # llm = ChatOpenAI(
+    #     model=model_name,
+    #     temperature=temperature,
+    #     # max_tokens=MAX_TOKENS,
+    #     timeout=TIMEOUT,
+    #     max_retries=2,
+    # )
+
+    llm = ChatOllama(
+        model="qwen3-vl:4b",
+        base_url="http://10.0.102.100:11434",
     )
 
     # 存入缓存

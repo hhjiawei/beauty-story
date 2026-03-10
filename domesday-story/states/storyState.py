@@ -162,7 +162,7 @@ class MainState(TypedDict):
     plot: PlotState
 
     # 生产流水线
-    segments: List[SegmentState]
+    segments: List[SegmentState] # 摘要
     continuity: ContinuityState
     rhythm: RhythmState
 
