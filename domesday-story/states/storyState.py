@@ -41,12 +41,14 @@ class CharacterState(TypedDict):
 
 class PlotState(TypedDict):
     """剧情策划状态"""
-    beat_sheet: List[Dict]            # 6 段情节大纲
-    hook_points: List[str]            # 爽点位置
-    transition_design: str            # 过渡设计
-    opening_hook: str                 # 开篇设计
-    ending_hook: str                  # 结尾设计
-    timeline_summary: str             # 完整时间线摘要
+    beat_sheet: List[Dict]                    # 6 段情节大纲
+    hook_points: List[str]                    # 爽点位置
+    transition_design: str                    # 过渡设计
+    opening_hook: str                         # 开篇设计
+    ending_hook: str                          # 结尾设计
+    timeline_summary: str                     # 完整时间线摘要
+    revision_count: int                       # 返修次数（新增）
+    revision_notes: str                       # 返修说明
     qa_status: str
     qa_feedback: str
 
@@ -69,9 +71,9 @@ class SegmentState(TypedDict):
 class ContinuityState(TypedDict):
     """连贯性整合状态"""
     full_draft: str                   # 连贯初稿
-    continuity_report: Dict           # 连贯性检查报告
+    # continuity_report: Dict           # 连贯性检查报告
     transition_records: List[str]     # 过渡修改记录
-    logic_continuity: float           # 逻辑连续性评分
+    # logic_continuity: float           # 逻辑连续性评分
     qa_status: str
     qa_feedback: str
 
@@ -161,8 +163,12 @@ class MainState(TypedDict):
     character: CharacterState
     plot: PlotState
 
+    # 连贯性检测（新增）
+    plot_continuity_report: Dict  # 大纲连贯性检测报告
+    plot_continuity_status: str  # 大纲连贯性状态（PASS/FAIL）
+
     # 生产流水线
-    segments: List[SegmentState] # 摘要
+    segments: List[SegmentState]
     continuity: ContinuityState
     rhythm: RhythmState
 
@@ -172,11 +178,7 @@ class MainState(TypedDict):
     format: FormatState
 
     # 品控中心
-    node_qa_records: List[NodeQAState]
     final_qa: FinalQAState
-
-    # 连贯性追踪
-    continuity_tracker: ContinuityTrackerState
 
     # 流程控制
     iteration_count: int

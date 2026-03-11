@@ -1,92 +1,49 @@
 """
 连贯性整合部节点
-检查 6 段之间的时间、地点、人物、道具连贯性
+大纲阶段已进行连贯性检测，此节点仅负责段落整合
 """
-import json
-import re
-from langchain_core.messages import HumanMessage, SystemMessage
 from states.storyState import MainState
-from prompts.storyPrompts import PROMPT_CONTINUITY
-from config.config import llm_precise
-
-# 初始化 LLM
-llm = llm_precise
-
-
-def parse_json_response(content: str) -> dict:
-    """解析 LLM 的 JSON 响应"""
-    try:
-        content = content.strip()
-        content = re.sub(r'^```json\s*', '', content)
-        content = re.sub(r'^```\s*', '', content)
-        content = re.sub(r'\s*```$', '', content)
-        content = content.strip()
-        return json.loads(content)
-    except Exception as e:
-        print(f"[JSON 解析错误] {e}")
-        return {}
 
 
 def continuity_node(state: MainState) -> dict:
     """
-    连贯性整合部节点函数
+    连贯性整合部节点函数 - 简化版（仅段落整合）
 
     Args:
-        state: 主状态对象，包含所有段落草稿
+        state: 主状态对象
 
     Returns:
-        更新后的状态字典，包含连贯初稿和检查报告
+        更新后的状态字典，包含连贯初稿
     """
-    print("\n" + "=" * 60)
+    print("\n" + "="*60)
     print("[连贯性整合部] 开始工作")
-    print("=" * 60)
+    print("="*60)
 
-    # 获取所有段落
+    # 1. 获取所有段落
     segments = state.get("segments", [])
+    print(f"[连贯性整合部] 段落数量：{len(segments)}")
 
-    # 组合所有段落文本
-    segments_text = []
-    for seg in segments:
-        segments_text.append(
-            f"===段落{seg['segment_index'] + 1}===\n{seg['content']}\n摘要：{seg['summary']}"
-        )
-        print(f"===段落{seg['segment_index'] + 1}===\n{seg['content']}\n摘要：{seg['summary']}")
+    # 2. 组合所有段落正文
+    full_draft = "\n\n".join([seg.get("content", "") for seg in segments])
 
+    # 3. 获取大纲阶段的连贯性报告
+    plot_continuity_report = state.get("plot_continuity_report", {})
 
-    # 构建消息
-    messages = [
-        SystemMessage(content=PROMPT_CONTINUITY),
-        HumanMessage(content="\n\n".join(segments_text))
-    ]
-
-    # 调用 LLM
-    response = llm.invoke(messages)
-
-    # 分离报告和正文
-    content = response.content
-    if "第一部分" in content and "第二部分" in content:
-        parts = content.split("第二部分")
-        report_str = parts[0].replace("第一部分", "").strip()
-        draft = parts[1].strip() if len(parts) > 1 else content
-    else:
-        report_str = content
-        draft = content
-
-    # 解析报告
-    report = parse_json_response(report_str)
-
-    # 构建连贯性状态对象
+    # 4. 构建连贯性状态
     continuity = {
-        "full_draft": draft,
-        "continuity_report": report,
+        "full_draft": full_draft,
+        "continuity_report": {
+            "overall_status": plot_continuity_report.get("overall_status", "PASS"),
+            "logic_continuity_score": plot_continuity_report.get("total_score", 80),
+        },
         "transition_records": [],
-        "logic_continuity": report.get("logic_continuity_score", 80),
+        "logic_continuity": plot_continuity_report.get("total_score", 80),
         "qa_status": "PENDING",
         "qa_feedback": ""
     }
 
-    # 打印工作日志
-    print(f"[连贯性整合部] ✅ 完成，连贯性评分：{continuity['logic_continuity']}")
+    print(f"[连贯性整合部] ✅ 段落整合完成")
+    print(f"[连贯性整合部] 总字数：{len(full_draft)}")
+    print(f"[连贯性整合部] 大纲连贯性评分：{continuity['logic_continuity']:.1f}/100")
 
-    # 返回状态更新
     return {"continuity": continuity}
