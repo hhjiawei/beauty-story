@@ -935,16 +935,8 @@ PROMPT_SENSORY = f"""
 - 分布：均匀分布，不要集中在某一段
 - 类型：多样化，不要只用一种类型
 
-【输出格式】
-第一部分：感官描写报告（JSON 格式）
-{{
-    "sensory_count": 描写数量，
-    "sensory_positions": [段落位置],
-    "sensory_types": {{"触感": 数量，"气味": 数量，...}},
-    "compliance_status": "PASS/FAIL"
-}}
-
-第二部分：感官增强稿（完整正文）
+【输出】
+感官增强稿（完整正文）
 
 【待润色的节奏优化稿】
 {{rhythm_draft}}
@@ -1011,16 +1003,8 @@ PROMPT_HUMOR = f"""
 ❌ 严肃复仇时刻不能搞笑
 ❌ 他人真正痛苦时不能搞笑
 
-【输出格式】
-第一部分：幽默注入报告（JSON 格式）
-{{
-    "humor_count": 笑点数量，
-    "humor_positions": [段落位置],
-    "humor_types": {{"吐槽": 数量，"反讽": 数量，...}},
-    "style_consistency": 风格一致性评分 0-100
-}}
-
-第二部分：幽默增强稿（完整正文）
+【输出】
+幽默增强稿（完整正文）
 
 【待润色的感官增强稿】
 {{sensory_draft}}

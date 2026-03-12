@@ -52,29 +52,19 @@ def humor_node(state: MainState) -> dict:
 
     # 分离报告和正文
     content = response.content
-    if "第一部分" in content and "第二部分" in content:
-        parts = content.split("第二部分")
-        report_str = parts[0].replace("第一部分", "").strip()
-        draft = parts[1].strip() if len(parts) > 1 else content
-    else:
-        report_str = content
-        draft = content
 
     # 解析报告
-    report = parse_json_response(report_str)
+    # draft = parse_json_response(content)
 
     # 构建幽默状态对象
     humor = {
-        "humor_enhanced": draft,
-        "humor_report": report,
-        "humor_count": report.get("humor_count", 0),
-        "style_consistency": report.get("style_consistency", 90),
+        "humor_enhanced": content,
         "qa_status": "PENDING",
         "qa_feedback": ""
     }
 
     # 打印工作日志
-    print(f"[幽默注入部] ✅ 完成，笑点数量：{humor['humor_count']} 个")
+    print(f"[幽默注入部] ✅ 完成")
 
     # 返回状态更新
     return {"humor": humor}

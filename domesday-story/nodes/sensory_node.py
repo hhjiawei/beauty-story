@@ -44,7 +44,7 @@ def sensory_node(state: MainState) -> dict:
     # 构建消息
     messages = [
         SystemMessage(content=PROMPT_SENSORY),
-        HumanMessage(content=state["rhythm"]["optimized_draft"])
+        HumanMessage(content=state["continuity"]["full_draft"])
     ]
 
     # 调用 LLM
@@ -52,29 +52,19 @@ def sensory_node(state: MainState) -> dict:
 
     # 分离报告和正文
     content = response.content
-    if "第一部分" in content and "第二部分" in content:
-        parts = content.split("第二部分")
-        report_str = parts[0].replace("第一部分", "").strip()
-        draft = parts[1].strip() if len(parts) > 1 else content
-    else:
-        report_str = content
-        draft = content
 
     # 解析报告
-    report = parse_json_response(report_str)
+    # draft = parse_json_response(content)
 
     # 构建感官状态对象
     sensory = {
-        "sensory_enhanced": draft,
-        "sensory_report": report,
-        "sensory_count": report.get("sensory_count", 0),
-        "compliance_check": report.get("compliance_status") == "PASS",
+        "sensory_enhanced": content,
         "qa_status": "PENDING",
         "qa_feedback": ""
     }
 
     # 打印工作日志
-    print(f"[感官修饰部] ✅ 完成，感官描写：{sensory['sensory_count']} 处")
+    print(f"[感官修饰部] ✅ 完成")
 
     # 返回状态更新
     return {"sensory": sensory}

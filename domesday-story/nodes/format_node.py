@@ -9,10 +9,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from states.storyState import MainState
 from config.config import MODEL_NAME, TEMPERATURE, OUTPUT_DIR, generate_filename
 
-from config.config import llm_precise
 
-# 初始化 LLM
-llm = llm_precise
 
 
 def format_node(state: MainState) -> dict:
@@ -62,8 +59,6 @@ def format_node(state: MainState) -> dict:
 ---
 ## 📊 创作统计
 - **段落数**: {len(state.get('segments', []))}
-- **感官描写**: {state.get('sensory', {}).get('sensory_count', 0)} 处
-- **笑点数量**: {state.get('humor', {}).get('humor_count', 0)} 个
 
 ---
 *本作品由 AI 创作团队自动生成 | 末日爽文工厂*
@@ -92,7 +87,7 @@ def format_node(state: MainState) -> dict:
     }
 
     # 打印工作日志
-    print(f"[格式标准化部] ✅ 完成，文件已保存：{filepath}")
+    print(f"[格式标准化部] ✅ 完成")
 
     # 返回状态更新
     return {"format": format_state}

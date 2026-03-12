@@ -74,7 +74,7 @@ def rhythm_node(state: MainState) -> dict:
     }
 
     # 打印工作日志
-    print(f"[节奏控制部] ✅ 完成，短句占比：{rhythm['short_sentence_ratio']}")
+    print(f"[节奏控制部] ✅ 完成")
 
     # 返回状态更新
     return {"rhythm": rhythm}

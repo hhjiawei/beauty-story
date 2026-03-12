@@ -66,7 +66,7 @@ def golden_finger_node(state: MainState) -> dict:
     }
 
     # 打印工作日志
-    print(f"[金手指设计部] ✅ 完成：{golden_finger['ability_type']}")
+    print(f"[金手指设计部] ✅ 完成")
 
     # 返回状态更新
     return {"golden_finger": golden_finger}

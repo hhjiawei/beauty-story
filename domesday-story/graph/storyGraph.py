@@ -48,7 +48,7 @@ def check_plot_continuity_passed(state: MainState) -> str:
     print(f"[大纲连贯性路由] 必须修复问题：{len(must_fix_issues)}个")
 
     # 通过条件：状态为 PASS 且总分≥80 且无必须修复问题
-    if plot_continuity_status == "PASS" and total_score >= 80 and not must_fix_issues:
+    if total_score >= 80 and plot_continuity_status == "PASS" and not must_fix_issues:
         print(f"[大纲连贯性路由] ✅ 通过，开始写作")
         return "pass"
     else:
@@ -126,8 +126,8 @@ main_graph.add_conditional_edges(
 )
 
 # 连贯性→节奏→感官→幽默→格式
-main_graph.add_edge("continuity", "rhythm")
-main_graph.add_edge("rhythm", "sensory")
+main_graph.add_edge("continuity", "sensory")
+# main_graph.add_edge("rhythm", "sensory")
 main_graph.add_edge("sensory", "humor")
 main_graph.add_edge("humor", "format")
 

@@ -90,16 +90,6 @@ def get_full_process_records(state: MainState) -> dict:
             "total_segments": len(state.get("segments", [])),
             "total_word_count": sum(seg.get("word_count", 0) for seg in state.get("segments", [])),
         },
-        "node_qa_records": {
-            "total_checks": len(state.get("node_qa_records", [])),
-            "failed_checks": len([r for r in state.get("node_qa_records", []) if r.get("check_result") == "REJECT"]),
-        },
-        "sensory": {
-            "sensory_count": state.get("sensory", {}).get("sensory_count", 0),
-        },
-        "humor": {
-            "humor_count": state.get("humor", {}).get("humor_count", 0),
-        },
     }
 
 
@@ -131,7 +121,7 @@ def final_qa_node(state: MainState) -> dict:
         SystemMessage(content=PROMPT_FINAL_QA),
         HumanMessage(content=f"""
         待审查的完整稿件（前 5000 字符）：
-        {final_draft[:5000]}...
+        {final_draft}...
         
         全流程状态记录：
         {json.dumps(full_process_records, ensure_ascii=False, indent=2)}

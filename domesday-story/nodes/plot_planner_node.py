@@ -5,10 +5,38 @@
 支持根据连贯性检测的返修意见重新设计大纲
 """
 import json
+import re
+
 from langchain_core.messages import HumanMessage, SystemMessage
 from states.storyState import MainState
 from prompts.storyPrompts import PROMPT_PLOT_PLANNER
 from config.config import llm_default
+
+
+
+def parse_json_response(content: str) -> dict:
+    """
+    解析 LLM 的 JSON 响应
+
+    Args:
+        content: LLM 返回的内容
+
+    Returns:
+        解析后的字典
+    """
+    try:
+        # 清理 Markdown 代码块标记
+        content = content.strip()
+        content = re.sub(r'^```json\s*', '', content)
+        content = re.sub(r'^```\s*', '', content)
+        content = re.sub(r'\s*```$', '', content)
+        content = content.strip()
+
+        # 解析 JSON
+        return json.loads(content)
+    except Exception as e:
+        print(f"[JSON 解析错误] {e}")
+        return {}
 
 
 def build_world_building_context(state: MainState) -> dict:
@@ -228,8 +256,7 @@ def plot_planner_node(state: MainState) -> dict:
     try:
         content = response.content.strip()
         # 清理 Markdown 代码块标记
-        content = content.replace('```json', '').replace('```', '').strip()
-        plot_data = json.loads(content)
+        plot_data = parse_json_response(content)
         print(f"[剧情策划部] ✅ JSON 解析成功")
     except Exception as e:
         print(f"[剧情策划部][JSON 解析错误] {e}")
