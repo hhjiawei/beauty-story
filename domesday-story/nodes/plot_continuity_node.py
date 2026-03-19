@@ -130,10 +130,6 @@ def plot_continuity_node(state: MainState) -> dict:
     print(f"[剧情连贯性检测] ✅ 检测完成：{report['overall_status']}")
     print(f"[剧情连贯性检测] 总分：{report['total_score']}/100")
     print(f"[剧情连贯性检测] 各项评分:")
-    print(f"  - 时间连贯：{report['time_continuity'].get('score', 0)}/25")
-    print(f"  - 地点连贯：{report['location_continuity'].get('score', 0)}/25")
-    print(f"  - 人物连贯：{report['character_continuity'].get('score', 0)}/25")
-    print(f"  - 剧情逻辑：{report['plot_logic'].get('score', 0)}/25")
 
     if report.get("must_fix_issues"):
         print(f"[剧情连贯性检测] ⚠️ 必须修复的问题：{len(report['must_fix_issues'])} 个")

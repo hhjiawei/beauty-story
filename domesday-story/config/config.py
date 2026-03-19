@@ -12,10 +12,10 @@ from langchain_openai import ChatOpenAI
 # 请替换为你的实际 API Key
 OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
 OPENAI_API_BASE = "https://api.deepseek.com"
-MODEL_NAME = "deepseek-chat"
+MODEL_NAME = "deepseek-reasoner"
 TEMPERATURE = 0.7
 MAX_TOKENS = 15000
-TIMEOUT = 60
+TIMEOUT = 600
 
 # 设置环境变量
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
@@ -90,20 +90,20 @@ def get_llm(model_name=None, temperature=None, cache=True):
     if cache and cache_key in _llm_cache:
         return _llm_cache[cache_key]
 
-    # # 创建新实例
-    # llm = ChatOpenAI(
-    #     model=model_name,
-    #     temperature=temperature,
-    #     max_tokens=MAX_TOKENS,
-    #     timeout=TIMEOUT,
-    #     max_retries=2,
-    # )
-
-    llm = ChatOllama(
-        model="qwen3-vl:32b",
-        base_url="http://10.0.102.100:11434",
-        num_predict=15000
+    # 创建新实例
+    llm = ChatOpenAI(
+        model=model_name,
+        temperature=temperature,
+        max_tokens=MAX_TOKENS,
+        timeout=TIMEOUT,
+        max_retries=2,
     )
+
+    # llm = ChatOllama(
+    #     model="qwen3-vl:32b",
+    #     base_url="http://10.0.102.100:11434",
+    #     num_predict=15000
+    # )
 
     # 存入缓存
     if cache:
@@ -156,9 +156,9 @@ def get_llm_by_purpose(purpose="default"):
 # ================= 预创建常用 LLM 实例 =================
 # 在模块加载时创建常用实例，避免首次调用延迟
 
-llm_default = get_llm(temperature=0.8)     # 默认 LLM，用于大部分节点
-llm_creative = get_llm(temperature=1.0)    # 创意 LLM，用于写作节点
-llm_precise = get_llm(temperature=0.7)     # 精确 LLM，用于质检和 JSON 解析
+llm_default = get_llm(temperature=1.3)     # 默认 LLM，用于大部分节点
+llm_creative = get_llm(temperature=1.5)    # 创意 LLM，用于写作节点
+llm_precise = get_llm(temperature=1.0)     # 精确 LLM，用于质检和 JSON 解析
 
 # ================= 工具函数 =================
 
