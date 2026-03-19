@@ -80,8 +80,6 @@ def world_builder_node(state: MainState) -> dict:
         "apocalypse_name": world_data.get("apocalypse_name", "未知末日"), # 末日名称（4-10 字）
         "apocalypse_source": world_data.get("apocalypse_source", ""),   # 末日来源详细描述（300 字以上）
         "outbreak_date": world_data.get("outbreak_date", ""),           # 爆发具体日期时间
-        "transmission_rules": world_data.get("transmission_rules", ""), # 传播规则详细说明
-        "mutation_symptoms": world_data.get("mutation_symptoms", ""),   # 变异症状描述
         "key_locations": world_data.get("key_locations", []),           # 地址信息
         "timeline": world_data.get("timeline", []),                     # 时间时间线
         "special_rules": world_data.get("special_rules", ""),           # 特殊设定及限制条件

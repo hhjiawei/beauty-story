@@ -51,8 +51,6 @@ def build_world_building_context(state: MainState) -> dict:
         "apocalypse_name": world.get("apocalypse_name", "未知末日"),
         "apocalypse_source": world.get("apocalypse_source", ""),  # 限制长度
         "outbreak_date": world.get("outbreak_date", ""),
-        "transmission_rules": world.get("transmission_rules", ""),
-        "mutation_symptoms": world.get("mutation_symptoms", ""),
         "key_locations": [loc.get("name", "") for loc in world.get("key_locations", [])],
         "special_rules": world.get("special_rules", ""),
     }

@@ -11,8 +11,6 @@ class WorldBuildingState(TypedDict):
     apocalypse_name: str              # 末日名称
     apocalypse_source: str            # 末日来源详细描述
     outbreak_date: str                # 爆发具体日期时间
-    transmission_rules: str           # 传播规则详细说明
-    mutation_symptoms: str            # 变异症状描述
     key_locations: List[Dict]         # 关键地点列表
     timeline: List[Dict]              # 时间线
     special_rules: str                # 特殊设定及限制

@@ -17,9 +17,17 @@ TEMPERATURE = 0.7
 MAX_TOKENS = 15000
 TIMEOUT = 600
 
+TAVILY_API_KEY = "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"
+
 # 设置环境变量
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
+
+
+# 设置搜索引擎
+os.environ["TAVILY_API_KEY"] = TAVILY_API_KEY
+
+
 
 # ================= 路径配置 =================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
