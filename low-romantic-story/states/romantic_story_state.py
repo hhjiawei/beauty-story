@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Dict, Any, Optional
+from typing import TypedDict, List, Dict, Any, Optional, Literal, NotRequired
 
 
 # ----------------------------------------------------------------------
@@ -46,9 +46,51 @@ class PlanState(TypedDict):
 # 2. 人物关系部 · 角色架构师
 # ----------------------------------------------------------------------
 
+class CharacterBasic(TypedDict):
+    name: str
+    age: int
+    career_tag: str  # 职业标签（仅名称，无细节）
+    income_level: str # 收入层级（底层/中层/上层）
+    living_space: str  # 居住空间（仅类型，如：合租公寓）
 
+class CharacterDNA(TypedDict):
+    surface_personality: List[str]  # 外在表现（3个关键词）
+    inner_essence: str  # 内在本质（核心恐惧+核心渴望）
+    character_flaw: str  # 性格缺陷（驱动冲突的关键，如：逃避型依恋） !! 重点性格描述
+    defense_mechanism: str  # 防御机制（如：用冷漠掩饰脆弱）
 
+class CharacterSecret(TypedDict):
+    content: str # 隐藏秘密（影响剧情）
+    revealed_at: str  # 预计揭露节点（段落编号）
 
+class RelationshipDynamics(TypedDict):
+    initial_state: str # 初始关系状态
+    turning_points: List[str]  # 每章的发展状态
+    final_state: str    # 最终关系状态
+
+class CharacterProfile(TypedDict):
+    character_id: str
+    basic: CharacterBasic
+    dna: CharacterDNA
+    secret: CharacterSecret
+    relationship_dynamics: RelationshipDynamics
+    physical_markers: List[str]  # 身体特征状态
+
+class NetworkNode(TypedDict):
+    from_char: str
+    to_char: str
+    relationship: str
+    emotional_current: str
+    motivation: NotRequired[str]  # 仅配角需要
+    independence: NotRequired[str]  # 仅助攻者需要
+
+class CharacterState(TypedDict):
+    """人物组输出状态"""
+    character_a: CharacterProfile
+    character_b: CharacterProfile
+    network: List[NetworkNode]  # 关系网络图
+
+# 不能体现动态变化啊
 
 
 
