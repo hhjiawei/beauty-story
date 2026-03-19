@@ -2,8 +2,7 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/domesday-story" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/low-romantic-story" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/catalog" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.13 (beauty-story)" jdkType="Python SDK" />
