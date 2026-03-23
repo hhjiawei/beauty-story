@@ -861,3 +861,121 @@
 ---
 
 这份修订版章程已完全通用化，正文专注方法论，所有例子移入附录且标明"仅参考、非强制"。每个部门的任务清单已量化，相识和职业的处理在各环节都有明确约束。需要我进一步细化某个部门的SOP，或调整某些量化标准吗？
+
+
+
+
+
+
+
+
+
+
+请基于class CharacterBasic(TypedDict):
+    name: str
+    age: int
+    sample_character: str # 身高外貌（突出 1 个标志性特征，如眼尾痣、指尖薄茧）
+    career_tag: str  # 身份职业：职场人 / 学生 / 自由职业者（贴合背景，决定行为逻辑）
+    income_level: str # 普通 / 优渥 / 清贫（影响爱情观、现实顾虑）
+    habit: str  # 小癖好（喝咖啡加糖、戴旧手表、习惯性低头）
+
+    """
+        性格特质：主性格 + 反差感（如外冷内热、嘴硬心软、温柔敏感）
+        原生家庭：影响爱情观的关键（缺爱→渴望安全感，强势→不懂表达）
+        核心执念 / 软肋：情感痛点（怕被抛弃、不敢告白、放不下过去）
+        爱情观：对感情的态度（慢热、勇敢、现实、被动）
+        成长弧光：短篇需小弧光（从胆怯到勇敢，从冷漠到温柔）
+        核心动机：行为驱动力（想被爱、想守护、想弥补遗憾）
+    """
+class CharacterDNA(TypedDict):
+    surface_personality: List[str]  # 外在表现（3个关键词）
+    inner_essence: str  # 内在本质（核心恐惧+核心渴望）
+    character_flaw: str  # 性格缺陷（驱动冲突的关键，如：逃避型依恋） !! 重点性格描述
+    characteristics: str  # 性格缺陷（驱动冲突的关键，如：逃避型依恋） !! 重点性格描述  性格特质：主性格 + 反差感（如外冷内热、嘴硬心软、温柔敏感）
+    core_mechanism: str  # 核心动机：行为驱动力（想被爱、想守护、想弥补遗憾）
+
+class RelationshipDynamics(TypedDict):
+    initial_state: str # 初始关系状态
+    turning_points: List[str]  # 每章的发展状态
+    final_state: str    # 最终关系状态
+
+class CharacterProfile(TypedDict):
+    character_id: str
+    basic: CharacterBasic
+    dna: CharacterDNA
+    relationship_dynamics: RelationshipDynamics
+    physical_markers: List[str]  # 身体特征状态
+
+class NetworkNode(TypedDict):
+    from_char: str
+    to_char: str
+    relationship: str       # 关系
+    emotional_current: str # 情感流向（如：A恨B但放不下）
+    motivation: NotRequired[str]  # 仅配角需要
+    independence: NotRequired[str]  # 仅助攻者需要
+
+class CharacterState(TypedDict):
+    """人物组输出状态"""
+    characters: List[CharacterProfile]    # 主角配角等人物属性
+    network: List[NetworkNode]  # 关系网络图  和要求 **部门描述**：角色的"造物主"，设计完整人物档案与关系网络，为情感张力提供基础。
+
+**核心任务清单**：
+
+| 序号 | 任务项 | 输出要求 | 约束条件 |
+|-----|-------|---------|---------|
+| 1 | **主角A档案** | 完整DNA（外在+内在+秘密+缺陷） | 职业仅标签化，不写工作日常 |
+| 2 | **主角B档案** | 完整DNA，必须与A形成**互补或镜像** | 同上 |
+| 3 | **关系网络图** | 显性+隐性关系，标注**情感流向** | 配角≤3人 |
+| 4 | **搅局者设计** | 1人，必须有**合理动机**（非纯恶） | 动机与主矛盾相关 |
+| 5 | **助攻者设计** | 1人，必须有**独立人格**（非工具人） | 与主角有真实羁绊 |
+| 6 | **关系变化表** | 标注全文5个关键节点的关系状态 | 每节点必须不同（升温/降温/质变） 
+
+以及输入内容
+
+{
+    "story_summary": "【800字内】6000字短篇言情完整故事摘要，涵盖起承转合、核心情感与结局",
+    "hook": "【≤100字】开篇爆点，强冲突/强悬念吸睛总结句，并以第一人称口吻",
+    "core_topic": "【情感内核】如双向奔赴/破镜重圆/暗恋成真/救赎/现实向爱情",
+    "story_backend": "【故事背景】时代+场景+社会环境，单一现代都市，固定核心场景，轻现实规则",
+    "dual_line_intersections": [
+        "【≤30字】感情线与事业线交汇点1",
+        "【≤30字】感情线与事业线交汇点2",
+        "【≤30字】感情线与事业线交汇点3"
+    ],
+    "three_lines_info": {
+        "event_line": "【≤200字】主角事件成长轨迹起承转合（职场/生存等）",
+        "emotion_line": "【≤200字】感情阶段起承转合（试探→拉扯→破冰→危机→结局）",
+        "background_line": "【≤200字】背景幕后事件起承转合（家族/现实/阶层等）"
+    },
+    "core_conflicts": [
+        {"main": "【主矛盾】可拆解为具体事件的贯穿全文核心冲突"},
+        {"sub1": "【副矛盾1】可落地的具体冲突事件"},
+        {"sub2": "【副矛盾2】可落地的具体冲突事件"}
+    ],
+    "extra_plan": {
+        "meet_setting": "【≤50字】男女主相识背景事实",
+        "career_tags": "【男女主职业+收入层级】仅作冲突背景",
+        "time_place": "【时间跨度+精确城市区域主场景】"
+    }
+}
+
+ 完成人物关系部 · 角色架构师的提示词，要求根据输入内容进行人物信息分析，结果要json格式，并且满足CharacterState的状态，多人放在characters列表中。按步骤完成,最后输出一个类似于输入的json样例
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
