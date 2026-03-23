@@ -5,9 +5,9 @@
 import json
 import re
 from langchain_core.messages import HumanMessage, SystemMessage
-from states.storyState import MainState
-from prompts.storyPrompts import PROMPT_CHARACTER
-from config.config import llm_default  # ✅ 直接导入预创建的 LLM 实例
+from domesday.states.storyState import MainState
+from domesday.prompts.storyPrompts import PROMPT_CHARACTER
+from domesday.config.config import llm_default  # ✅ 直接导入预创建的 LLM 实例
 
 # 初始化 LLM
 llm = llm_default

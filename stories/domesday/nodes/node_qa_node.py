@@ -7,9 +7,9 @@ import json
 import re
 from datetime import datetime
 from langchain_core.messages import HumanMessage, SystemMessage
-from states.storyState import MainState
-from prompts.storyPrompts import PROMPT_NODE_QA
-from config.config import llm_precise  # ✅ 质检使用精确 LLM，温度低更稳定
+from domesday.states.storyState import MainState
+from domesday.prompts.storyPrompts import PROMPT_NODE_QA
+from domesday.config.config import llm_precise  # ✅ 质检使用精确 LLM，温度低更稳定
 
 llm = llm_precise
 

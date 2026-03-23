@@ -2,7 +2,7 @@
 连贯性整合部节点
 大纲阶段已进行连贯性检测，此节点仅负责段落整合
 """
-from states.storyState import MainState
+from domesday.states.storyState import MainState
 
 
 def continuity_node(state: MainState) -> dict:

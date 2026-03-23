@@ -6,9 +6,9 @@
 import json
 import re
 from langchain_core.messages import HumanMessage, SystemMessage
-from states.storyState import MainState
-from prompts.storyPrompts import PROMPT_PLOT_CONTINUITY
-from config.config import llm_precise  # 使用精确 LLM 进行检测
+from domesday.states.storyState import MainState
+from domesday.prompts.storyPrompts import PROMPT_PLOT_CONTINUITY
+from domesday.config.config import llm_precise  # 使用精确 LLM 进行检测
 
 
 def parse_json_response(content: str) -> dict:

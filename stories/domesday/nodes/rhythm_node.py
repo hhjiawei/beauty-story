@@ -4,10 +4,10 @@
 """
 import json
 import re
-from config.config import llm_default
+from domesday.config.config import llm_default
 from langchain_core.messages import HumanMessage, SystemMessage
-from states.storyState import MainState
-from prompts.storyPrompts import PROMPT_RHYTHM
+from domesday.states.storyState import MainState
+from domesday.prompts.storyPrompts import PROMPT_RHYTHM
 
 # 初始化 LLM
 llm = llm_default

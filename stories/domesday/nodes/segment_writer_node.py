@@ -5,9 +5,9 @@
 """
 import json
 from langchain_core.messages import HumanMessage, SystemMessage
-from states.storyState import MainState
-from prompts.storyPrompts import PROMPT_SEGMENT_WRITER
-from config.config import llm_creative  # ✅ 使用创意 LLM，温度更高，更有文学性
+from domesday.states.storyState import MainState
+from domesday.prompts.storyPrompts import PROMPT_SEGMENT_WRITER
+from domesday.config.config import llm_creative  # ✅ 使用创意 LLM，温度更高，更有文学性
 
 
 def extract_text_and_summary(content: str) -> tuple:

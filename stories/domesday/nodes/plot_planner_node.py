@@ -8,9 +8,9 @@ import json
 import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from states.storyState import MainState
-from prompts.storyPrompts import PROMPT_PLOT_PLANNER
-from config.config import llm_default
+from domesday.states.storyState import MainState
+from domesday.prompts.storyPrompts import PROMPT_PLOT_PLANNER
+from domesday.config.config import llm_default
 
 
 

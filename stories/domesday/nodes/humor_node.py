@@ -1,13 +1,13 @@
 """
-感官修饰部节点
-增加成人向感官张力，提升阅读粘性
+幽默注入部节点
+植入黑色幽默和吐槽，缓解压抑
 """
 import json
 import re
-from config.config import llm_creative
 from langchain_core.messages import HumanMessage, SystemMessage
-from states.storyState import MainState
-from prompts.storyPrompts import PROMPT_SENSORY
+from domesday.states.storyState import MainState
+from domesday.prompts.storyPrompts import PROMPT_HUMOR
+from domesday.config.config import llm_creative
 
 # 初始化 LLM
 llm = llm_creative
@@ -27,24 +27,24 @@ def parse_json_response(content: str) -> dict:
         return {}
 
 
-def sensory_node(state: MainState) -> dict:
+def humor_node(state: MainState) -> dict:
     """
-    感官修饰部节点函数
+    幽默注入部节点函数
 
     Args:
-        state: 主状态对象，包含节奏优化稿
+        state: 主状态对象，包含感官增强稿
 
     Returns:
-        更新后的状态字典，包含感官增强稿
+        更新后的状态字典，包含幽默增强稿
     """
     print("\n" + "=" * 60)
-    print("[感官修饰部] 开始工作")
+    print("[幽默注入部] 开始工作")
     print("=" * 60)
 
     # 构建消息
     messages = [
-        SystemMessage(content=PROMPT_SENSORY),
-        HumanMessage(content=state["continuity"]["full_draft"])
+        SystemMessage(content=PROMPT_HUMOR),
+        HumanMessage(content=state["sensory"]["sensory_enhanced"])
     ]
 
     # 调用 LLM
@@ -56,15 +56,15 @@ def sensory_node(state: MainState) -> dict:
     # 解析报告
     # draft = parse_json_response(content)
 
-    # 构建感官状态对象
-    sensory = {
-        "sensory_enhanced": content,
+    # 构建幽默状态对象
+    humor = {
+        "humor_enhanced": content,
         "qa_status": "PENDING",
         "qa_feedback": ""
     }
 
     # 打印工作日志
-    print(f"[感官修饰部] ✅ 完成")
+    print(f"[幽默注入部] ✅ 完成")
 
     # 返回状态更新
-    return {"sensory": sensory}
+    return {"humor": humor}

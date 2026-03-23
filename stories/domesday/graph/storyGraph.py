@@ -3,8 +3,8 @@
 大纲连贯性检测使用 LLM，通过后才开始写作
 """
 from langgraph.graph import StateGraph, END
-from states.storyState import MainState
-from nodes import (
+from domesday.states.storyState import MainState
+from domesday.nodes import (
     world_builder_node,
     golden_finger_node,
     character_node,

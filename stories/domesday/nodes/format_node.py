@@ -6,8 +6,8 @@ import json
 import os
 from datetime import datetime
 from langchain_core.messages import HumanMessage, SystemMessage
-from states.storyState import MainState
-from config.config import MODEL_NAME, TEMPERATURE, OUTPUT_DIR, generate_filename
+from domesday.states.storyState import MainState
+from domesday.config.config import MODEL_NAME, TEMPERATURE, OUTPUT_DIR, generate_filename
 
 
 
