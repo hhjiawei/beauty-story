@@ -55,35 +55,7 @@ CHARACTER_PROMPT = """
 ---
 
 ## 输入接收
-
-```json
-{
-    "story_summary": "【800字内】6000字短篇言情完整故事摘要，涵盖起承转合、核心情感与结局",
-    "hook": "【≤100字】开篇爆点，强冲突/强悬念吸睛总结句，并以第一人称口吻",
-    "core_topic": "【情感内核】如双向奔赴/破镜重圆/暗恋成真/救赎/现实向爱情",
-    "story_backend": "【故事背景】时代+场景+社会环境，单一现代都市，固定核心场景，轻现实规则",
-    "dual_line_intersections": [
-        "【≤30字】感情线与事业线交汇点1",
-        "【≤30字】感情线与事业线交汇点2",
-        "【≤30字】感情线与事业线交汇点3"
-    ],
-    "three_lines_info": {
-        "event_line": "【≤200字】主角事件成长轨迹起承转合（职场/生存等）",
-        "emotion_line": "【≤200字】感情阶段起承转合",
-        "background_line": "【≤200字】背景幕后事件起承转合（家族/现实/阶层等）"
-    },
-    "core_conflicts": [
-        {"main": "【主矛盾】可拆解为具体事件的贯穿全文核心冲突"},
-        {"sub1": "【副矛盾1】可落地的具体冲突事件"},
-        {"sub2": "【副矛盾2】可落地的具体冲突事件"}
-    ],
-    "extra_plan": {
-        "meet_setting": "【≤50字】男女主相识背景事实",
-        "career_tags": "【男女主职业+收入层级】仅作冲突背景",
-        "time_place": "【时间跨度+精确城市区域主场景】"
-    }
-}
-```
+{{summary_input}}
 
 ---
 
@@ -343,7 +315,131 @@ conflict_essence中A的行为模式
 
 
 
+PLOT_PROMPT = """
 
+接下来是剧情策划部设计剧情，本部分十分重要，需要用严谨的逻辑，把整个段落的灵魂设计完整、精妙。本部门的核心职责为：故事的"动态架构师"，基于策划层的故事摘要、核心冲突和人物的性格DNA以及配角的作用，定制化开发非线性的段落序列，
+背景:结合策划层规划的story_backend、dual_line_intersections、three_lines_info、core_conflicts，设计剧情，在extra_plan范围之内。
+
+## 核心工作原则
+| 原则 | 说明 | 执行标准 |
+|-----|------|---------|
+| **因人设戏** | 每段内容必须源于人物的**性格缺陷**和**核心恐惧** | 对照人物部DNA模板，标注驱动源 |
+| **因事设段** | 段落划分由**冲突事件**决定，非字数均分 | 每段解决一个具体问题或制造一个新问题 |
+| **关系为轴** | 所有事件必须**改变或揭示**人物关系 | 禁止纯功能性事件（如单纯展示职业） |
+| **弹性结构** | 支持线性/闪回/多线并行/环形等任意结构 | 结构选择必须服务于情绪目标 |
+
+
+
+
+其中策划层提供的内容为：{
+    "story_summary": "【800字内】6000字短篇言情完整故事摘要，涵盖起承转合、核心情感与结局",
+    "hook": "【≤100字】开篇爆点，强冲突/强悬念吸睛总结句，并以第一人称口吻",
+    "core_topic": "【情感内核】如双向奔赴/破镜重圆/暗恋成真/救赎/现实向爱情",
+    "story_backend": "【故事背景】时代+场景+社会环境，单一现代都市，固定核心场景，轻现实规则",
+    "dual_line_intersections": [
+        "【≤30字】感情线与事业线交汇点1",
+        "【≤30字】感情线与事业线交汇点2",
+        "【≤30字】感情线与事业线交汇点3"
+    ],
+    "three_lines_info": {
+        "event_line": "【≤200字】主角事件成长轨迹起承转合（职场/生存等）",
+        "emotion_line": "【≤200字】感情阶段起承转合（试探→拉扯→破冰→危机→结局）",
+        "background_line": "【≤200字】背景幕后事件起承转合（家族/现实/阶层等）"
+    },
+    "core_conflicts": [
+        {"main": "【主矛盾】可拆解为具体事件的贯穿全文核心冲突"},
+        {"sub1": "【副矛盾1】可落地的具体冲突事件"},
+        {"sub2": "【副矛盾2】可落地的具体冲突事件"}
+    ],
+    "extra_plan": {
+        "meet_setting": "【≤50字】男女主相识背景事实",
+        "career_tags": "【男女主职业+收入层级】仅作冲突背景",
+        "time_place": "【时间跨度+精确城市区域主场景】"
+    }
+}            角色部门提供的内容为:
+{
+    "characters": [
+        {
+            "character_id": "A",
+            "basic": {
+                "name": "姓名（从`story_backend`的时代感+`career_tags`的阶层感推导）",
+                "age": "年龄（与`time_place`的时间跨度+职业阶段匹配）",
+                "sample_character": "1个标志性外貌特征（暗示`flaw`或历史）",
+                "career_tag": "职业标签（直接来自`extra_plan.career_tags`，无添加）",
+                "income_level": "收入层级（直接来自`extra_plan.career_tags`）",
+                "habit": "小癖好（`flaw`的身体化，日常可观察）"
+            },
+            "dna": {
+                "surface_personality": ["3个关键词（`characteristics`的标签化）"],
+                "inner_essence": "核心恐惧+核心渴望（一句话，解释`flaw`的根源）",
+                "character_flaw": "性格缺陷（驱动`main`矛盾的具体机制，重点）",
+                "characteristics": "性格特质=主性格+反差感（`flaw`的外在呈现，重点）",
+                "core_mechanism": "核心动机（行为驱动力，从`story_summary`的结局推导）"
+            },
+            "relationship_dynamics": {
+                "initial_state": "初始关系状态（来自`extra_plan.meet_setting`+`hook`的张力）",
+                "turning_points": [
+                    "节点1：具体触发事件+关系变化（对应`emotion_line`阶段1）",
+                    "节点2：具体触发事件+关系变化（对应`emotion_line`阶段2）",
+                    "节点3：具体触发事件+关系变化（对应`emotion_line`阶段3）",
+                    "节点4：具体触发事件+关系变化（对应`emotion_line`阶段4）"
+                ],
+                "final_state": "最终关系状态（与`story_summary`的结局严格匹配）"
+            },
+            "physical_markers": [
+                "身体特征1（场景化使用，关联`flaw`）",
+                "身体特征2（场景化使用，关联历史）"
+            ],
+            "secret": {
+                "content": "隐藏秘密（与B相关，揭露时颠覆B认知）",
+                "revealed_at": "揭露节点（对应`turning_points`序号）",
+                "connection_to_background": "与`background_line`的关联（为何此时揭露）"
+            },
+            "growth_arc": "短篇小弧光（从`event_line`推导，具体变化）"
+        },
+        {
+            "character_id": "B",
+            "basic": {...},
+            "dna": {...},
+            "relationship_dynamics": {...},
+            "physical_markers": [...],
+            "secret": {...},
+            "growth_arc": "...",
+            "relationship_to_a": {
+                "pattern": "关系模式（推导发现，非预设：如'给-拒死锁'/'追逐-逃避'/'控制-反抗'/'镜像共振'等）",
+                "collision": "两人缺陷的具体碰撞机制（解释`main`矛盾的持续）",
+                "attraction": "互相吸引的深层原因（缺陷层面的共鸣）",
+                "resolution": "关系模式的最终走向（与`final_state`匹配）"
+            }
+        }
+    ],
+    "network": [
+        {
+            "from_char": "A",
+            "to_char": "B",
+            "relationship": "关系类型（具体描述，非标签）",
+            "emotional_current": "情感流向（具体描述，含矛盾：如'想靠近但先证明值得'）"
+        },
+        {
+            "from_char": "C（搅局者）",
+            "to_char": "A或B",
+            "relationship": "关系类型",
+            "emotional_current": "情感流向",
+            "motivation": "深层动机（从`sub1`/`sub2`推导，非纯恶）",
+            "function_in_plot": "在主线中的具体功能（触发缺陷/加剧矛盾/创造场景）"
+        },
+        {
+            "from_char": "D（助攻者）",
+            "to_char": "A或B",
+            "relationship": "关系类型",
+            "emotional_current": "情感流向",
+            "independence": "独立人格（自己的故事线，非工具人）"
+        }
+    ]
+}
+
+
+"""
 
 
 
