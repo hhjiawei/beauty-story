@@ -100,30 +100,26 @@ class CharacterState(TypedDict):
 # 对应章程：二 - 部门章程详解 - 【第三部门】
 # ==========================================
 
-class TriggerInfo(TypedDict):
-    description: str  # ≤50 字  触发事件（≤50字）
-    source: str # 触发源（必须关联策划层矛盾或人物秘密）
-
 class CharacterAction(TypedDict):
+    character: str # 具体角色
     behavior: str   # "具体行为"
     driven_by: str  # 驱动的性格缺陷
     defense_mechanism: str # "使用的防御机制"
 
 class ParagraphUnit(TypedDict):
     para_id: str  # 流水编号，非幕号
-    preceding_state: str    # "前置关系状态（来自上一段输出）"
-    trigger: TriggerInfo    # 触发事件
     character_action_list: List[CharacterAction]   # 角色行动
     climax_moment: str      #  "本段高潮点（具体动作或对话）"
     resulting_state: str    #  "新关系状态（输出给下一段）",
     residue_problem: str    #  "遗留问题（下一段的触发器）",
-
-
-class PlotState(TypedDict):
-    beat_sheet: List[ParagraphUnit]  # 每段段情节大纲
     transition_design: str                    # 过渡设计
     opening_hook: str                         # 开篇设计
     ending_hook: str                          # 结尾设计
+    plot: str # 本段大纲内容
+
+class PlotState(TypedDict):
+    beat_sheet: List[ParagraphUnit]  # 每段段情节大纲
+
 
 
 
