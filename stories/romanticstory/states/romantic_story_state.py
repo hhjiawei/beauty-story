@@ -132,7 +132,7 @@ class SegmentState(TypedDict):
 
     # 段落内容
     content: str
-    hook_ended: bool  # 结尾的钩子
+    hook_ended: str  # 结尾的钩子
 
 
 
