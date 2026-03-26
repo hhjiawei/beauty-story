@@ -1,196 +1,40 @@
-import os
-
-from deepagents import create_deep_agent
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
-
-from romanticstory.prompts.romantic_story_prompt import  PLOT_PROMPT
-from romanticstory.tools.web_search import internet_search
-
-"""
-故事架构师的deep agent
-
-"""
-
-# OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
-# OPENAI_API_BASE = "https://api.deepseek.com"
-# MODEL_NAME = "deepseek-chat"
-# 设置环境变量
-# os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-# os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
-TAVILY_API_KEY = "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"
+# romantic_story/nodes/plot.py
+import json
+from romanticstory.config.config import get_agent
+from romanticstory.prompts.romantic_story_prompt import PLOT_PROMPT
+from romanticstory.states.romantic_story_state import MainState
 
 
-OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
-MODEL_NAME ="doubao-seed-2-0-pro-260215"
-OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
+def plot_node(state: MainState) -> dict:
+    """
+    剧情策划部：根据策划和人物生成详细大纲 (Beat Sheet)
+    """
+    plan_state = state.get("plan_state", {})
+    character_state = state.get("character_state", {})
 
-
-llm = ChatOpenAI(
-    model=MODEL_NAME,
-    max_tokens=50000
-)
-agent = create_deep_agent(
-    model=llm,
-    tools=[internet_search],
-    system_prompt=PLOT_PROMPT
-)
-
-#流式输出方法（实时更新）
-inputs = {"messages": [("user", """ 
-架构数据：{
-    "story_summary": "林小满与陈阳是蜗居城中村的临时工情侣，相依为命约定未来。陈阳工地意外双腿致残，无保险的巨额医药费压垮两人。小满日夜兼三份工仍入不敷出，在现实碾压下坚守逐渐崩塌。面对亲戚介绍的能提供安稳生活的超市老板，看着瘫痪消沉的陈阳，小满最终选择妥协离开。这段始于烟火、终于现实的爱情残酷落幕，两人各自背负遗憾走向不同人生。故事以BE结局收尾，展现底层爱情在生存压力下的脆弱与无奈。",
-    "hook": "林小满收拾行李时，陈阳在隔壁房间摔碎了他们攒钱买的第一个手机。三年前他们约定要攒够钱转正结婚，现在她却要嫁给能给她安稳生活的陌生男人。",
-    "core_topic": "现实向爱情/生存与爱情的残酷抉择",
-    "story_backend": "现代都市背景，固定核心场景为二线城市老城区城中村'向阳村'，轻现实规则聚焦底层打工者生存现状，无复杂社会矛盾。",
-    "dual_line_intersections": [
-        "陈阳工地意外致残，感情危机与生计危机同时爆发",
-        "小满为医药费日夜兼三份工，感情在现实压力下磨损",
-        "亲戚介绍相亲对象提供稳定工作，感情与生存必须二选一"
-    ],
-    "three_lines_info": {
-        "event_line": "起：城中村临时工情侣相依为命约定未来。承：陈阳工地意外致残，医药费压垮小满。转：小满日夜兼三份工仍入不敷出，亲戚介绍相亲对象。合：小满选择离开陈阳，嫁给能提供安稳生活的男人。",
-        "emotion_line": "起：底层相濡以沫的温暖让爱升温。承：意外后小满不离不弃但现实压力让温情渐冷。转：陈阳自暴自弃，小满在疲惫绝望中动摇。合：小满选择生存而非爱情，两人最后对视爱情破碎。",
-        "background_line": "起：城中村底层打工者无保障的临时工生活。承：工伤事故暴露劳动者保障缺失医疗无着。转：社会现实逼迫女性在爱情与生存间做残酷选择。合：不同阶层生活轨迹对比，底层爱情在现实前脆弱。"
-    },
-    "core_conflicts": [
-        {"main": "贫穷与爱情的对抗——底层临时工情侣在生存压力下爱情逐渐被现实碾碎"},
-        {"sub1": "意外事故带来的生存危机——陈阳工伤致残无保险，巨额医药费压垮两人"},
-        {"sub2": "传统观念与现实选择的冲突——亲戚认为小满应选择稳定婚姻而非守着残疾男友"}
-    ],
-    "extra_plan": {
-        "meet_setting": "两人在城中村同一栋出租楼租住相邻单间，因共用厨房和卫生间而相识。",
-        "career_tags": "林小满：餐馆服务员月薪2800元；陈阳：建筑工地零工月薪3500元（事故前）",
-        "time_place": "时间跨度2个月（从陈阳出事到小满离开），主场景：某二线城市老城区城中村'向阳村'"
+    context = {
+        "plan": plan_state,
+        "characters": character_state
     }
-    
-角色数据：
-{
-    "characters": [
-        {
-            "character_id": "A",
-            "basic": {
-                "name": "林小满",
-                "age": "24",
-                "sample_character": "右手虎口有长期端盘子留下的薄茧，眼下有熬夜打工的乌青",
-                "career_tag": "餐馆服务员",
-                "income_level": "月薪2800元",
-                "habit": "压力时咬下嘴唇内侧，把零钱按面额叠整齐"
-            },
-            "dna": {
-                "surface_personality": ["坚韧", "务实", "沉默的承担者"],
-                "inner_essence": "恐惧失去被需要的价值感，渴望通过承担一切来证明自己不可或缺",
-                "character_flaw": "责任成瘾——通过不断承担更多来逃避面对关系的真实问题，用疲惫证明爱，用牺牲绑架爱",
-                "characteristics": "主性格=坚韧务实，反差感=内心渴望被拯救却从不开口",
-                "core_mechanism": "为了证明自己有价值而过度承担，把责任等同于爱，最终在极限疲惫中选择生存"
-            },
-            "relationship_dynamics": {
-                "initial_state": "城中村出租楼相邻单间，共用厨房卫生间相识，底层相濡以沫的温暖",
-                "turning_points": [
-                    "节点1：陈阳工地意外致残，小满不离不弃日夜照顾，但现实压力让温情渐冷",
-                    "节点2：小满为医药费兼三份工，疲惫到在公交车上睡着坐过站，感情在磨损中动摇",
-                    "节点3：陈阳秘密揭露（曾计划求婚的高薪项目合同丢失），小满意识到所有承担可能毫无意义，绝望加深",
-                    "节点4：王姨介绍超市老板相亲，提供稳定工作，小满在生存与爱情间最终选择生存"
-                ],
-                "final_state": "离开陈阳，嫁给能提供安稳生活的男人，背负遗憾走向不同人生"
-            },
-            "physical_markers": [
-                "右手虎口薄茧（端盘子三年）",
-                "眼下乌青（熬夜兼三份工）"
-            ],
-            "secret": {
-                "content": "小满在陈阳出事前一周，偷偷去做了婚检，一切正常。她计划等陈阳这个项目结束就提结婚，体检单一直藏在枕头下。",
-                "revealed_at": "节点3",
-                "connection_to_background": "与'社会现实逼迫女性在爱情与生存间做残酷选择'同步——健康证明在现实面前毫无意义"
-            },
-            "growth_arc": "从相信'爱就是承担一切'到明白'承担有时是逃避'，最终学会为自己生存负责，代价是永远失去爱情"
-        },
-        {
-            "character_id": "B",
-            "basic": {
-                "name": "陈阳",
-                "age": "26",
-                "sample_character": "事故后左腿膝盖上方有手术疤痕，右手食指有长期抽烟的焦黄",
-                "career_tag": "建筑工地零工",
-                "income_level": "月薪3500元（事故前）",
-                "habit": "无意识地摩挲左手无名指（想戴婚戒的地方），拒绝眼神接触"
-            },
-            "dna": {
-                "surface_personality": ["倔强", "自尊", "沉默的拒绝者"],
-                "inner_essence": "恐惧成为别人的负担失去尊严，渴望被需要但非被怜悯",
-                "character_flaw": "尊严成瘾——把接受帮助等同于失去尊严，把自暴自弃伪装成自我牺牲，用推开证明爱",
-                "characteristics": "主性格=倔强自尊，反差感=内心渴望被拥抱却用刺猬姿态",
-                "core_mechanism": "为了保护最后一点尊严而推开一切帮助，最终用放手证明爱"
-            },
-            "relationship_dynamics": {
-                "initial_state": "城中村出租楼相邻单间，因小满做饭总多带一份而走近，约定攒钱转正结婚",
-                "turning_points": [
-                    "节点1：工地意外双腿致残，从医院醒来第一句话是'分手吧'，开始自暴自弃",
-                    "节点2：看到小满兼三份工累到睡着，故意摔碎东西制造争吵，想逼她离开",
-                    "节点3：老张来探望时说出秘密（高薪项目合同丢失），被门外的小满听到",
-                    "节点4：听到小满收拾行李，摔碎小满攒钱给陈阳买的第一个手机，最后对视无言"
-                ],
-                "final_state": "独自留在城中村，背负'是我先推开她'的遗憾，在轮椅上度过余生"
-            },
-            "physical_markers": [
-                "左腿膝盖上方手术疤痕（工伤致残）",
-                "右手食指焦黄（事故后抽烟加剧）"
-            ],
-            "secret": {
-                "content": "陈阳在出事前三天，已经通过工友联系到一个去外地的高薪项目，月薪能到8000，准备干半年就正式向小满求婚。项目合同在事故现场丢失，他从未告诉小满。",
-                "revealed_at": "节点3",
-                "connection_to_background": "与'工伤事故暴露劳动者保障缺失'同步——合同丢失象征底层劳动者权益的脆弱，计划永远赶不上现实"
-            },
-            "growth_arc": "从用'推开'保护尊严到明白'推开是最深的伤害'，最终学会真正的爱是接受自己的脆弱，但为时已晚",
-            "relationship_to_a": {
-                "pattern": "证明-拒绝死锁",
-                "collision": "小满每多承担一份责任，陈阳就多一分'自己是负担'的耻辱感，于是更激烈地拒绝；陈阳每多一次拒绝，小满就多一分'付出不被珍视'的委屈，于是更拼命地承担",
-                "attraction": "两人都深层相信'爱需要证明'，只是证明方式相反：一个用承担（'我这样够不够爱你'），一个用拒绝（'我不值得你这样爱'）",
-                "resolution": "死锁无法解开，小满选择生存（离开），陈阳选择放手（沉默），爱情在现实前破碎"
-            }
-        }
-    ],
-    "network": [
-        {
-            "from_char": "A",
-            "to_char": "B",
-            "relationship": "从相濡以沫到被现实撕裂的情侣",
-            "emotional_current": "想用承担靠近但先证明值得被爱，想用拒绝保护但先证明爱得深沉"
-        },
-        {
-            "from_char": "王姨",
-            "to_char": "A",
-            "relationship": "远房表姨，婚姻'过来人'",
-            "emotional_current": "同情但现实，'我是为你好'的压迫性关怀",
-            "motivation": "自己年轻时因爱情嫁错人一生贫困，怕小满重蹈覆辙",
-            "function_in_plot": "触发小满缺陷爆发（'我这样承担真的值得吗？'），提供'逃离'选项，加剧main矛盾"
-        },
-        {
-            "from_char": "老张",
-            "to_char": "B",
-            "relationship": "工地工友，同样命运的底层劳动者",
-            "emotional_current": "同病相怜的粗糙关怀，'男人要挺住'的无效鼓励",
-            "independence": "40多岁零工，妻子跟人跑了，独自抚养读初中的女儿，自己的故事线是'下一个陈阳'"
-        },
-        {
-            "from_char": "李医生",
-            "to_char": "A",
-            "relationship": "医院骨科主治医生",
-            "emotional_current": "职业性同情与无奈，'我也要跟科室交代'的压力传递",
-            "motivation": "职业责任与现实的冲突——同情病人但必须催缴医药费",
-            "function_in_plot": "定期制造生存压力场景（催缴医药费），让'钱'这个现实问题具象化，创造A/B被迫讨论现实的场景"
-        }
+
+    agent = get_agent(PLOT_PROMPT)
+    messages = [
+        {"role": "user", "content": f"基于以下信息生成章节大纲：{json.dumps(context, ensure_ascii=False)}"}
     ]
-} 将结果打印到控制台中
-""")]}
 
-for msg, metadata in agent.stream(inputs, stream_mode="messages"):
-    if msg.content and not isinstance(msg.content, list):
-        print(msg.content, end="", flush=True)
+    response = agent.invoke(messages)
 
+    try:
+        content = response.content if hasattr(response, 'content') else str(response)
+        plot_data = json.loads(content)
+    except Exception:
+        plot_data = {"beat_sheet": []}
+
+    # 初始化写作索引
+    return {
+        "plot_state": plot_data,
+        "current_segment_index": 0
+    }
 
 
 

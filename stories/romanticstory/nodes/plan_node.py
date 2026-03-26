@@ -1,46 +1,43 @@
-import os
-
-from deepagents import create_deep_agent
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
-
+# romantic_story/nodes/planner.py
+import json
+from romanticstory.config.config import get_agent
 from romanticstory.prompts.romantic_story_prompt import PLAN_SUMMARY_PROMPT
-from romanticstory.tools.web_search import internet_search
 
-"""
-故事架构师的deep agent
+from romanticstory.states.romantic_story_state import MainState
 
-"""
 
-OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
-OPENAI_API_BASE = "https://api.deepseek.com"
-MODEL_NAME = "deepseek-chat"
-# 设置环境变量
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
-TAVILY_API_KEY = "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"
+def planner_node(state: MainState) -> dict:
+    """
+    策划层：根据用户输入生成故事架构
+    """
+    user_input = state.get("user_input", "")
 
-llm = ChatOpenAI(
-    model=MODEL_NAME,
-)
-agent = create_deep_agent(
-    model=llm,
-    tools=[internet_search],
-    system_prompt=PLAN_SUMMARY_PROMPT
-)
+    # 创建 Agent
+    agent = get_agent(PLAN_SUMMARY_PROMPT)
 
-#流式输出方法（实时更新）
-inputs = {"messages": [("user", """
-林小满与陈阳是在城中村相依为命的临时工，她在餐馆端盘，他在工地打零工。两人挤在出租屋里，靠着微薄的薪水互相取暖，是彼此灰暗生活里唯一的光，约定攒钱转正、安稳度日。
-朝夕相处中，底层的陪伴滋生出真挚的爱意，加班后的一碗热汤、发薪日的小礼物，让感情迅速升温。然而一场工地意外，陈阳双腿致残，失去劳动能力，家里的顶梁柱轰然倒塌。
-医药费的重压、生活的困顿接踵而至，小满独自扛起两人的生计，日夜操劳却看不到希望。在现实的碾压下，她的坚守逐渐崩塌。面对亲戚介绍的、能给她安稳生活的男人，看着瘫痪在床、日渐消沉的陈阳，小满最终选择了妥协。她收拾行李离开出租屋，这段始于烟火、终于现实的临时工爱情，以最残酷的方式落幕，只剩两人各自背负遗憾，走向截然不同的人生。
-""")]}
+    # 构造消息 (假设 agent 接受 messages 列表)
+    # 注意：根据 create_deep_agent 的具体实现，这里可能需要调整输入格式
+    messages = [
+        {"role": "user", "content": f"请根据以下灵感创作策划案：{user_input}"}
+    ]
 
-for msg, metadata in agent.stream(inputs, stream_mode="messages"):
-    if msg.content and not isinstance(msg.content, list):
-        print(msg.content, end="", flush=True)
+    response = agent.invoke(messages)
 
+    # 解析输出 (假设 LLM 返回的是 JSON 字符串，实际需根据 Prompt 要求调整)
+    # 这里需要确保解析后的字典符合 PlanState 结构
+    try:
+        # 如果 agent 返回的是 Message 对象，需提取 content
+        content = response.content if hasattr(response, 'content') else str(response)
+        plan_data = json.loads(content)
+    except Exception:
+        # 降级处理或抛出错误，此处为示例
+        plan_data = {"story_summary": content, "hook": "", "core_topic": "", "story_backend": "",
+                     "dual_line_intersections": [], "three_lines_info": {}, "core_conflicts": []}
+
+    # 更新 State
+    return {
+        "plan_state": plan_data
+    }
 
 
 """

@@ -49,9 +49,9 @@ class PlanState(TypedDict):
 class CharacterBasic(TypedDict):
     name: str
     age: int
-    sample_character: str # 身高外貌（突出 1 个标志性特征，如眼尾痣、指尖薄茧）
+    sample_character: str  # 身高外貌（突出 1 个标志性特征，如眼尾痣、指尖薄茧）
     career_tag: str  # 身份职业：职场人 / 学生 / 自由职业者（贴合背景，决定行为逻辑）
-    income_level: str # 普通 / 优渥 / 清贫（影响爱情观、现实顾虑）
+    income_level: str  # 普通 / 优渥 / 清贫（影响爱情观、现实顾虑）
     habit: str  # 小癖好（喝咖啡加糖、戴旧手表、习惯性低头）
 
     """
@@ -62,6 +62,8 @@ class CharacterBasic(TypedDict):
         成长弧光：短篇需小弧光（从胆怯到勇敢，从冷漠到温柔）
         核心动机：行为驱动力（想被爱、想守护、想弥补遗憾）
     """
+
+
 class CharacterDNA(TypedDict):
     surface_personality: List[str]  # 外在表现（3个关键词）
     inner_essence: str  # 内在本质（核心恐惧+核心渴望）
@@ -69,10 +71,12 @@ class CharacterDNA(TypedDict):
     characteristics: str  # 性格缺陷（驱动冲突的关键，如：逃避型依恋） !! 重点性格描述  性格特质：主性格 + 反差感（如外冷内热、嘴硬心软、温柔敏感）
     core_mechanism: str  # 核心动机：行为驱动力（想被爱、想守护、想弥补遗憾）
 
+
 class RelationshipDynamics(TypedDict):
-    initial_state: str # 初始关系状态
+    initial_state: str  # 初始关系状态
     turning_points: List[str]  # 每章的发展状态
-    final_state: str    # 最终关系状态
+    final_state: str  # 最终关系状态
+
 
 class CharacterProfile(TypedDict):
     character_id: str
@@ -81,17 +85,19 @@ class CharacterProfile(TypedDict):
     relationship_dynamics: RelationshipDynamics
     physical_markers: List[str]  # 身体特征状态
 
+
 class NetworkNode(TypedDict):
     from_char: str
     to_char: str
-    relationship: str       # 关系
-    emotional_current: str # 情感流向（如：A恨B但放不下）
+    relationship: str  # 关系
+    emotional_current: str  # 情感流向（如：A恨B但放不下）
     motivation: NotRequired[str]  # 仅配角需要
     independence: NotRequired[str]  # 仅助攻者需要
 
+
 class CharacterState(TypedDict):
     """人物组输出状态"""
-    characters: List[CharacterProfile]    # 主角配角等人物属性
+    characters: List[CharacterProfile]  # 主角配角等人物属性
     network: List[NetworkNode]  # 关系网络图
 
 
@@ -101,26 +107,26 @@ class CharacterState(TypedDict):
 # ==========================================
 
 class CharacterAction(TypedDict):
-    character: str # 具体角色
-    behavior: str   # "具体行为"
+    character: str  # 具体角色
+    behavior: str  # "具体行为"
     driven_by: str  # 驱动的性格缺陷
-    defense_mechanism: str # "使用的防御机制"
+    defense_mechanism: str  # "使用的防御机制"
+
 
 class ParagraphUnit(TypedDict):
     para_id: str  # 流水编号，非幕号
-    character_action_list: List[CharacterAction]   # 角色行动
-    climax_moment: str      #  "本段高潮点（具体动作或对话）"
-    resulting_state: str    #  "新关系状态（输出给下一段）",
-    residue_problem: str    #  "遗留问题（下一段的触发器）",
-    transition_design: str                    # 过渡设计
-    opening_hook: str                         # 开篇设计
-    ending_hook: str                          # 结尾设计
-    plot: str # 本段大纲内容
+    character_action_list: List[CharacterAction]  # 角色行动
+    climax_moment: str  # "本段高潮点（具体动作或对话）"
+    resulting_state: str  # "新关系状态（输出给下一段）",
+    residue_problem: str  # "遗留问题（下一段的触发器）",
+    transition_design: str  # 过渡设计
+    opening_hook: str  # 开篇设计
+    ending_hook: str  # 结尾设计
+    plot: str  # 本段大纲内容
+
 
 class PlotState(TypedDict):
     beat_sheet: List[ParagraphUnit]  # 每段段情节大纲
-
-
 
 
 # ==========================================
@@ -129,15 +135,19 @@ class PlotState(TypedDict):
 # ==========================================
 
 class SegmentState(TypedDict):
-
+    para_id: str  # 段落编号
     # 段落内容
     content: str
-    hook_ended: str  # 结尾的钩子
 
 
+# 主要State
+class MainState(TypedDict):
+    user_input: str
 
+    plan_state: PlanState
 
+    character_state: CharacterState
 
+    plot_state: PlotState
 
-
-
+    segment_state: SegmentState
