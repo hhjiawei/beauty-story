@@ -1,37 +1,49 @@
 # romantic_story/nodes/character.py
-import json
-from romanticstory.config.config import get_agent
+from romanticstory.config.config import get_agent, llm
 from romanticstory.prompts.romantic_story_prompt import CHARACTER_PROMPT
 from romanticstory.states.romantic_story_state import MainState
+import json
+from langchain_core.messages import HumanMessage, SystemMessage
+
+from utils.json_util import parse_json_response
 
 
 def character_node(state: MainState) -> dict:
     """
-    人物关系部：根据策划案生成人物小传
+    人物关系部节点函数
+    负责设计主角、配角等的完整档案和关系网
     """
-    plan_state = state.get("plan_state", {})
+    print("\n" + "=" * 60)
+    print("[人物关系部] 开始工作")
+    print("=" * 60)
 
-    # 将 PlanState 转为字符串上下文
-    context = json.dumps(plan_state, ensure_ascii=False)
-
-    agent = get_agent(CHARACTER_PROMPT)
+    # 构建消息
     messages = [
-        {"role": "user", "content": f"基于以下策划案设计人物：{context}"}
+        SystemMessage(content=CHARACTER_PROMPT),
+        HumanMessage(content=f"""
+        策划案设定：{json.dumps(state.get('plan_state', {}), ensure_ascii=False)}
+        """)
     ]
 
-    response = agent.invoke(messages)
+    # 调用 LLM
+    response = llm.invoke(messages)
 
-    try:
-        content = response.content if hasattr(response, 'content') else str(response)
-        character_data = json.loads(content)
-    except Exception:
-        character_data = {"characters": [], "network": []}
+    # 解析 JSON 响应
+    char_data = parse_json_response(response.content)
 
-    return {
-        "character_state": character_data
+    # 构建人物关系状态对象
+    character_state = {
+        "characters": char_data.get("characters", []),
+        "network": char_data.get("network", [])
     }
 
+    # 打印工作日志
+    print(f"[人物关系部] ✅ 完成：共设计 {len(character_state['characters'])} 个角色")
+    if len(character_state['characters']) > 0:
+        print(f"[人物关系部] 主角：{character_state['characters'][0]['basic']['name']}")
 
+    # 返回状态更新
+    return {"character_state": character_state}
 
 
 """

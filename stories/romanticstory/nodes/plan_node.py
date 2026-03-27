@@ -1,45 +1,63 @@
-# romantic_story/nodes/planner.py
-import json
-from romanticstory.config.config import get_agent
+from romanticstory.config.config import llm
 from romanticstory.prompts.romantic_story_prompt import PLAN_SUMMARY_PROMPT
 
 from romanticstory.states.romantic_story_state import MainState
+from langchain_core.messages import HumanMessage, SystemMessage
+
+from utils.json_util import parse_json_response
 
 
 def planner_node(state: MainState) -> dict:
     """
-    策划层：根据用户输入生成故事架构
+    策划层节点函数
+    负责生成故事核心架构、三线构建及矛盾设定
     """
-    user_input = state.get("user_input", "")
+    print("\n" + "=" * 60)
+    print("[策划层] 开始工作")
+    print("=" * 60)
 
-    # 创建 Agent
-    agent = get_agent(PLAN_SUMMARY_PROMPT)
-
-    # 构造消息 (假设 agent 接受 messages 列表)
-    # 注意：根据 create_deep_agent 的具体实现，这里可能需要调整输入格式
+    # 构建消息
     messages = [
-        {"role": "user", "content": f"请根据以下灵感创作策划案：{user_input}"}
+        SystemMessage(content=PLAN_SUMMARY_PROMPT),
+        HumanMessage(content=f"请根据以下灵感创作策划案：{state.get('user_input', '')}")
     ]
 
-    response = agent.invoke(messages)
+    # 调用 LLM
+    response = llm.invoke(messages)
 
-    # 解析输出 (假设 LLM 返回的是 JSON 字符串，实际需根据 Prompt 要求调整)
-    # 这里需要确保解析后的字典符合 PlanState 结构
-    try:
-        # 如果 agent 返回的是 Message 对象，需提取 content
-        content = response.content if hasattr(response, 'content') else str(response)
-        plan_data = json.loads(content)
-    except Exception:
-        # 降级处理或抛出错误，此处为示例
-        plan_data = {"story_summary": content, "hook": "", "core_topic": "", "story_backend": "",
-                     "dual_line_intersections": [], "three_lines_info": {}, "core_conflicts": []}
+    # 解析 JSON 响应
+    plan_data = parse_json_response(response.content)
 
-    # 更新 State
-    return {
-        "plan_state": plan_data
+    # 构建策划状态对象
+    plan_state = {
+        "story_summary": plan_data.get("story_summary", ""),
+        "hook": plan_data.get("hook", ""),
+        "core_topic": plan_data.get("core_topic", ""),
+        "story_backend": plan_data.get("story_backend", ""),
+        "dual_line_intersections": plan_data.get("dual_line_intersections", []),
+        "three_lines_info": plan_data.get("three_lines_info", {}),
+        "core_conflicts": plan_data.get("core_conflicts", []),
+        "extra_plan": plan_data.get("extra_plan", {})
     }
 
+    # 打印工作日志
+    print(f"[策划层] ✅ 完成：{plan_state['core_topic']}")
+    print(f"[策划层] 开篇爆点：{plan_state['hook'][:50]}...")
 
+    # 返回状态更新
+    return {"plan_state": plan_state}
+
+
+
+# ---------------------- 测试代码 -------------------
+state = MainState()
+
+state['user_input'] = """
+林小满与陈阳是蜗居城中村的临时工情侣，相依为命约定未来。陈阳工地意外双腿致残，无保险的巨额医药费压垮两人。小满日夜兼三份工仍入不敷出，在现实碾压下坚守逐渐崩塌。面对亲戚介绍的能提供安稳生活的超市老板，看着瘫痪消沉的陈阳，小满最终选择妥协离开。这段始于烟火、终于现实的爱情残酷落幕，两人各自背负遗憾走向不同人生。故事以BE结局收尾，展现底层爱情在生存压力下的脆弱与无奈。
+"""
+
+pn = planner_node(state)
+print(pn)
 """
 {
     "story_summary": "林小满与陈阳是蜗居城中村的临时工情侣，相依为命约定未来。陈阳工地意外双腿致残，无保险的巨额医药费压垮两人。小满日夜兼三份工仍入不敷出，在现实碾压下坚守逐渐崩塌。面对亲戚介绍的能提供安稳生活的超市老板，看着瘫痪消沉的陈阳，小满最终选择妥协离开。这段始于烟火、终于现实的爱情残酷落幕，两人各自背负遗憾走向不同人生。故事以BE结局收尾，展现底层爱情在生存压力下的脆弱与无奈。",
