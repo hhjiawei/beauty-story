@@ -1,9 +1,23 @@
 # romantic_story/nodes/plot.py
 import json
-from romanticstory.config.config import get_agent
+
+from deepagents import create_deep_agent
+from langchain_core.messages import HumanMessage, SystemMessage
+
+from romanticstory.config.config import get_agent, llm
 from romanticstory.prompts.romantic_story_prompt import PLOT_PROMPT
 from romanticstory.states.romantic_story_state import MainState
+from utils.json_util import parse_json_response
 
+
+def get_agent(system_prompt: str):
+    """
+    创建深度 Agent 实例
+    """
+    return create_deep_agent(
+        model=llm,
+        system_prompt=system_prompt
+    )
 
 def plot_node(state: MainState) -> dict:
     """
@@ -12,27 +26,20 @@ def plot_node(state: MainState) -> dict:
     plan_state = state.get("plan_state", {})
     character_state = state.get("character_state", {})
 
-    context = {
-        "plan": plan_state,
-        "characters": character_state
-    }
-
-    agent = get_agent(PLOT_PROMPT)
     messages = [
-        {"role": "user", "content": f"基于以下信息生成章节大纲：{json.dumps(context, ensure_ascii=False)}"}
+        SystemMessage(content=PLOT_PROMPT),
+        HumanMessage(content=f"基于以下信息生成章节大纲：\n{json.dumps({'plan': plan_state, 'characters': character_state}, ensure_ascii=False)}")
     ]
 
-    response = agent.invoke(messages)
+    # 调用 LLM
+    response = llm.invoke(messages)
 
-    try:
-        content = response.content if hasattr(response, 'content') else str(response)
-        plot_data = json.loads(content)
-    except Exception:
-        plot_data = {"beat_sheet": []}
+    # 解析 JSON 响应
+    char_data = parse_json_response(response.content)
 
     # 初始化写作索引
     return {
-        "plot_state": plot_data,
+        "plot_state": char_data,
         "current_segment_index": 0
     }
 

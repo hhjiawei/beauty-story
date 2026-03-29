@@ -150,4 +150,9 @@ class MainState(TypedDict):
 
     plot_state: PlotState
 
-    segment_state: SegmentState
+    current_segment_index: int
+
+    current_polish_index: int
+
+    segments: List[SegmentState]
+

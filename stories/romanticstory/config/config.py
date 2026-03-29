@@ -8,23 +8,23 @@ from deepagents import create_deep_agent
 # 配置 API
 OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
 OPENAI_API_BASE = "https://api.deepseek.com"
-MODEL_NAME = "deepseek-chat"
+MODEL_NAME = "deepseek-reasoner"
 
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
 
-# # 初始化 LLM
-# llm = ChatOpenAI(
-#     model=MODEL_NAME,
-#     temperature=0.7,
-# )
-
-
-llm = ChatOllama(
-    model="qwen3-vl:32b",
-    base_url="http://10.0.102.100:11434",
-    num_predict=15000
+# 初始化 LLM
+llm = ChatOpenAI(
+    model=MODEL_NAME,
+    temperature=0.7,
 )
+
+
+# llm = ChatOllama(
+#     model="qwen3.5:35b",
+#     base_url="http://localhost:11434",
+#     num_predict=15000
+# )
 
 
 
