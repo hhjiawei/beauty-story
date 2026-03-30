@@ -1,11 +1,44 @@
+import os
+
+from deepagents import create_deep_agent
+from langchain_openai import ChatOpenAI
+
 from romanticstory.config.config import llm
 from romanticstory.prompts.romantic_story_prompt import PLAN_SUMMARY_PROMPT
 
 from romanticstory.states.romantic_story_state import MainState
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from romanticstory.tools.web_search import internet_search
 from utils.json_util import parse_json_response
 
+
+# 策划节点，需要灵感和天马行空的设计，大模型也需要偏设计一些的 条理要清晰，要有逻辑   deepseek-reasoner
+
+# 配置 API
+OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
+OPENAI_API_BASE = "https://api.deepseek.com"
+MODEL_NAME = "deepseek-reasoner"
+
+os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
+
+# 初始化 LLM
+"""
+temperature 参数默认为 1.0。
+
+我们建议您根据如下表格，按使用场景设置 temperature。
+场景	温度
+代码生成/数学解题 	0.0
+数据抽取/分析	1.0
+通用对话	1.3
+翻译	1.3
+创意类写作/诗歌创作	1.5  当模型的「温度」较高时（如 0.8、1 或更高），模型会更倾向于从较多样且不同的词汇中选择，这使得生成的文本风险性更高、创意性更强，
+"""
+llm = ChatOpenAI(
+    model=MODEL_NAME,
+    temperature=1.5,
+)
 
 def planner_node(state: MainState) -> dict:
     """
@@ -17,13 +50,24 @@ def planner_node(state: MainState) -> dict:
     print("=" * 60)
 
     # 构建消息
-    messages = [
-        SystemMessage(content=PLAN_SUMMARY_PROMPT),
-        HumanMessage(content=f"请根据以下灵感创作策划案：{state.get('user_input', '')}")
-    ]
+    # messages = [
+    #     SystemMessage(content=PLAN_SUMMARY_PROMPT),
+    #     HumanMessage(content=f"请根据以下灵感创作策划案：{state.get('user_input', '')}")
+    # ]
 
     # 调用 LLM
-    response = llm.invoke(messages)
+    # response = llm.invoke(messages)
+
+    agent = create_deep_agent(
+        model=llm,
+        system_prompt=PLAN_SUMMARY_PROMPT,
+
+    )
+
+    response = agent.invoke({"messages": [HumanMessage(content=f"请根据以下灵感创作策划案：{state.get('user_input', '')}")]})
+
+
+
 
     # 解析 JSON 响应
     plan_data = parse_json_response(response.content)
@@ -46,35 +90,3 @@ def planner_node(state: MainState) -> dict:
 
     # 返回状态更新
     return {"plan_state": plan_state}
-
-
-
-# ---------------------- 测试代码 -------------------
-"""
-{
-    "story_summary": "林小满与陈阳是蜗居城中村的临时工情侣，相依为命约定未来。陈阳工地意外双腿致残，无保险的巨额医药费压垮两人。小满日夜兼三份工仍入不敷出，在现实碾压下坚守逐渐崩塌。面对亲戚介绍的能提供安稳生活的超市老板，看着瘫痪消沉的陈阳，小满最终选择妥协离开。这段始于烟火、终于现实的爱情残酷落幕，两人各自背负遗憾走向不同人生。故事以BE结局收尾，展现底层爱情在生存压力下的脆弱与无奈。",
-    "hook": "林小满收拾行李时，陈阳在隔壁房间摔碎了他们攒钱买的第一个碗。三年前他们约定要攒够钱转正结婚，现在她却要嫁给能给她安稳生活的陌生男人。",
-    "core_topic": "现实向爱情/生存与爱情的残酷抉择",
-    "story_backend": "现代都市背景，固定核心场景为二线城市老城区城中村'向阳村'，轻现实规则聚焦底层打工者生存现状，无复杂社会矛盾。",
-    "dual_line_intersections": [
-        "陈阳工地意外致残，感情危机与生计危机同时爆发",
-        "小满为医药费日夜兼三份工，感情在现实压力下磨损",
-        "亲戚介绍相亲对象提供稳定工作，感情与生存必须二选一"
-    ],
-    "three_lines_info": {
-        "event_line": "起：城中村临时工情侣相依为命约定未来。承：陈阳工地意外致残，医药费压垮小满。转：小满日夜兼三份工仍入不敷出，亲戚介绍相亲对象。合：小满选择离开陈阳，嫁给能提供安稳生活的男人。",
-        "emotion_line": "起：底层相濡以沫的温暖让爱升温。承：意外后小满不离不弃但现实压力让温情渐冷。转：陈阳自暴自弃，小满在疲惫绝望中动摇。合：小满选择生存而非爱情，两人最后对视爱情破碎。",
-        "background_line": "起：城中村底层打工者无保障的临时工生活。承：工伤事故暴露劳动者保障缺失医疗无着。转：社会现实逼迫女性在爱情与生存间做残酷选择。合：不同阶层生活轨迹对比，底层爱情在现实前脆弱。"
-    },
-    "core_conflicts": [
-        {"main": "贫穷与爱情的对抗——底层临时工情侣在生存压力下爱情逐渐被现实碾碎"},
-        {"sub1": "意外事故带来的生存危机——陈阳工伤致残无保险，巨额医药费压垮两人"},
-        {"sub2": "传统观念与现实选择的冲突——亲戚认为小满应选择稳定婚姻而非守着残疾男友"}
-    ],
-    "extra_plan": {
-        "meet_setting": "两人在城中村同一栋出租楼租住相邻单间，因共用厨房和卫生间而相识。",
-        "career_tags": "林小满：餐馆服务员月薪2800元；陈阳：建筑工地零工月薪3500元（事故前）",
-        "time_place": "时间跨度2个月（从陈阳出事到小满离开），主场景：某二线城市老城区城中村'向阳村'"
-    }
-
-"""

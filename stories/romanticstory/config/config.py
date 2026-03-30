@@ -25,18 +25,3 @@ llm = ChatOpenAI(
 #     base_url="http://localhost:11434",
 #     num_predict=15000
 # )
-
-
-
-
-
-
-
-def get_agent(system_prompt: str):
-    """
-    创建深度 Agent 实例
-    """
-    return create_deep_agent(
-        model=llm,
-        system_prompt=system_prompt
-    )
