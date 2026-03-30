@@ -65,9 +65,7 @@ def planner_node(state: MainState) -> dict:
     )
 
     response = agent.invoke({"messages": [HumanMessage(content=f"请根据以下灵感创作策划案：{state.get('user_input', '')}")]})
-
-
-
+    response = response["messages"][-1]
 
     # 解析 JSON 响应
     plan_data = parse_json_response(response.content)

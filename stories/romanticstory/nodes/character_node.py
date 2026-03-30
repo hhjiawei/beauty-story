@@ -71,7 +71,7 @@ def character_node(state: MainState) -> dict:
     response = agent.invoke({"messages": [HumanMessage(content=f"""
         策划案设定：{json.dumps(state.get('plan_state', {}), ensure_ascii=False)}
         """)]})
-
+    response = response["messages"][-1]
 
     # 解析 JSON 响应
     char_data = parse_json_response(response.content)

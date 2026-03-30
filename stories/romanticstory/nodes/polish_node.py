@@ -1,10 +1,42 @@
 # romanticstory/nodes/polish_node.py
 import json
+import os
+
+from deepagents import create_deep_agent
 from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_openai import ChatOpenAI
+
 from romanticstory.config.config import llm
 from romanticstory.prompts.romantic_story_prompt import POLISH_PROMPT
 from romanticstory.states.romantic_story_state import MainState, SegmentState
 from utils.json_util import parse_json_response
+
+
+# 配置 API
+OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
+OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
+MODEL_NAME = "doubao-seed-2-0-pro-260215"
+
+os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
+
+# 初始化 LLM
+"""
+temperature 参数默认为 1.0。
+
+我们建议您根据如下表格，按使用场景设置 temperature。
+场景	温度
+代码生成/数学解题 	0.0
+数据抽取/分析	1.0
+通用对话	1.3
+翻译	1.3
+创意类写作/诗歌创作	1.5  当模型的「温度」较高时（如 0.8、1 或更高），模型会更倾向于从较多样且不同的词汇中选择，这使得生成的文本风险性更高、创意性更强，
+"""
+llm = ChatOpenAI(
+    model=MODEL_NAME,
+    temperature=0.8,
+)
+
 
 
 def polish_node(state: MainState) -> dict:
@@ -44,20 +76,39 @@ def polish_node(state: MainState) -> dict:
     # ===================================================================
     # 步骤 3: 构建消息并调用 LLM
     # ===================================================================
-    messages = [
-        SystemMessage(content=POLISH_PROMPT),
-        HumanMessage(content=f"""
+
+
+    # messages = [
+    #     SystemMessage(content=POLISH_PROMPT),
+    #     HumanMessage(content=f"""
+    #     请对以下小说段落进行抛光处理：
+    #
+    #     【待抛光段落】
+    #     {json.dumps(polish_context, ensure_ascii=False, indent=2)}
+    #
+    #     请输出 JSON 格式：{{"para_id": "P1", "content": "抛光后内容"}}
+    #     """)
+    # ]
+    #
+    # # 调用 LLM
+    # response = llm.invoke(messages)
+
+
+    agent = create_deep_agent(
+        model=llm,
+        system_prompt=POLISH_PROMPT,
+    )
+
+    response = agent.invoke({"messages": [HumanMessage(content=f"""
         请对以下小说段落进行抛光处理：
 
         【待抛光段落】
         {json.dumps(polish_context, ensure_ascii=False, indent=2)}
 
         请输出 JSON 格式：{{"para_id": "P1", "content": "抛光后内容"}}
-        """)
-    ]
+        """)]})
 
-    # 调用 LLM
-    response = llm.invoke(messages)
+    response = response["messages"][-1]
 
     # ===================================================================
     # 步骤 4: 解析响应并构建更新后的 segment

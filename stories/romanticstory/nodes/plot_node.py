@@ -66,7 +66,7 @@ def plot_node(state: MainState) -> dict:
     )
 
     response = agent.invoke({"messages": [HumanMessage(content=f"基于以下信息生成章节大纲：\n{json.dumps({'plan': plan_state, 'characters': character_state}, ensure_ascii=False)}")]})
-
+    response = response["messages"][-1]
 
     # 解析 JSON 响应
     char_data = parse_json_response(response.content)
