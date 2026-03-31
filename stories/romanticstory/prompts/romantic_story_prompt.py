@@ -7,7 +7,7 @@ PLAN_SUMMARY_PROMPT = """
 职业标签：为男女主分配职业 + 收入层级，仅作冲突背景，不细化工作
 双线蓝图：明确感情线与事业副线的 3 个交汇点，每点≤30 字
 三线构建：输出事件线、感情线、背景线起承转合，每线≤200 字
-时间地理：故事时间跨度限定≤7 天或 3 个月，主场景精确到城市区域
+时间地理：故事时间跨度限定≤ 3 个月，主场景精确到城市区域
 核心矛盾：设定 1 个贯穿全文主矛盾 + 2 个副矛盾，矛盾均拆解为具体可写事件
 附加创作约束
 故事背景：单一现代都市背景，固定核心场景，轻量级现实规则，无复杂社会矛盾
@@ -51,7 +51,8 @@ PLAN_SUMMARY_PROMPT = """
 
 CHARACTER_PROMPT = """
 ## 部门描述
-你是角色的"造物主"，基于策划层的故事摘要、核心矛盾和三线发展，自主设计完整的人物档案与关系网络。你不依赖任何预设模板或固定映射，而是通过深度解析输入文本的内在逻辑，推导出唯一适配当前故事的人物设计方案。
+你是角色的"造物主"，基于策划层的故事摘要、核心矛盾和三线发展，自主设计完整的人物档案与关系网络。
+你不依赖任何预设模板或固定映射，而是通过深度解析输入文本的内在逻辑，推导出唯一适配当前故事的人物设计方案。
 
 ---
 
@@ -73,7 +74,7 @@ CHARACTER_PROMPT = """
 - 从`story_summary`的具体情节中推导人物动机
 - 从`core_conflicts`的具体冲突中推导性格缺陷
 - 从`emotion_line`的具体阶段中推导关系变化节点
-
+- 身体特征不要太刻意，例如抚摸疤痕之类的，可以用用手推了推眼镜等日常小动作。
 ---
 
 ### 原则2：追问式推导（每个设计必须有溯源）
@@ -132,8 +133,6 @@ conflict_essence中A的行为模式
     → A的缺陷（character_flaw：动机的扭曲表达，制造矛盾的具体方式）
     → A的特质（characteristics：缺陷的外在呈现，含反差）
     → A的关键词（surface_personality：特质的标签化）
-    → A的习惯（habit：缺陷的身体化）
-    → A的外貌（sample_character：能暗示缺陷或历史的身体标记）
 ```
 
 **必须回答**：
@@ -194,7 +193,7 @@ conflict_essence中A的行为模式
 
 ---
 
-## 输出格式（CharacterState）
+## 输出格式
 请只输出 以下JSON 格式结果，不要其他文字：
 {
     "characters": [
@@ -203,10 +202,8 @@ conflict_essence中A的行为模式
             "basic": {
                 "name": "姓名（从`story_backend`的时代感+`career_tags`的阶层感推导）",
                 "age": "年龄（与`time_place`的时间跨度+职业阶段匹配）",
-                "sample_character": "1个标志性外貌特征（暗示`flaw`或历史）",
                 "career_tag": "职业标签（直接来自`extra_plan.career_tags`，无添加）",
                 "income_level": "收入层级（直接来自`extra_plan.career_tags`）",
-                "habit": "小癖好（`flaw`的身体化，日常可观察）"
             },
             "dna": {
                 "surface_personality": ["3个关键词（`characteristics`的标签化）"],
@@ -225,10 +222,6 @@ conflict_essence中A的行为模式
                 ],
                 "final_state": "最终关系状态（与`story_summary`的结局严格匹配）"
             },
-            "physical_markers": [
-                "身体特征1（场景化使用，关联`flaw`）",
-                "身体特征2（场景化使用，关联历史）"
-            ],
             "secret": {
                 "content": "隐藏秘密（与B相关，揭露时颠覆B认知）",
                 "revealed_at": "揭露节点（对应`turning_points`序号）",
@@ -241,7 +234,6 @@ conflict_essence中A的行为模式
             "basic": {...},
             "dna": {...},
             "relationship_dynamics": {...},
-            "physical_markers": [...],
             "secret": {...},
             "growth_arc": "...",
             "relationship_to_a": {
@@ -310,7 +302,9 @@ conflict_essence中A的行为模式
 - 任何预设分类或选项列表
 
 **必须输出**：从输入文本中生长出的、唯一适配当前故事的人物档案，每个元素可追溯到具体输入字段。
-```
+不允许把结果保存到文件,必须按照输出格式的json样式输出结果,以便后续工作流的执行
+
+
 """
 
 
@@ -342,7 +336,7 @@ PLOT_PROMPT = """
 二、角色层输入（{{character_input}}）必须包含以下字段：
   - characters: 角色列表（A/B为主角，C/D为辅助角色）
       - character_id: 角色标识（A/B/C/D）
-      - basic: 基础信息（name/age/sample_character/career_tag/income_level/habit）
+      - basic: 基础信息（name/age/career_tag/income_level/）
       - dna: 人物DNA
           - surface_personality: 表面性格（3个关键词）
           - inner_essence: 内在本质（核心恐惧与渴望）
@@ -353,7 +347,6 @@ PLOT_PROMPT = """
           - initial_state: 初始关系状态
           - turning_points: 关系转折点列表（与beat_sheet段落对应）
           - final_state: 最终关系状态
-      - physical_markers: 标志性身体语言/动作（2-3个）
       - secret: 角色秘密
           - content: 秘密内容
           - revealed_at: 揭露时机（对应段落编号）
@@ -397,7 +390,6 @@ PLOT_PROMPT = """
           "behavior": "角色A在本段的具体行为描述（包含场景、动作、对话）",
           "driven_by": "驱动的性格缺陷（引用character_input中dna.character_flaw的具体描述）",
           "defense_mechanism": "使用的防御机制（引用character_input中dna.core_mechanism的具体逻辑）",
-          "physical_marker": "标志性身体动作（引用physical_markers中的具体动作）",
           "secret_involved": "是否涉及秘密（是/否，如是则描述秘密互动方式）"
         },
         {
@@ -464,16 +456,17 @@ plot字段要求：
 1. 剧情符合现实逻辑（基于extra_plan中的career_tags/time_place设定）
 2. 剧情不降智化、不低智化（角色行为必须符合其dna中的智商与情商设定）
 3. 大纲内容plot是最核心部分，所有内容全部为大纲服务
-4. 必须体现physical_markers中的标志性动作（如敲击桌面、触碰耳后等）
-5. 必须处理secret的揭露时机与方式（按secret.revealed_at执行）
-6. 辅助角色（C/D）必须在对应段落中体现其network中定义的功能
-
+4. 必须处理secret的揭露时机与方式（按secret.revealed_at执行）
+5. 辅助角色（C/D）必须在对应段落中体现其network中定义的功能
+6. 章节不能超过7段
 ═══════════════════════════════════════════════════════════════
 【第六部分：输入变量占位符】
 ═══════════════════════════════════════════════════════════════
 
 架构层内容：{{architecture_input}}
 角色层内容：{{character_input}}
+
+不允许把结果保存到文件,必须按照【第三部分：输出格式规范】来输出结果
 """
 
 
@@ -513,8 +506,6 @@ WRITE_PROMPT = """
 ### 3. characters 使用规范
 - **character_flaw** -> 角色行为的核心驱动力，必须在动作/对话中体现
 - **core_mechanism** -> 角色行为的深层动机，在关键决策点体现
-- **physical_markers** -> 在关键情绪点插入身体特征描写，增强画面感
-- **habit** -> 在压力/紧张场景中使用习惯性动作
 - **secret** -> 如 current_paragraph 中 secret_involved 为"是"，需埋设或呼应秘密
 
 ### 4. structure_notes 使用规范
@@ -560,8 +551,7 @@ WRITE_PROMPT = """
 4.  禁止输出非JSON格式的内容，不得在JSON代码块外添加任何解释性文字、说明内容
 5.  禁止出现不符合言情文调性、违背现实情感逻辑的生硬剧情，禁止为了剧情强行扭曲人物行为
 6.  禁止大段无效的环境、外貌描写，禁止辞藻堆砌、无病呻吟的空洞叙事
-
-
+7.  不允许把结果保存到文件,必须按照输出格式的json样式输出结果,以便后续工作流的执行
 """
 
 
@@ -586,6 +576,7 @@ POLISH_PROMPT = """
 ### 2. 全面纠错规范（符合出版级校对标准）
 系统排查并修正全文所有问题，包括但不限于：错别字（形近字、音近字、多音字误用）、语病（搭配不当、成分残缺、句式杂糅、歧义句、逻辑矛盾）、
 标点符号使用不规范（引号、逗号、分号、省略号、破折号等误用，段落标点衔接混乱）、用词偏差（近义词混淆、书面语与口语误用、专业词汇 / 场景用词错误、语气词使用不当）；
+第一人称,第三人称检查,第一主角一直是第一人称 "我" 的口吻;
 确保文本表述严谨、规范，无任何基础错误，符合现代汉语文学写作规范。
 
 ### 3. 文风优化升级（贴合小说特质）：
@@ -622,6 +613,8 @@ POLISH_PROMPT = """
 用户消息中将包含：
 - para_id: 段落标识
 - content: 段落正文内容
+
+不允许把结果保存到文件,必须按照输出格式的json样式输出结果,以便后续工作流的执行
 """
 
 

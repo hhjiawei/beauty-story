@@ -15,10 +15,9 @@ from utils.json_util import parse_json_response
 # 大纲 需要逻辑清晰，需要把前面的人物形象和剧情相结合并产出，需要合理的推理能力 deepseek-reasoner
 
 
-# 配置 API
-OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
-OPENAI_API_BASE = "https://api.deepseek.com"
-MODEL_NAME = "deepseek-reasoner"
+OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
+OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
+MODEL_NAME = "doubao-seed-2-0-pro-260215"
 
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
@@ -37,7 +36,8 @@ temperature 参数默认为 1.0。
 """
 llm = ChatOpenAI(
     model=MODEL_NAME,
-    temperature=1.0,
+    temperature=1.3,
+    max_tokens=50000
 )
 
 
@@ -70,6 +70,7 @@ def plot_node(state: MainState) -> dict:
 
     # 解析 JSON 响应
     char_data = parse_json_response(response.content)
+
 
     # 初始化写作索引
     return {

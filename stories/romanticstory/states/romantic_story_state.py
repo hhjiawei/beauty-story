@@ -49,10 +49,8 @@ class PlanState(TypedDict):
 class CharacterBasic(TypedDict):
     name: str
     age: int
-    sample_character: str  # 身高外貌（突出 1 个标志性特征，如眼尾痣、指尖薄茧）
     career_tag: str  # 身份职业：职场人 / 学生 / 自由职业者（贴合背景，决定行为逻辑）
     income_level: str  # 普通 / 优渥 / 清贫（影响爱情观、现实顾虑）
-    habit: str  # 小癖好（喝咖啡加糖、戴旧手表、习惯性低头）
 
     """
         性格特质：主性格 + 反差感（如外冷内热、嘴硬心软、温柔敏感）
@@ -83,7 +81,6 @@ class CharacterProfile(TypedDict):
     basic: CharacterBasic
     dna: CharacterDNA
     relationship_dynamics: RelationshipDynamics
-    physical_markers: List[str]  # 身体特征状态
 
 
 class NetworkNode(TypedDict):

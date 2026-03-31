@@ -33,7 +33,7 @@ temperature 参数默认为 1.0。
 """
 llm = ChatOpenAI(
     model=MODEL_NAME,
-    temperature=1.0,
+    temperature=1.5,
 )
 
 
@@ -85,8 +85,6 @@ def writer_node(state: MainState) -> dict:
             "character_id": char_id,
             "character_flaw": char.get("dna", {}).get("character_flaw", ""),
             "core_mechanism": char.get("dna", {}).get("core_mechanism", ""),
-            "physical_markers": char.get("physical_markers", []),
-            "habit": char.get("basic", {}).get("habit", ""),
             "secret": char.get("secret", {})
         }
 
@@ -234,6 +232,6 @@ def writer_node(state: MainState) -> dict:
     # 步骤 5: 返回状态更新（必须是字典）
     # ===================================================================
     return {
-        "segments": updated_segments,
+            "segments": updated_segments,
         "current_segment_index": current_index + 1
     }

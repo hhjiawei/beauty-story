@@ -906,7 +906,6 @@
 请基于class CharacterBasic(TypedDict):
     name: str
     age: int
-    sample_character: str # 身高外貌（突出 1 个标志性特征，如眼尾痣、指尖薄茧）
     career_tag: str  # 身份职业：职场人 / 学生 / 自由职业者（贴合背景，决定行为逻辑）
     income_level: str # 普通 / 优渥 / 清贫（影响爱情观、现实顾虑）
     habit: str  # 小癖好（喝咖啡加糖、戴旧手表、习惯性低头）
@@ -1040,7 +1039,6 @@ class CharacterState(TypedDict):
             "basic": {
                 "name": "姓名（从`story_backend`的时代感+`career_tags`的阶层感推导）",
                 "age": "年龄（与`time_place`的时间跨度+职业阶段匹配）",
-                "sample_character": "1个标志性外貌特征（暗示`flaw`或历史）",
                 "career_tag": "职业标签（直接来自`extra_plan.career_tags`，无添加）",
                 "income_level": "收入层级（直接来自`extra_plan.career_tags`）",
                 "habit": "小癖好（`flaw`的身体化，日常可观察）"
