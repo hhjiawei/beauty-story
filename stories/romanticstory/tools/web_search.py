@@ -8,7 +8,7 @@ TAVILY_API_KEY = "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"
 tavily_client = TavilyClient(api_key=TAVILY_API_KEY)
 
 
-@tool
+# @tool
 def internet_search(
         query: str,
         max_results: int = 5,

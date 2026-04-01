@@ -61,7 +61,7 @@ def planner_node(state: MainState) -> dict:
     agent = create_deep_agent(
         model=llm,
         system_prompt=PLAN_SUMMARY_PROMPT,
-
+        tools=[internet_search]
     )
 
     response = agent.invoke({"messages": [HumanMessage(content=f"请根据以下灵感创作策划案：{state.get('user_input', '')}")]})

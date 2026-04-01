@@ -36,7 +36,7 @@ temperature 参数默认为 1.0。
 """
 llm = ChatOpenAI(
     model=MODEL_NAME,
-    temperature=1.3,
+    temperature=1.0,
     max_tokens=50000
 )
 

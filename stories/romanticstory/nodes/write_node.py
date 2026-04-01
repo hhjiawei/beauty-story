@@ -93,8 +93,7 @@ def writer_node(state: MainState) -> dict:
         # 核心故事信息
         "story_info": {
             "core_topic": plan_state.get("core_topic", ""),
-            "story_backend": plan_state.get("story_backend", ""),
-            "hook": plan_state.get("hook", "")
+            "story_backend": plan_state.get("story_backend", "")
         },
 
         # 当前段落大纲（核心）
@@ -146,33 +145,6 @@ def writer_node(state: MainState) -> dict:
     # 步骤 3: 构建消息并调用 LLM
     # ===================================================================
 
-
-    # messages = [
-    #     SystemMessage(content=WRITE_PROMPT),
-    #     HumanMessage(content=f"""
-    #     请根据以下信息撰写正文内容：
-    #
-    #     【故事核心信息】
-    #     {json.dumps(writing_context["story_info"], ensure_ascii=False, indent=2)}
-    #
-    #     【当前段落大纲】
-    #     {json.dumps(writing_context["current_paragraph"], ensure_ascii=False, indent=2)}
-    #
-    #     【主要人物设定】
-    #     {json.dumps(writing_context["characters"], ensure_ascii=False, indent=2)}
-    #
-    #     【整体结构说明】
-    #     {json.dumps(writing_context["structure_notes"], ensure_ascii=False, indent=2)}
-    #
-    #     【写作要求】
-    #     {json.dumps(writing_context["writing_requirements"], ensure_ascii=False, indent=2)}
-    #
-    #     请输出 JSON 格式：{{"content": "正文内容"}}
-    #     """)
-    # ]
-    #
-    # # 调用 LLM
-    # # response = llm.invoke(messages)
 
     agent = create_deep_agent(
         model=llm,
@@ -235,3 +207,35 @@ def writer_node(state: MainState) -> dict:
             "segments": updated_segments,
         "current_segment_index": current_index + 1
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
