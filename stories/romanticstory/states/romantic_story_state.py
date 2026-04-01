@@ -41,6 +41,7 @@ class PlanState(TypedDict):
     # **核心矛盾** | 定义贯穿全文的1个主矛盾+2个副矛盾 | 矛盾必须可拆解为具体事件   [{main:xxx},{sub1:xxx},{sub2:xxx}]
     core_conflicts: List[Dict]
 
+    narrative_skills: str
 
 # ----------------------------------------------------------------------
 # 2. 人物关系部 · 角色架构师
