@@ -2,6 +2,7 @@ import os
 
 from deepagents import create_deep_agent
 from langchain_openai import ChatOpenAI
+from langgraph.types import interrupt
 
 from romanticstory.config.config import llm
 from romanticstory.prompts.romantic_story_prompt import PLAN_SUMMARY_PROMPT
@@ -12,13 +13,24 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from romanticstory.tools.web_search import internet_search
 from utils.json_util import parse_json_response
 
-
 # 策划节点，需要灵感和天马行空的设计，大模型也需要偏设计一些的 条理要清晰，要有逻辑   deepseek-reasoner
 
 # 配置 API
 OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
 OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
 MODEL_NAME = "doubao-seed-2-0-pro-260215"
+
+# deepseek-reasoner
+# OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
+# OPENAI_API_BASE = "https://api.deepseek.com"
+# MODEL_NAME = "deepseek-reasoner"
+
+
+# # qwen  sk-5fd1dda940aa46d282873be7e02fcd82
+# OPENAI_API_KEY = "sk-5fd1dda940aa46d282873be7e02fcd82"
+# OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+# MODEL_NAME = "qwen3.6-plus"
+
 
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
@@ -64,7 +76,8 @@ def planner_node(state: MainState) -> dict:
         tools=[internet_search]
     )
 
-    response = agent.invoke({"messages": [HumanMessage(content=f"请根据以下灵感创作策划案：{state.get('user_input', '')}")]})
+    response = agent.invoke(
+        {"messages": [HumanMessage(content=f"请根据以下灵感创作策划案：{state.get('user_input', '')}")]})
     response = response["messages"][-1]
 
     # 解析 JSON 响应

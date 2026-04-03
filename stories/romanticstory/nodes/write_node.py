@@ -33,7 +33,7 @@ temperature 参数默认为 1.0。
 """
 llm = ChatOpenAI(
     model=MODEL_NAME,
-    temperature=1.5,
+    temperature=1.0,
 )
 
 
@@ -152,7 +152,7 @@ def writer_node(state: MainState) -> dict:
     )
 
     response = agent.invoke({"messages": [HumanMessage(content=f"""
-        请根据以下信息撰写正文内容：
+        请根据以下信息制定写作任务，完成撰写正文内容：
 
         【故事核心信息】
         {json.dumps(writing_context["story_info"], ensure_ascii=False, indent=2)}
