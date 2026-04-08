@@ -33,7 +33,7 @@ temperature 参数默认为 1.0。
 """
 llm = ChatOpenAI(
     model=MODEL_NAME,
-    temperature=1.0,
+    temperature=2.0,
 )
 
 
@@ -166,8 +166,6 @@ def writer_node(state: MainState) -> dict:
         【整体结构说明】
         {json.dumps(writing_context["structure_notes"], ensure_ascii=False, indent=2)}
 
-        【写作要求】
-        {json.dumps(writing_context["writing_requirements"], ensure_ascii=False, indent=2)}
 
         请输出 JSON 格式：{{"content": "正文内容"}}
         """)]})
