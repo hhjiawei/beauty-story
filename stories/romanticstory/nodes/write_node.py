@@ -33,7 +33,7 @@ temperature 参数默认为 1.0。
 """
 llm = ChatOpenAI(
     model=MODEL_NAME,
-    temperature=2.0,
+    temperature=0.85,
 )
 
 
@@ -124,13 +124,6 @@ def writer_node(state: MainState) -> dict:
             "rhythm_pattern": structure_notes.get("rhythm_pattern", ""),
             "secret_reveal_schedule": structure_notes.get("secret_reveal_schedule", ""),
             "core_conflict_resolution": structure_notes.get("core_conflict_resolution", "")
-        },
-
-        # 写作要求
-        "writing_requirements": {
-            "word_count": "1000-1500 字",
-            "style": "细腻情感描写 + 具体动作呈现",
-            "focus": "严格遵循 character_action_list 中的行为驱动和防御机制"
         }
     }
 
