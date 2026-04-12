@@ -92,8 +92,7 @@ def planner_node(state: MainState) -> dict:
         "dual_line_intersections": plan_data.get("dual_line_intersections", []),
         "three_lines_info": plan_data.get("three_lines_info", {}),
         "core_conflicts": plan_data.get("core_conflicts", []),
-        "extra_plan": plan_data.get("extra_plan", {}),
-        "narrative_skills": plan_data.get("narrative_skills", {}),
+        "extra_plan": plan_data.get("extra_plan", {})
     }
 
     # 打印工作日志
