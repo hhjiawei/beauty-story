@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional
 
 import yaml
 
+from config.config import config_yaml
 from .config import parse_multi_account_config, validate_paired_configs
 from trendradar.utils.time import DEFAULT_TIMEZONE
 
@@ -540,7 +541,7 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         FileNotFoundError: 配置文件不存在
     """
     if config_path is None:
-        config_path = os.environ.get("CONFIG_PATH", "config/config.yaml")
+        config_path = os.environ.get("CONFIG_PATH", config_yaml)
 
     if not Path(config_path).exists():
         raise FileNotFoundError(f"配置文件 {config_path} 不存在")

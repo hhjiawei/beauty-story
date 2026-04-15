@@ -19,6 +19,8 @@ from typing import Dict, List, Tuple, Optional
 
 import requests
 
+from config.config import config_yaml, timeline, frequency_words, ai_interests, ai_analysis_prompt, \
+    ai_translation_prompt
 from trendradar.context import AppContext
 from trendradar import __version__
 from trendradar.core import load_config, parse_multi_account_config, validate_paired_configs
@@ -139,12 +141,12 @@ def check_all_versions(
     print(f"  主程序版本: {__version__} {program_status}")
 
     config_files = [
-        Path("config/config.yaml"),
-        Path("config/timeline.yaml"),
-        Path("config/frequency_words.txt"),
-        Path("config/ai_interests.txt"),
-        Path("config/ai_analysis_prompt.txt"),
-        Path("config/ai_translation_prompt.txt"),
+        Path(config_yaml),
+        Path(timeline),
+        Path(frequency_words),
+        Path(ai_interests),
+        Path(ai_analysis_prompt),
+        Path(ai_translation_prompt),
     ]
 
     version_pattern = re.compile(r"Version:\s*(\d+\.\d+\.\d+)", re.IGNORECASE)
@@ -1755,7 +1757,7 @@ def _save_doctor_report(
     report = {
         "version": __version__,
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "config_path": config_path or os.environ.get("CONFIG_PATH", "config/config.yaml"),
+        "config_path": config_path or os.environ.get("CONFIG_PATH", config_yaml),
         "summary": {
             "pass": pass_count,
             "warn": warn_count,
