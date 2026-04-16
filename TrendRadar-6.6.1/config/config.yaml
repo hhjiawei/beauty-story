@@ -65,8 +65,6 @@ platforms:
       name: "澎湃新闻"
     - id: "bilibili-hot-search"
       name: "bilibili 热搜"
-    - id: "cls-hot"
-      name: "财联社热门"
     - id: "ifeng"
       name: "凤凰网"
     - id: "tieba"
