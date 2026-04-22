@@ -1,6 +1,7 @@
 import os
 import subprocess
 from pathlib import Path
+from typing import Literal
 
 from langchain.tools import tool
 
@@ -44,3 +45,9 @@ def shell_exec(command: str) -> str:
     except Exception as e:
         return f"Exec error: {e}"
 
+@tool
+def web_search(query: str, max_results: int = 5, topic: Literal["general", "news"] = "news") -> dict:
+    """Search the web for current information."""
+    from tavily import TavilyClient
+    client = TavilyClient(api_key="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")
+    return client.search(query, max_results=max_results, topic=topic)
