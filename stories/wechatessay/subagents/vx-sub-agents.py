@@ -1,28 +1,92 @@
-
-# 1 collect_info_agent 根据用户输入内容，读取input路径下的所有文章，生成《热点追踪表》（含事件背景/信源清单/切入角度/风险评级），时间线、争议点标注
-
-
-# 2 supply_resource_agent 补充信息 信源交叉验证表（≥2独立权威源）、时间线、争议点标注
-
-
-# 3 intelligent_analysis_agent 别人都从那些角度写该事件 哪些可以融合 哪些可以对立 哪些有争议 哪些容易引发深思 判定风格1) 情感分析 2) 写法分析 3) 模板生成
+from wechatessay.prompts.vx_prompt import SOURCE_PROMPT
+from wechatessay.states.vx_state import Creating
+from wechatessay.tools.vx_tools import read_file, tavily_web_search
 
 
 
-# 4 create_plot_agent 大纲
+
+
+# 根据用户输入内容，读取input路径下的所有文章，生成《热点追踪表》（含事件背景/信源清单/切入角度/风险评级），时间线、争议点标注
 
 
 
-# 5 write_agent 开始写作 (RAG or SKILL)
+source_sub_agent = {
+    "name": "source-sub-agent",
+    "description": "解析输入的民生类文章素材，提取碎片化信息并进行结构化整理，生成标准化的热点追踪表信息，将信息结构化输出到Creating对象",
+    "system_prompt": SOURCE_PROMPT,
+    "tools": [read_file],
+    "model": "openai:gpt-5.4",
+    "skills": [],
+    "response_format": Creating,
+}
 
 
+collect_sub_agent = {
+    "name": "collect-sub-agent",
+    "description": "Used to research more in depth questions",
+    "system_prompt": "You are a great researcher",
+    "tools": [],
+    "model": "openai:gpt-5.4",
+    "skills": [],
+}
 
-# 6 composition_agent 编辑排版	内容运营	排版预览版+标题A/B测试稿+转发语
+
+analyse_sub_agent = {
+    "name": "analyse-sub-agent",
+    "description": "Used to research more in depth questions",
+    "system_prompt": "You are a great researcher",
+    "tools": [],
+    "model": "openai:gpt-5.4",
+    "skills": [],
+}
 
 
+plot_sub_agent = {
+    "name": "plot-sub-agent",
+    "description": "Used to research more in depth questions",
+    "system_prompt": "You are a great researcher",
+    "tools": [],
+    "model": "openai:gpt-5.4",
+    "skills": [],
+}
 
-# 7 create_topic_agent 标题
+
+write_sub_agent = {
+    "name": "write-sub-agent",
+    "description": "Used to research more in depth questions",
+    "system_prompt": "You are a great researcher",
+    "tools": [],
+    "model": "openai:gpt-5.4",
+    "skills": [],
+}
 
 
+title_sub_agent = {
+    "name": "title-sub-agent",
+    "description": "Used to research more in depth questions",
+    "system_prompt": "You are a great researcher",
+    "tools": [],
+    "model": "openai:gpt-5.4",
+    "skills": [],
+}
 
-# 8 legality_review_agent 合规审核	风控/主编	敏感词/事实/立场复核表+修改意见
+
+composition_sub_agent = {
+    "name": "composition-sub-agent",
+    "description": "Used to research more in depth questions",
+    "system_prompt": "You are a great researcher",
+    "tools": [],
+    "model": "openai:gpt-5.4",
+    "skills": [],
+}
+
+
+legality_sub_agent= {
+    "name": "legality-sub-agent",
+    "description": "Used to research more in depth questions",
+    "system_prompt": "You are a great researcher",
+    "tools": [],
+    "model": "openai:gpt-5.4",
+    "skills": [],
+}
+

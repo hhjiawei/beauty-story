@@ -46,7 +46,7 @@ def shell_exec(command: str) -> str:
         return f"Exec error: {e}"
 
 @tool
-def web_search(query: str, max_results: int = 5, topic: Literal["general", "news"] = "news") -> dict:
+def tavily_web_search(query: str, max_results: int = 5, topic: Literal["general", "news"] = "news") -> dict:
     """Search the web for current information."""
     from tavily import TavilyClient
     client = TavilyClient(api_key="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")
