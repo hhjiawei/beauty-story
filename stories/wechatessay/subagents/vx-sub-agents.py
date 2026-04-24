@@ -61,15 +61,6 @@ write_sub_agent = {
 }
 
 
-title_sub_agent = {
-    "name": "title-sub-agent",
-    "description": "Used to research more in depth questions",
-    "system_prompt": "You are a great researcher",
-    "tools": [],
-    "model": "openai:gpt-5.4",
-    "skills": [],
-}
-
 
 composition_sub_agent = {
     "name": "composition-sub-agent",
