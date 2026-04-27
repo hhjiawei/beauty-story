@@ -1,7 +1,6 @@
-from pydantic import BaseModel
 
 # --------------- ArticleAnalyseNode --------------------
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, TypedDict
 from pydantic import BaseModel, Field, ConfigDict
 
 
