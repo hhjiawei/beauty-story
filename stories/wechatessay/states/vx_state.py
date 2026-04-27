@@ -1,6 +1,6 @@
 
 # --------------- ArticleAnalyseNode --------------------
-from typing import List, Literal, Optional, TypedDict
+from typing import List, Literal, Optional, TypedDict, Any
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -43,7 +43,7 @@ class ExtendedContent(BaseModel):
 
 class ArticleAnalyseNode(BaseModel):
     """
-    热点公众号文章创作输入模型
+    热点公众号文章创作输入模型 单篇/汇总后的热点追踪表
 
     用于结构化描述热点事件及创作指导参数，
     可直接作为 LLM Prompt 的上下文数据源。
@@ -110,6 +110,31 @@ class ArticleAnalyseNode(BaseModel):
         alias="creationIdeas",
         description="切入点与创作思路（核心字段，如普通人维权技巧、官方处置效率、痛点反思等）"
     )
+
+
+# =============================================================================
+# 二、Map-Reduce 专用 State
+# =============================================================================
+
+class MapReduceState(TypedDict):
+    """Map-Reduce 工作流状态"""
+
+    # ── 输入 ──
+    input_path: str
+    articles_content: Optional[str]  # 可选：直接传入
+
+    # ── Map 阶段产出 ──
+    article_files: List[str]  # 扫描到的文章文件路径列表
+    per_article_results: List[ArticleAnalyseNode]  # 每篇文章的独立分析结果
+
+    # ── Reduce 阶段产出 ──
+    analysis_result: Optional[ArticleAnalyseNode]  # 最终汇总结果
+
+    # ── 控制 ──
+    error: Optional[str]
+    raw_response: Optional[dict[str, Any]]
+
+
 
 # ---------------- ArticleSearchNode ------------------
 
@@ -550,5 +575,20 @@ class ArticleOutputNode(BaseModel):
 
 
 
+# 总State
+class GraphState(TypedDict):
+    # ── 输入层 ──
+    input_path: str                    # 文章所在目录或文件路径（工作流入口）
+    articles_content: Optional[str]    # 可选：直接传入内容，跳过文件读取
 
+    # ── 节点产出层（按工作流顺序） ──
+    search_result: Optional[ArticleSearchNode]      # 热点调研
+    analysis_result: Optional[ArticleAnalyseNode]   # 文章分析（热点追踪表）
+    blueprint_result: Optional[ArticleBlueprintNode] # 写作蓝图
+    plot_result: Optional[ArticlePlotNode]          # 写作指令/情节
+    article_output: Optional[ArticleOutputNode]     # 最终文章输出
 
+    # ── 控制与调试层 ──
+    error: Optional[str]               # 错误信息
+    raw_response: Optional[dict]       # LLM 原始响应（调试）
+    current_node: Optional[str]        # 当前节点标识（追踪）

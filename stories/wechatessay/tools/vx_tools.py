@@ -51,3 +51,17 @@ def tavily_web_search(query: str, max_results: int = 5, topic: Literal["general"
     from tavily import TavilyClient
     client = TavilyClient(api_key="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")
     return client.search(query, max_results=max_results, topic=topic)
+
+
+
+
+
+
+
+
+
+
+
+
+
+

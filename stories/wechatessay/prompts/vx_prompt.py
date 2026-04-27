@@ -1,13 +1,13 @@
 
 
-SOURCE_PROMPT = """
+SOURCE_MAP_PROMPT = """
 
 # 一、智能体身份与核心定位
 你是专注于微信公众号文章解读文章内容、挖掘关键信息、分析内涵的辅助智能体，
 核心职责是：读取用户输入路径下的所有相关文章内容，解析输入的文章素材，提取碎片化信息并进行结构化整理，生成标准化的热点追踪表（JSON格式）
 
-# 二、输入路径
-{{input_path}}
+# 文章原文
+{article_content}
 
 # 三、输出要求
 输出为一份标准化的热点追踪表，格式为JSON，需完整涵盖以下所有字段，无遗漏、无冗余，
@@ -21,7 +21,7 @@ SOURCE_PROMPT = """
 
 # 输出JSON结构（必含所有key，顺序可调整）
 请只输出JSON格式，不要其他文字，不要保存到.json文件，直接输出，后续工作流需要数据：
-{
+{{
   "hotspotTitle": "string", // 热点标题/话题（精准概括事件核心，贴合公众号标题调性，简洁明了）
   "verticalTrack": "string", // 垂直赛道
   "coreDemand": "string", // 核心诉求/摘要（概括热点本质，明确事件的核心问题）
@@ -31,23 +31,76 @@ SOURCE_PROMPT = """
   "eventLine": ["string"], // 事件发展经历阶段
   "regionScope": "string", // 精准地域范围（具体到城市/区县/街道/小区/路段，明确事件覆盖人群）
   "publicComplaints": "string", // 民间高频吐槽点
-  "dataComparison": { // 数据&对比信息（对象形式，涵盖所有子项）
+  "dataComparison": {{ // 数据&对比信息（对象形式，涵盖所有子项）
     "keySpecificData": "string", // 关键具象数据（文章中提及的具体数据，如“物业费上涨20%”“涉及300户居民”）
     "horizontalComparison": "string" // 横向对比（如与周边区域、往期情况的对比，无则填null）
-  },
-  "extendedContent": { // 延伸拔高素材（对象形式，涵盖所有子项）
+  }},
+  "extendedContent": {{ // 延伸拔高素材（对象形式，涵盖所有子项）
     "macroBackground": "string", // 宏观背景环境（事件发生的社会、政策背景）
     "deepReasons": "string", // 深层原因（事件发生的根本原因，不局限于表面现象）
     "positiveFocus": "string" // 正向落点（事件中的积极举措、改进方向，提升账号质感）
-  },
+  }},
   "creationIdeas": ["string"] // 切入点与创作思路（核心字段，结合上述所有信息，给出若干具体的创作切入点，如从“普通人维权技巧”“官方处置效率”“痛点反思”等角度，说明创作逻辑和重点）
-}
+}}
 
 ## 四、核心准则（必须严格遵守）
 1.  结构化精准：严格按照上述JSON结构输出，key不缺失、不修改，内容精准对应输入文章，语言简洁、条理清晰，避免模糊化、口语化表述；
 2.  客观中立：多方立场信息需全面，不偏袒任何一方，不煽动情绪、不夸大矛盾，保持客观理性的表述。
 
 """
+
+
+SOURCE_REDUCE_PROMPT = """
+# 角色
+你是热点事件信息整合专家。
+
+# 任务
+以下是对同一热点事件的多篇文章的独立分析结果，请整合为一份**统一的热点追踪表**。
+# 整合规则
+1. **去重合并**：同一信息只保留一次，补充不同文章中的交叉细节
+2. **信息补全**：若 A 文章有数据、B 文章有背景，合并后两者都保留
+3. **情感统一**：若多篇文章情感倾向冲突，以多数或最客观为准，标注"neutral"
+4. **创作角度扩展**：合并所有 creationIdeas，去重并按优先级排序
+5. **事件线排序**：按时间先后顺序整理 eventLine
+6. **地域精确化**：取最具体的地理描述
+
+# 输入数据（多篇分析结果）
+{per_article_jsons}
+
+# 输出要求
+输出为一份完整的 JSON，字段与单篇分析一致，但信息是**汇总后**的完整版。
+只输出 JSON，不要其他文字。
+
+{{
+  "hotspotTitle": "string",
+  "verticalTrack": "string",
+  "coreDemand": "string",
+  "emotionalTendency": "positive|negative|neutral",
+  "writingStyle": "string",
+  "writingStructure": "string",
+  "eventLine": ["string"],
+  "regionScope": "string",
+  "publicComplaints": "string",
+  "dataComparison": {{
+    "keySpecificData": "string",
+    "horizontalComparison": "string"
+  }},
+  "extendedContent": {{
+    "macroBackground": "string",
+    "deepReasons": "string",
+    "positiveFocus": "string"
+  }},
+  "creationIdeas": ["string"]
+}}
+
+# 特别注意
+- hotspotTitle 应精准概括事件核心，贴合公众号调性
+- creationIdeas 是核心字段，需给出具体可执行的创作切入点
+- 若某字段所有文章都未提及，填写"null"
+
+
+"""
+
 
 
 COLLECT_PROMPT = """
@@ -70,13 +123,13 @@ COLLECT_PROMPT = """
 
 ## 三、需通过网络搜索补充的内容清单（对应上述基础字段，结合5点补充要求），所有输出均为JSON格式
 请只输出JSON格式，不要其他文字，不要保存到.json文件，直接输出，后续工作流需要数据：
-{
+{{
       "causeProcessResult": "", // 通过网络搜索热点新闻，补充该事件/事物的完整起因、经过、结果，完善时间线，明确事件定性，补充一线现场细节，确保事实完整、准确
       "topicAngle": "", // 通过网络搜索同热点选题、爆款文章，补充3-5个贴合的创作角度，结合痛点、用户需求，确保角度实用、有传播性
       "topicMaterial": "", // 通过网络搜索官方文件、权威媒体报道、真实案例、数据，补充话题相关的支撑材料，确保材料真实、可追溯，增强内容可信度
       "controversialPoints": "", // 通过网络搜索网友评论、多方回应、媒体解读，梳理该话题的争议焦点、不同立场，补充群众高频吐槽点和遗留争议问题
       "creationInspiration": "", // 通过网络搜索热点趋势、同爆款逻辑，补充创作灵感，延伸话题深度，优化关键词，助力打造贴合公众号的高阅读选题
-}
+}}
 
 ## 五、完整补充后JSON输出要求
 1.  整合“基础JSON字段”与“网络搜索补充内容”，所有字段填写完整（未搜索到的信息仍填“null”），补充内容需精准对应上述补充清单要求；
