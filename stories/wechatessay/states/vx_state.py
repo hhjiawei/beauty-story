@@ -582,8 +582,8 @@ class GraphState(TypedDict):
     articles_content: Optional[str]    # 可选：直接传入内容，跳过文件读取
 
     # ── 节点产出层（按工作流顺序） ──
+    analysis_result: Optional[ArticleAnalyseNode]  # 文章分析（热点追踪表）
     search_result: Optional[ArticleSearchNode]      # 热点调研
-    analysis_result: Optional[ArticleAnalyseNode]   # 文章分析（热点追踪表）
     blueprint_result: Optional[ArticleBlueprintNode] # 写作蓝图
     plot_result: Optional[ArticlePlotNode]          # 写作指令/情节
     article_output: Optional[ArticleOutputNode]     # 最终文章输出
