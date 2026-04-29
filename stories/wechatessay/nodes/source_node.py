@@ -1,6 +1,46 @@
 # =============================================================================
 # 五、Map 阶段 Node：单篇分析
 # =============================================================================
+import json
+import logging
+import os
+from pathlib import Path
+from typing import List
+
+from deepagents import create_deep_agent
+from deepagents.backends import FilesystemBackend
+from langchain_openai import ChatOpenAI
+
+from wechatessay.prompts.vx_prompt import SOURCE_REDUCE_PROMPT, SOURCE_MAP_PROMPT
+from wechatessay.states.vx_state import MapReduceState, ArticleAnalyseNode
+from wechatessay.utils.vx_util import split_articles, scan_article_files, read_article
+
+logger = logging.getLogger(__name__)
+
+
+# 配置 API
+OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
+OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
+MODEL_NAME = "doubao-seed-2-0-pro-260215"
+
+# deepseek-reasoner
+# OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
+# OPENAI_API_BASE = "https://api.deepseek.com"
+# MODEL_NAME = "deepseek-reasoner"
+
+
+# # qwen  sk-5fd1dda940aa46d282873be7e02fcd82
+# OPENAI_API_KEY = "sk-5fd1dda940aa46d282873be7e02fcd82"
+# OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+# MODEL_NAME = "qwen3.6-plus"
+
+os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
+
+model = ChatOpenAI(
+    model=MODEL_NAME,
+    temperature=1.5,
+)
 
 async def map_analyze_single(state: MapReduceState) -> MapReduceState:
     """
@@ -15,8 +55,8 @@ async def map_analyze_single(state: MapReduceState) -> MapReduceState:
         articles = split_articles(articles_content)
         file_list = [f"inline_article_{i}" for i in range(len(articles))]
     else:
-        file_list = scan_article_files(input_path)
-        articles = [read_article(f) for f in file_list]
+        file_list = scan_article_files(input_path)  # 文件地址+名称
+        articles = [read_article(f) for f in file_list]  # 读取每篇内容
 
     # 过滤空内容
     valid_pairs = [(f, a) for f, a in zip(file_list, articles) if a.strip()]
@@ -26,21 +66,20 @@ async def map_analyze_single(state: MapReduceState) -> MapReduceState:
     logger.info(f"Map 阶段：共 {len(valid_pairs)} 篇文章待分析")
 
     # 2. 为每篇文章创建 DeepAgent 并分析
-    model = os.getenv("DEEPAGENTS_MODEL", "openai:gpt-4o")
     backend = FilesystemBackend(root_dir=Path(input_path).parent if input_path else Path.cwd())
 
     per_results: List[ArticleAnalyseNode] = []
 
     for file_path, article_text in valid_pairs:
         try:
-            agent = create_deep_agent(
+            agent = create_deep_agent( # 可以根据其他参数选用不同skill或者定制化
                 model=model,
                 backend=backend,
                 response_format=ArticleAnalyseNode,
                 system_prompt="你是一个专业的微信公众号文章分析助手。",
             )
 
-            prompt = MAP_PROMPT.format(article_content=article_text[:15000])  # 单篇截断保护
+            prompt = SOURCE_MAP_PROMPT.format(article_content=article_text)  # 单篇截断保护
             result = await agent.ainvoke({
                 "messages": [{"role": "user", "content": prompt}]
             })
@@ -103,7 +142,6 @@ async def reduce_merge_results(state: MapReduceState) -> MapReduceState:
         for i, r in enumerate(per_results)
     ])
 
-    model = os.getenv("DEEPAGENTS_MODEL", "openai:gpt-4o")
     backend = FilesystemBackend(root_dir=Path.cwd())
 
     try:
@@ -114,7 +152,7 @@ async def reduce_merge_results(state: MapReduceState) -> MapReduceState:
             system_prompt="你是一个信息整合专家，擅长合并多源信息。",
         )
 
-        prompt = REDUCE_PROMPT.format(per_article_jsons=per_article_jsons[:20000])  # 截断保护
+        prompt = SOURCE_REDUCE_PROMPT.format(per_article_jsons=per_article_jsons)
         result = await agent.ainvoke({
             "messages": [{"role": "user", "content": prompt}]
         })
@@ -149,3 +187,23 @@ async def reduce_merge_results(state: MapReduceState) -> MapReduceState:
             "error": f"Reduce 汇总失败，已降级返回首篇结果。错误: {str(e)}",
         }
 
+
+## **state 是 Python 中的 字典解包（Dictionary Unpacking） 语法。
+"""
+假设 state 是一个字典，比如：
+
+state = {
+    "per_article_results": [...],
+    "some_other_key": "value",
+    "timestamp": "2026-04-28"
+}
+那么 {**state, "analysis_result": merged} 等价于：
+
+{
+    "per_article_results": [...],
+    "some_other_key": "value", 
+    "timestamp": "2026-04-28",
+    "analysis_result": merged   # ← 新增或覆盖这个键
+}
+
+"""

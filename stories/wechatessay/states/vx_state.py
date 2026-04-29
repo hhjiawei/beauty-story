@@ -174,7 +174,7 @@ class ArticleSearchNode(BaseModel):
         description="创作灵感补充（热点趋势、爆款逻辑、话题延伸、关键词优化）"
     )
 
-
+# ------------------------ ArticleBlueprintNode ------------------------------
 class WritingAnalysis(BaseModel):
     """写作角度分析"""
     model_config = ConfigDict(populate_by_name=True)

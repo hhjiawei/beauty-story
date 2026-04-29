@@ -1,8 +1,9 @@
+import json
+import re
 from pathlib import Path
 from typing import Optional, List
 import logging
 from wechatessay.states.vx_state import MapReduceState
-
 
 logger = logging.getLogger(__name__)
 
@@ -51,3 +52,17 @@ def split_articles(content: str, delimiter: str = "===== 文件:") -> List[str]:
     """将合并的文章内容拆分为单篇"""
     parts = content.split(delimiter)
     return [p.strip() for p in parts if p.strip()]
+
+
+def parse_json_response(content: str) -> dict:
+    """解析 LLM 的 JSON 响应"""
+    try:
+        content = content.strip()
+        content = re.sub(r'^```json\s*', '', content)
+        content = re.sub(r'^```\s*', '', content)
+        content = re.sub(r'\s*```$', '', content)
+        content = content.strip()
+        return json.loads(content)
+    except Exception as e:
+        print(f"[JSON 解析错误] {e}")
+        return {}
