@@ -1,25 +1,11 @@
 import json
 import re
 from pathlib import Path
-from typing import Optional, List
+from typing import List
 import logging
-from wechatessay.states.vx_state import MapReduceState
+
 
 logger = logging.getLogger(__name__)
-
-
-# 输入时创建 mapreduce state 传入 input_path
-def create_mapreduce_state(input_path: str, articles_content: Optional[str] = None) -> MapReduceState:
-    return {
-        "input_path": input_path,
-        "articles_content": articles_content,
-        "article_files": [],
-        "per_article_results": [],
-        "analysis_result": None,
-        "error": None,
-        "raw_response": None,
-    }
-
 
 # =============================================================================
 # 四、工具函数

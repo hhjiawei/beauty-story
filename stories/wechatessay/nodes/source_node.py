@@ -12,7 +12,7 @@ from deepagents.backends import FilesystemBackend
 from langchain_openai import ChatOpenAI
 
 from wechatessay.prompts.vx_prompt import SOURCE_REDUCE_PROMPT, SOURCE_MAP_PROMPT
-from wechatessay.states.vx_state import MapReduceState, ArticleAnalyseNode
+from wechatessay.states.vx_state import ArticleAnalyseNode, GraphState
 from wechatessay.utils.vx_util import split_articles, scan_article_files, read_article
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ model = ChatOpenAI(
 )
 
 
-async def map_analyze_single(state: MapReduceState) -> MapReduceState:
+async def map_analyze_single(state: GraphState) -> GraphState:
     """
     Map 阶段：读取所有文章文件，为每篇生成独立分析。
     注意：这里用顺序执行演示，生产环境建议用 asyncio.gather 并行。
@@ -119,7 +119,7 @@ async def map_analyze_single(state: MapReduceState) -> MapReduceState:
 # 六、Reduce 阶段 Node：跨篇汇总
 # =============================================================================
 
-async def reduce_merge_results(state: MapReduceState) -> MapReduceState:
+async def reduce_merge_results(state: GraphState) -> GraphState:
     """
     Reduce 阶段：将多篇分析结果汇总为一份统一的热点追踪表。
     """

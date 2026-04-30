@@ -112,29 +112,6 @@ class ArticleAnalyseNode(BaseModel):
     )
 
 
-# =============================================================================
-# 二、Map-Reduce 专用 State
-# =============================================================================
-
-class MapReduceState(TypedDict):
-    """Map-Reduce 工作流状态"""
-
-    # ── 输入 ──
-    input_path: str
-    articles_content: Optional[str]  # 可选：直接传入
-
-    # ── Map 阶段产出 ──
-    article_files: List[str]  # 扫描到的文章文件路径列表
-    per_article_results: List[ArticleAnalyseNode]  # 每篇文章的独立分析结果
-
-    # ── Reduce 阶段产出 ──
-    analysis_result: Optional[ArticleAnalyseNode]  # 最终汇总结果
-
-    # ── 控制 ──
-    error: Optional[str]
-    raw_response: Optional[dict[str, Any]]
-
-
 
 # ---------------- ArticleSearchNode ------------------
 
@@ -582,7 +559,8 @@ class GraphState(TypedDict):
     articles_content: Optional[str]    # 可选：直接传入内容，跳过文件读取
 
     # ── map-reduce层 ──
-    map_reduce_content: Optional[MapReduceState]  # 将文件内容通过map-reduce后的中间结果，最后会赋给analysis_result
+    article_files: List[str]  # 新增
+    per_article_results: List[ArticleAnalyseNode]  # 新增
 
     # ── 节点产出层（按工作流顺序） ──
     analysis_result: Optional[ArticleAnalyseNode]  # 文章分析（热点追踪表）
