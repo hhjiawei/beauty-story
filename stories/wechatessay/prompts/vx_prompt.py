@@ -249,11 +249,7 @@ PLOT_PROMPT = """
 ---
 
 # 输入信息（JSON格式）
-
-{writingAnalysis}
-{writingStyle}
-{writingTemplate}
-{writingPlan}
+{{blueprint_result}}
 
 ---
 
@@ -271,7 +267,6 @@ Reasoning & Execution Logic (请遵循以下逻辑进行创作):
 金句预埋： 根据 coreIdea，在重要落结束处预留一个有质量，押韵的“金句/总结位”，用于社交媒体传播
 
 ## 二、大纲结构（严格按以下模块输出）
-
 
 输出时，先完成"爆款预判"，再输出"大纲结构"。语言风格严格遵循输入中的 {writingStyle.finalStyle}，并在关键处给出"为什么这么写"的简要说明。
 

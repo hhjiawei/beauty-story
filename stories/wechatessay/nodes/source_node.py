@@ -17,7 +17,6 @@ from wechatessay.utils.vx_util import split_articles, scan_article_files, read_a
 
 logger = logging.getLogger(__name__)
 
-
 # 配置 API
 OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
 OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
@@ -41,6 +40,7 @@ model = ChatOpenAI(
     model=MODEL_NAME,
     temperature=1.5,
 )
+
 
 async def map_analyze_single(state: MapReduceState) -> MapReduceState:
     """
@@ -72,7 +72,7 @@ async def map_analyze_single(state: MapReduceState) -> MapReduceState:
 
     for file_path, article_text in valid_pairs:
         try:
-            agent = create_deep_agent( # 可以根据其他参数选用不同skill或者定制化
+            agent = create_deep_agent(  # 可以根据其他参数选用不同skill或者定制化
                 model=model,
                 backend=backend,
                 response_format=ArticleAnalyseNode,
@@ -182,9 +182,7 @@ async def reduce_merge_results(state: MapReduceState) -> MapReduceState:
         logger.error(f"Reduce 汇总失败: {e}")
         # 降级：返回第一篇的结果（避免完全失败）
         return {
-            **state,
-            "analysis_result": per_results[0],
-            "error": f"Reduce 汇总失败，已降级返回首篇结果。错误: {str(e)}",
+            "analysis_result": per_results[0]
         }
 
 

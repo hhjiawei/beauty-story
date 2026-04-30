@@ -581,6 +581,9 @@ class GraphState(TypedDict):
     input_path: str                    # 文章所在目录或文件路径（工作流入口）
     articles_content: Optional[str]    # 可选：直接传入内容，跳过文件读取
 
+    # ── map-reduce层 ──
+    map_reduce_content: Optional[MapReduceState]  # 将文件内容通过map-reduce后的中间结果，最后会赋给analysis_result
+
     # ── 节点产出层（按工作流顺序） ──
     analysis_result: Optional[ArticleAnalyseNode]  # 文章分析（热点追踪表）
     search_result: Optional[ArticleSearchNode]      # 热点调研

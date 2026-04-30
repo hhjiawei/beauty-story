@@ -1,57 +1,48 @@
 import json
 import logging
 
-from langgraph.constants import END
+from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
+from wechatessay.nodes import collect_node, analyse_node
+from wechatessay.nodes.plot_node import plot_node
 from wechatessay.nodes.source_node import map_analyze_single, reduce_merge_results
-from wechatessay.states.vx_state import MapReduceState
-from wechatessay.utils.vx_util import create_mapreduce_state
+from wechatessay.nodes.write_node import write_node
+from wechatessay.states.vx_state import MapReduceState, GraphState
 
 
-def build_mapreduce_graph(checkpointer=None):
-    """构建 Map-Reduce 分析 Graph"""
-    builder = StateGraph(MapReduceState)
+def create_sub_workflow():
+    # sub-graph
+    sub_map_reduce_graph = StateGraph(MapReduceState)
+    sub_map_reduce_graph.add_node("map_node", map_analyze_single)
+    sub_map_reduce_graph.add_node("reduce_node", reduce_merge_results)
 
-    builder.add_node("map_analyze", map_analyze_single)
-    builder.add_node("reduce_merge", reduce_merge_results)
+    sub_map_reduce_graph.set_entry_point("map_node")
+    sub_map_reduce_graph.add_edge("map_node", "reduce_node")
+    sub_map_reduce_graph.add_edge("reduce_node", END)
 
-    builder.set_entry_point("map_analyze")
-    builder.add_edge("map_analyze", "reduce_merge")
-    builder.add_edge("reduce_merge", END)
-
-    return builder.compile(checkpointer=checkpointer)
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    logging.basicConfig(level=logging.INFO)
+    map_reduce_graph = sub_map_reduce_graph.compile()
+    return map_reduce_graph
 
 
-    async def main():
-        state = create_mapreduce_state(input_path="")
-        graph = build_mapreduce_graph()
-        result = await graph.ainvoke(state)
+def create_main_workflow():
+    # main-graph
 
-        if result.get("error"):
-            print(f"错误: {result['error']}")
+    map_reduce_graph = create_sub_workflow()
 
-        if result.get("analysis_result"):
-            print("\\n=== 最终汇总结果 ===")
-            print(json.dumps(
-                result["analysis_result"].model_dump(by_alias=True),
-                ensure_ascii=False, indent=2
-            ))
+    main_graph = StateGraph(GraphState)
+    main_graph.add_node("map_reduce_node", map_reduce_graph)
+    main_graph.add_node("collect_node", collect_node)
+    main_graph.add_node("analyse_node", analyse_node)
+    main_graph.add_node("plot_node", plot_node)
+    main_graph.add_node("write_node", write_node)
 
-        print(f"\\n共分析 {len(result.get('per_article_results', []))} 篇文章")
+    main_graph.add_edge(START, "map_reduce_node")
+    main_graph.add_edge("map_reduce_node", "collect_node")
+    main_graph.add_edge("collect_node", "analyse_node")
+    main_graph.add_edge("analyse_node", "plot_node")
+    main_graph.add_edge("plot_node", "write_node")
+    main_graph.add_edge("write_node", END)
 
-
-    asyncio.run(main())
-
-
-
-
-
-
-
+    app = main_graph.compile()
+    return app
