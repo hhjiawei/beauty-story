@@ -1,7 +1,7 @@
 from wechatessay.prompts.vx_prompt import SOURCE_PROMPT, COLLECT_PROMPT, ANALYSE_PROMPT, PLOT_PROMPT, WRITE_PROMPT
 from wechatessay.states.vx_state import ArticleAnalyseNode, ArticleOutputNode, ArticlePlotNode, ArticleBlueprintNode, \
     ArticleSearchNode
-from wechatessay.tools.vx_tools import read_file, tavily_web_search
+from wechatessay.tools.base_tools import read_file, tavily_web_search
 
 
 # 根据用户输入内容，读取input路径下的所有文章，生成《热点追踪表》（含事件背景/信源清单/切入角度/风险评级），时间线、争议点标注
