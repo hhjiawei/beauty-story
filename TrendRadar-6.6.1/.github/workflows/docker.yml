@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - "v*" # 主项目版本
-      - "mcp-v*" # MCP 版本
+      - "mcp_tools-v*" # MCP 版本
   workflow_dispatch:
     inputs:
       image:
@@ -15,7 +15,7 @@ on:
         options:
           - all
           - crawler
-          - mcp
+          - mcp_tools
 
 env:
   REGISTRY: docker.io
@@ -23,9 +23,9 @@ env:
 jobs:
   build-crawler:
     runs-on: ubuntu-latest
-    # 条件：v* 标签（排除 mcp-v*）或手动触发选择 all/crawler
+    # 条件：v* 标签（排除 mcp_tools-v*）或手动触发选择 all/crawler
     if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && !startsWith(github.ref, 'refs/tags/mcp-v')) ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && !startsWith(github.ref, 'refs/tags/mcp_tools-v')) ||
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.image == 'all' || github.event.inputs.image == 'crawler'))
 
     steps:
@@ -73,10 +73,10 @@ jobs:
 
   build-mcp:
     runs-on: ubuntu-latest
-    # 条件：mcp-v* 标签 或手动触发选择 all/mcp
+    # 条件：mcp_tools-v* 标签 或手动触发选择 all/mcp_tools
     if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/mcp-v')) ||
-      (github.event_name == 'workflow_dispatch' && (github.event.inputs.image == 'all' || github.event.inputs.image == 'mcp'))
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/mcp_tools-v')) ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.image == 'all' || github.event.inputs.image == 'mcp_tools'))
 
     steps:
       - name: Checkout
@@ -113,7 +113,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: wantcat/trendradar-mcp
+          images: wantcat/trendradar-mcp_tools
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=${{ steps.version.outputs.major_minor }}
@@ -125,7 +125,7 @@ jobs:
           BUILDKIT_PROGRESS: plain
         with:
           context: .
-          file: ./docker/Dockerfile.mcp
+          file: ./docker/Dockerfile.mcp_tools
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

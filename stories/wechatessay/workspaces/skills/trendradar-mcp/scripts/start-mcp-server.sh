@@ -1,6 +1,6 @@
 #!/bin/bash
 # TrendRadar MCP 服务器启动脚本 (Linux/Mac)
-# 用法: ./start-mcp-server.sh [--transport stdio|http] [--port PORT]
+# 用法: ./start-mcp_tools-server.sh [--transport stdio|http] [--port PORT]
 
 set -e
 
@@ -108,8 +108,8 @@ fi
 # 进入项目目录
 cd "$PROJECT_ROOT"
 
-# 检查是否已安装 trendradar-mcp 命令
-if ! command -v trendradar-mcp &> /dev/null; then
+# 检查是否已安装 trendradar-mcp_tools 命令
+if ! command -v trendradar-mcp_tools &> /dev/null; then
     echo -e "${YELLOW}[INFO] 未找到全局 trendradar-mcp 命令，尝试使用 Python 模块运行${NC}"
     MCP_CMD="python -m mcp_server.server"
 else

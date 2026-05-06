@@ -164,22 +164,22 @@ cd D:/TrendRadar
 uv sync
 
 # 启动MCP服务器（stdio模式，默认）
-trendradar-mcp
+trendradar-mcp_tools
 
 # 或启动HTTP服务器（生产推荐）
-trendradar-mcp --transport=http --host=0.0.0.0 --port=3333
+trendradar-mcp_tools --transport=http --host=0.0.0.0 --port=3333
 ```
 
 #### 方式二：Docker部署（生产推荐）
 ```bash
 # 拉取镜像
-docker pull wantcat/trendradar-mcp
+docker pull wantcat/trendradar-mcp_tools
 
 # 运行容器
 docker run -p 3333:3333 \
   -v /path/to/config:/app/config \
   -v /path/to/data:/app/output \
-  wantcat/trendradar-mcp
+  wantcat/trendradar-mcp_tools
 ```
 
 #### 方式三：GitHub Actions自动部署
@@ -194,7 +194,7 @@ docker run -p 3333:3333 \
 {
   "mcpServers": {
     "trendradar": {
-      "command": "trendradar-mcp",
+      "command": "trendradar-mcp_tools",
       "args": ["--transport=stdio"],
       "env": {
         "TRENDRADAR_PROJECT_ROOT": "D:/TrendRadar"

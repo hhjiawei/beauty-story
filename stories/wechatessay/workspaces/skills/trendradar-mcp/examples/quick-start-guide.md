@@ -32,20 +32,20 @@ pip install -e .
 ### 2.1 方式一：使用启动脚本
 ```bash
 # Windows
-scripts\start-mcp-server.bat
+scripts\start-mcp_tools-server.bat
 
 # Linux/Mac
-chmod +x scripts/start-mcp-server.sh
-./scripts/start-mcp-server.sh
+chmod +x scripts/start-mcp_tools-server.sh
+./scripts/start-mcp_tools-server.sh
 ```
 
 ### 2.2 方式二：直接运行
 ```bash
 # stdio 模式（默认，适合本地 AI 助手连接）
-trendradar-mcp
+trendradar-mcp_tools
 
 # HTTP 模式（适合远程连接）
-trendradar-mcp --transport=http --host=0.0.0.0 --port=3333
+trendradar-mcp_tools --transport=http --host=0.0.0.0 --port=3333
 ```
 
 ### 2.3 方式三：Python 模块运行
@@ -62,7 +62,7 @@ python -m mcp_server.server
 {
   "mcpServers": {
     "trendradar": {
-      "command": "trendradar-mcp",
+      "command": "trendradar-mcp_tools",
       "args": ["--transport=stdio"],
       "env": {
         "TRENDRADAR_PROJECT_ROOT": "D:/TrendRadar"
@@ -190,13 +190,13 @@ ls output/
 ### 9.1 Docker 部署
 ```bash
 # 拉取镜像
-docker pull wantcat/trendradar-mcp
+docker pull wantcat/trendradar-mcp_tools
 
 # 运行容器
 docker run -p 3333:3333 \
   -v /path/to/config:/app/config \
   -v /path/to/data:/app/output \
-  wantcat/trendradar-mcp
+  wantcat/trendradar-mcp_tools
 ```
 
 ### 9.2 定时抓取
@@ -240,7 +240,7 @@ trendradar --version
 
 # 查看帮助
 trendradar --help
-trendradar-mcp --help
+trendradar-mcp_tools --help
 
 # 测试连接
 python -c "import mcp; print('MCP SDK 已安装')"

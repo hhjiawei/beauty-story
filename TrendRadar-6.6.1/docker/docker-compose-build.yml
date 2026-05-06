@@ -61,7 +61,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.mcp
-    container_name: trendradar-mcp
+    container_name: trendradar-mcp_tools
     restart: unless-stopped
 
     ports:

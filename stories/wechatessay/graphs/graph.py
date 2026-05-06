@@ -4,7 +4,9 @@ import logging
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
-from wechatessay.nodes import collect_node, analyse_node
+from wechatessay.nodes.collect_node import search_collect_node
+from wechatessay.nodes.analyse_node import blueprint_node
+
 from wechatessay.nodes.plot_node import plot_node
 from wechatessay.nodes.source_node import map_analyze_single, reduce_merge_results
 from wechatessay.nodes.write_node import write_node
@@ -18,8 +20,8 @@ def create_main_workflow():
 
     main_graph.add_node("map_node", map_analyze_single)
     main_graph.add_node("reduce_node", reduce_merge_results)
-    main_graph.add_node("collect_node", collect_node)
-    main_graph.add_node("analyse_node", analyse_node)
+    main_graph.add_node("collect_node", search_collect_node)
+    main_graph.add_node("analyse_node", blueprint_node)
     main_graph.add_node("plot_node", plot_node)
     main_graph.add_node("write_node", write_node)
 

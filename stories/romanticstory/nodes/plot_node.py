@@ -3,13 +3,13 @@ import json
 import os
 
 from deepagents import create_deep_agent
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
 from romanticstory.config.config import  llm
 from romanticstory.prompts.romantic_story_prompt import PLOT_PROMPT
 from romanticstory.states.romantic_story_state import MainState
-from utils.json_util import parse_json_response
+from wechatessay.utils.json_util import parse_json_response
 
 
 # 大纲 需要逻辑清晰，需要把前面的人物形象和剧情相结合并产出，需要合理的推理能力 deepseek-reasoner

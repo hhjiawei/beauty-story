@@ -1,13 +1,11 @@
 import json
-from typing import Optional
 from deepagents import create_deep_agent
 from langchain_openai import ChatOpenAI
 
-from utils.json_util import parse_json_response
+from wechatessay.utils.json_util import parse_json_response
 from wechatessay.config import composite_backend, store
 from wechatessay.prompts.vx_prompt import BLUEPRINT_PROMPT
-from wechatessay.states.vx_state import GraphState, ArticleBlueprintNode
-
+from wechatessay.states.vx_state import GraphState
 
 import os
 

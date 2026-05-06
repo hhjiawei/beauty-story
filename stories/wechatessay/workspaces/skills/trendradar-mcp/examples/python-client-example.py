@@ -4,7 +4,7 @@ TrendRadar MCP 客户端示例
 演示如何使用 MCP 客户端与 TrendRadar MCP 服务器交互
 
 前置要求:
-1. 安装 MCP SDK: pip install mcp
+1. 安装 MCP SDK: pip install mcp_tools
 2. 运行 TrendRadar MCP 服务器
 """
 
@@ -13,14 +13,14 @@ import json
 from typing import List, Dict, Any
 import sys
 
-# 检查是否已安装 mcp
+# 检查是否已安装 mcp_tools
 try:
     import mcp
     from mcp import ClientSession, StdioServerParameters
     from mcp.client import stdio
 except ImportError:
     print("错误: 未安装 MCP SDK")
-    print("安装命令: pip install mcp")
+    print("安装命令: pip install mcp_tools")
     sys.exit(1)
 
 
@@ -46,7 +46,7 @@ class TrendRadarClient:
         if self.transport == "stdio":
             # stdio 模式
             server_params = StdioServerParameters(
-                command="trendradar-mcp",
+                command="trendradar-mcp_tools",
                 args=["--transport=stdio"]
             )
             self.session = await stdio.connect_with_params(server_params)

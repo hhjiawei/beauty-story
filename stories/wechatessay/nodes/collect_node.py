@@ -1,12 +1,10 @@
 import json
 
-from typing import Optional
 from deepagents import create_deep_agent
-from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI  # 假设使用 OpenAI 模型
 
 from wechatessay.config import composite_backend, store
-from wechatessay.mcp.mcp_tool import trendradar_manager
+from wechatessay.tools.mcp_tools.mcp_tool import trendradar_manager
 from wechatessay.prompts.vx_prompt import COLLECT_PROMPT
 from wechatessay.states.vx_state import GraphState, ArticleSearchNode
 from wechatessay.tools.base_tools import tavily_web_search, create_file, read_file, shell_exec

@@ -33,9 +33,7 @@ def scan_article_files(txt_file_path: str, output_dir: str = None) -> list:
     # ===== 1. 确定输出目录 =====
     if output_dir is None:
         # 根据项目结构自动定位 sources 目录
-        current_file_dir = os.path.dirname(os.path.abspath(__file__))
-        output_dir = os.path.join(current_file_dir, "backends", "sources")
-
+        output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'backends', 'sources')
 
     # 计算 wechatessay 根目录（用于生成相对路径）
     wechatessay_root = os.path.dirname(os.path.dirname(output_dir))  # 向上回退两级到 wechatessay

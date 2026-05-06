@@ -1,8 +1,9 @@
 # romanticstory/main.py
+import asyncio
 from wechatessay.graphs.graph import create_main_workflow
 from wechatessay.states.vx_state import GraphState
 
-def main():
+async def main():
     app = create_main_workflow()
 
     initial_state: GraphState = {
@@ -15,21 +16,21 @@ def main():
 
         # ── 节点产出层（按工作流顺序） ──
         "analysis_result": {},  # 文章分析（热点追踪表）
-        "search_result": {},  # 热点调研
-        "blueprint_result": {},  # 写作蓝图
-        "plot_result": {},  # 写作指令/情节
-        "article_output": {},  # 最终文章输出
+        "search_result": {},    # 热点调研
+        "blueprint_result": {}, # 写作蓝图
+        "plot_result": {},      # 写作指令/情节
+        "article_output": {},   # 最终文章输出
 
         # ── 控制与调试层 ──
-        "error": "",  # 错误信息
-        "raw_response": "",  # LLM 原始响应（调试）
-        "current_node": ""  # 当前节点标识（追踪）
+        "error": "",            # 错误信息
+        "raw_response": "",     # LLM 原始响应（调试）
+        "current_node": ""      # 当前节点标识（追踪）
     }
 
     print("🚀 开始生成故事...")
 
-    # 运行工作流
-    for event in app.stream(initial_state):  # 这里加config
+    # 异步流式运行工作流
+    async for event in app.astream(initial_state):
         for node_name, output in event.items():
             print(f"\n✅ 节点 [{node_name}] 处理完毕")
             print(event)
@@ -39,7 +40,5 @@ def main():
     print("=" * 60)
 
 
-
-
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

@@ -35,7 +35,7 @@ body:
       required: true
 
   - type: input
-    id: mcp-version
+    id: mcp_tools-version
     attributes:
       label: 🔌 MCP Server 版本 (可选)
       description: 如果你是通过 MCP 使用，请填写 MCP Server 的版本。

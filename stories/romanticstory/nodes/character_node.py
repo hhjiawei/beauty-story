@@ -8,9 +8,9 @@ from romanticstory.config.config import  llm
 from romanticstory.prompts.romantic_story_prompt import CHARACTER_PROMPT
 from romanticstory.states.romantic_story_state import MainState
 import json
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 
-from utils.json_util import parse_json_response
+from wechatessay.utils.json_util import parse_json_response
 
 
 # 策划节点，需要灵感和天马行空的设计，大模型也需要偏设计一些的 条理要清晰，要有逻辑   deepseek-reasoner

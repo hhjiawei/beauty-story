@@ -1209,7 +1209,7 @@ def run_server(
             transport='http',
             host=host,
             port=port,
-            path='/mcp'  # HTTP 端点路径
+            path='/mcp_tools'  # HTTP 端点路径
         )
     else:
         raise ValueError(f"不支持的传输模式: {transport}")

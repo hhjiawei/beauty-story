@@ -385,7 +385,7 @@ class SystemManagementTools:
             版本检查结果字典，包含：
             - success: 是否成功
             - trendradar: TrendRadar 版本检查结果
-            - mcp: MCP Server 版本检查结果
+            - mcp_tools: MCP Server 版本检查结果
             - any_update: 是否有任何组件需要更新
 
         Example:
@@ -527,7 +527,7 @@ class SystemManagementTools:
                 },
                 "data": {
                     "trendradar": trendradar_result,
-                    "mcp": mcp_result,
+                    "mcp_tools": mcp_result,
                     "any_update": any_update
                 }
             }
