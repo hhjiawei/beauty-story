@@ -1,5 +1,5 @@
 # romanticstory/main.py
-from wechatessay.graph import create_main_workflow
+from wechatessay.graphs.graph import create_main_workflow
 from wechatessay.states.vx_state import GraphState
 
 
