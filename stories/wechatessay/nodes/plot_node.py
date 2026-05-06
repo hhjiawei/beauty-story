@@ -4,11 +4,35 @@ from deepagents import create_deep_agent
 from langchain_openai import ChatOpenAI
 
 from utils.json_util import parse_json_response
+from wechatessay.config import composite_backend, store
 from wechatessay.prompts.vx_prompt import PLOT_PROMPT
 from wechatessay.states.vx_state import (
     GraphState,
     ArticleBlueprintNode,
     ArticlePlotNode,
+)
+
+
+
+import os
+
+# deepseek-reasoner
+OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
+OPENAI_API_BASE = "https://api.deepseek.com"
+MODEL_NAME = "deepseek-chat"
+
+
+# # qwen  sk-5fd1dda940aa46d282873be7e02fcd82
+# OPENAI_API_KEY = "sk-5fd1dda940aa46d282873be7e02fcd82"
+# OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+# MODEL_NAME = "qwen3.6-plus"
+
+os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
+
+llm = ChatOpenAI(
+    model=MODEL_NAME,
+    temperature=1.5,
 )
 
 async def plot_node(state: GraphState) -> dict:
@@ -27,11 +51,12 @@ async def plot_node(state: GraphState) -> dict:
         blueprint_str = json.dumps(blueprint, ensure_ascii=False, indent=2)
 
     # 3. 创建 Deep Agent（不需要工具）
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.4)
     agent = create_deep_agent(
         model=llm,
         tools=[],
-        system_prompt="",
+        # system_prompt="",
+        backend=composite_backend,
+        store=store,
     )
 
     # 4. 格式化完整提示词（注入蓝图）

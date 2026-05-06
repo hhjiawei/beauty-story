@@ -11,6 +11,7 @@ from deepagents import create_deep_agent
 from deepagents.backends import FilesystemBackend
 from langchain_openai import ChatOpenAI
 
+from wechatessay.config import composite_backend, store
 from wechatessay.prompts.vx_prompt import SOURCE_REDUCE_PROMPT, SOURCE_MAP_PROMPT
 from wechatessay.states.vx_state import ArticleAnalyseNode, GraphState
 from wechatessay.utils.vx_util import split_articles, scan_article_files, read_article
@@ -18,14 +19,14 @@ from wechatessay.utils.vx_util import split_articles, scan_article_files, read_a
 logger = logging.getLogger(__name__)
 
 # 配置 API
-OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
-OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
-MODEL_NAME = "doubao-seed-2-0-pro-260215"
+# OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
+# OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
+# MODEL_NAME = "doubao-seed-2-0-pro-260215"
 
 # deepseek-reasoner
-# OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
-# OPENAI_API_BASE = "https://api.deepseek.com"
-# MODEL_NAME = "deepseek-reasoner"
+OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
+OPENAI_API_BASE = "https://api.deepseek.com"
+MODEL_NAME = "deepseek-chat"
 
 
 # # qwen  sk-5fd1dda940aa46d282873be7e02fcd82
@@ -77,7 +78,7 @@ async def map_analyze_single(state: GraphState) -> GraphState:
                 backend=backend,
                 tools=[],
                 response_format=ArticleAnalyseNode,
-                system_prompt="你是一个专业的微信公众号文章分析助手。",
+                # system_prompt="你是一个专业的微信公众号文章分析助手。",
             )
 
             prompt = SOURCE_MAP_PROMPT.format(article_content=article_text)  # 单篇截断保护
@@ -143,12 +144,12 @@ async def reduce_merge_results(state: GraphState) -> GraphState:
         for i, r in enumerate(per_results)
     ])
 
-    backend = FilesystemBackend(root_dir=Path.cwd())
 
     try:
         agent = create_deep_agent(
             model=model,
-            backend=backend,
+            backend=composite_backend,
+            store=store,
             response_format=ArticleAnalyseNode,
             system_prompt="你是一个信息整合专家，擅长合并多源信息。",
         )

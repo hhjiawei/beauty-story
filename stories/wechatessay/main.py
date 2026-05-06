@@ -2,7 +2,6 @@
 from wechatessay.graphs.graph import create_main_workflow
 from wechatessay.states.vx_state import GraphState
 
-
 def main():
     app = create_main_workflow()
 

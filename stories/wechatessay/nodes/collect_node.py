@@ -1,13 +1,35 @@
 import json
+
 from typing import Optional
 from deepagents import create_deep_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI  # 假设使用 OpenAI 模型
 
-
+from wechatessay.config import composite_backend, store
+from wechatessay.mcp.mcp_tool import trendradar_manager
 from wechatessay.prompts.vx_prompt import COLLECT_PROMPT
 from wechatessay.states.vx_state import GraphState, ArticleSearchNode
-from wechatessay.tools.base_tools import tavily_web_search
+from wechatessay.tools.base_tools import tavily_web_search, create_file, read_file, shell_exec
+
+import os
+
+# deepseek-reasoner
+OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
+OPENAI_API_BASE = "https://api.deepseek.com"
+MODEL_NAME = "deepseek-chat"
+
+# # qwen  sk-5fd1dda940aa46d282873be7e02fcd82
+# OPENAI_API_KEY = "sk-5fd1dda940aa46d282873be7e02fcd82"
+# OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+# MODEL_NAME = "qwen3.6-plus"
+
+os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
+
+llm = ChatOpenAI(
+    model=MODEL_NAME,
+    temperature=1.5,
+)
 
 
 async def search_collect_node(state: GraphState) -> dict:
@@ -21,19 +43,21 @@ async def search_collect_node(state: GraphState) -> dict:
     # 2. 格式化提示词，注入 analysis_result
     analysis_str = json.dumps(analysis, ensure_ascii=False, indent=2) if isinstance(analysis, dict) else str(analysis)
 
-    # 3. 创建 Deep Agent
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.2)  # 根据实际配置调整
+    mcp_tools = await trendradar_manager.get_tools()
 
     try:
 
         agent = create_deep_agent(
             model=llm,
-            tools=[tavily_web_search],
-            system_prompt="",
+            tools=[tavily_web_search, create_file, read_file, shell_exec] + mcp_tools,
+            # system_prompt="",
+            backend=composite_backend,
+            store=store,
             response_format=ArticleSearchNode
         )
 
         filled_prompt = COLLECT_PROMPT.format(analysis_result=analysis_str)
+
         response = await agent.ainvoke({
             "messages": [{"role": "user", "content": filled_prompt}]
         })
@@ -57,10 +81,8 @@ async def search_collect_node(state: GraphState) -> dict:
 
     # 5. 返回更新后的状态
     return {
-        "search_result": result,          # result 已经是 ArticleSearchNode 实例
-        "raw_response": None,              # 可根据需要保留调试信息
+        "search_result": result,  # result 已经是 ArticleSearchNode 实例
+        "raw_response": None,  # 可根据需要保留调试信息
         "current_node": "search_collect_node",
         "error": None
     }
-
-
