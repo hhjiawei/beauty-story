@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI  # 假设使用 OpenAI 模型
 
 from wechatessay.prompts.vx_prompt import COLLECT_PROMPT
 from wechatessay.states.vx_state import GraphState, ArticleSearchNode
-from wechatessay.tools.vx_tools import tavily_web_search
+from wechatessay.tools.base_tools import tavily_web_search
 
 
 async def search_collect_node(state: GraphState) -> dict:

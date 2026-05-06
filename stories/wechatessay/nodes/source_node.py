@@ -75,6 +75,7 @@ async def map_analyze_single(state: GraphState) -> GraphState:
             agent = create_deep_agent(  # 可以根据其他参数选用不同skill或者定制化
                 model=model,
                 backend=backend,
+                tools=[],
                 response_format=ArticleAnalyseNode,
                 system_prompt="你是一个专业的微信公众号文章分析助手。",
             )
