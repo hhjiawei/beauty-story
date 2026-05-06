@@ -1,0 +1,171 @@
+# TrendRadar MCP 服务器示例配置文件
+# 版本: 2.2.0
+
+# ===============================================================
+# 1. 基础设置
+# ===============================================================
+app:
+  timezone: "Asia/Shanghai"  # 时区配置，影响时间显示和数据存储
+  show_version_update: true   # 显示版本更新提示
+
+# ===============================================================
+# 2. 调度系统
+# ===============================================================
+schedule:
+  enabled: true              # 是否启用调度系统
+  preset: "morning_evening"  # 预设模板：always_on, morning_evening, office_hours, night_owl, custom
+
+# ===============================================================
+# 3. 数据源 - 热榜平台
+# ===============================================================
+platforms:
+  enabled: true              # 是否启用热榜平台抓取
+  sources:
+    # 基础平台配置（启用部分常用平台）
+    - id: "zhihu"
+      name: "知乎"
+    - id: "weibo"
+      name: "微博"
+    - id: "toutiao"
+      name: "今日头条"
+    - id: "baidu"
+      name: "百度热搜"
+    # 可选平台（按需启用）
+    # - id: "bilibili-hot-search"
+    #   name: "bilibili 热搜"
+    # - id: "douyin"
+    #   name: "抖音"
+    # - id: "thepaper"
+    #   name: "澎湃新闻"
+    # - id: "wallstreetcn-hot"
+    #   name: "华尔街见闻"
+
+# ===============================================================
+# 4. 数据源 - RSS 订阅
+# ===============================================================
+rss:
+  enabled: true              # 是否启用 RSS 抓取
+  freshness_filter:
+    enabled: true            # 启用新鲜度过滤
+    max_age_days: 1          # 最大文章年龄（天）
+  
+  feeds:
+    # 示例 RSS 源
+    - id: "hacker-news"
+      name: "Hacker News"
+      url: "https://hnrss.org/frontpage"
+    
+    - id: "yahoo-finance"
+      name: "雅虎财经"
+      url: "https://finance.yahoo.com/news/rssindex"
+    
+    # 自定义 RSS 源示例
+    # - id: "custom-feed"
+    #   name: "自定义源"
+    #   url: "https://example.com/feed.xml"
+    #   enabled: true
+    #   max_age_days: 3      # 覆盖全局新鲜度设置
+
+# ===============================================================
+# 5. 存储配置（MCP 服务器重要配置）
+# ===============================================================
+storage:
+  # 本地存储配置
+  local:
+    enabled: true
+    data_dir: "output"       # 数据存储目录
+  
+  # 远程存储配置（用于 GitHub Actions 等云端部署）
+  remote:
+    enabled: false           # 默认禁用
+    
+    # S3 兼容存储示例（Cloudflare R2, 腾讯云 COS 等）
+    # s3:
+    #   endpoint_url: "https://xxx.r2.cloudflarestorage.com"
+    #   bucket_name: "trendradar-data"
+    #   access_key_id: "${R2_ACCESS_KEY_ID}"     # 通过环境变量配置
+    #   secret_access_key: "${R2_SECRET_ACCESS_KEY}"
+  
+  # 数据同步配置
+  sync:
+    auto_pull: false         # 启动时自动从远程拉取数据
+    pull_days: 7             # 自动拉取最近 N 天数据
+
+# ===============================================================
+# 6. MCP 服务器特定配置
+# ===============================================================
+mcp:
+  # 传输模式配置
+  transport: "stdio"         # 或 "http"
+  
+  # HTTP 模式配置
+  http:
+    host: "0.0.0.0"
+    port: 3333
+    path: "/mcp"            # HTTP 端点路径
+  
+  # 工具默认设置（影响 AI token 消耗）
+  defaults:
+    news_limit: 50          # 默认返回新闻条数
+    include_url: false      # 默认不包含 URL（节省 token）
+    rss_limit: 50           # 默认返回 RSS 条数
+    include_summary: false  # 默认不包含摘要（节省 token）
+
+# ===============================================================
+# 7. 通知渠道配置（send_notification 工具使用）
+# ===============================================================
+notification:
+  channels:
+    # 飞书示例
+    # feishu:
+    #   webhook_url: "${FEISHU_WEBHOOK_URL}"
+    
+    # 钉钉示例  
+    # dingtalk:
+    #   webhook_url: "${DINGTALK_WEBHOOK_URL}"
+    
+    # Telegram 示例
+    # telegram:
+    #   bot_token: "${TELEGRAM_BOT_TOKEN}"
+    #   chat_id: "${TELEGRAM_CHAT_ID}"
+    
+    # 邮件示例
+    # email:
+    #   smtp_server: "smtp.gmail.com"
+    #   smtp_port: 587
+    #   from_address: "${EMAIL_FROM}"
+    #   password: "${EMAIL_PASSWORD}"
+    #   to_addresses:
+    #     - "user@example.com"
+
+# ===============================================================
+# 8. AI 分析配置（可选）
+# ===============================================================
+ai:
+  # 启用 AI 分析功能
+  enabled: false            # MCP 服务器中默认禁用，通过外部 AI 调用
+  
+  # 模型配置（如需在 MCP 工具中使用 AI 分析）
+  # model: "deepseek/deepseek-chat"  # LiteLLM 格式
+  # api_key: "${AI_API_KEY}"
+  # api_base: "https://api.deepseek.com"
+  
+  # 备用模型
+  # fallback_models:
+  #   - "openai/gpt-4o-mini"
+  #   - "anthropic/claude-3-5-sonnet"
+
+# ===============================================================
+# 环境变量覆盖说明
+# ===============================================================
+# 所有配置项都可以通过环境变量覆盖，格式：
+# TRENDRADAR_<SECTION>_<KEY>_<SUBKEY>
+# 例如：
+# - TRENDRADAR_APP_TIMEZONE="America/New_York"
+# - TRENDRADAR_PLATFORMS_ENABLED="false"
+# - TRENDRADAR_MCP_TRANSPORT="http"
+
+# 重要环境变量：
+# - TRENDRADAR_PROJECT_ROOT: 项目根目录路径
+# - TRENDRADAR_CONFIG_PATH: 配置文件路径
+# - TRENDRADAR_DATA_DIR: 数据存储目录

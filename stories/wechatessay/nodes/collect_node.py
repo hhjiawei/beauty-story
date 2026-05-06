@@ -50,7 +50,7 @@ async def search_collect_node(state: GraphState) -> dict:
         agent = create_deep_agent(
             model=llm,
             tools=[tavily_web_search, create_file, read_file, shell_exec] + mcp_tools,
-            # system_prompt="",
+            system_prompt="",
             backend=composite_backend,
             store=store,
             response_format=ArticleSearchNode
