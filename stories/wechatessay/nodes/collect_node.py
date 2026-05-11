@@ -11,6 +11,8 @@ from wechatessay.tools.base_tools import tavily_web_search, create_file, read_fi
 
 import os
 
+from wechatessay.utils.vx_util import parse_json_response
+
 # deepseek-reasoner
 OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
 OPENAI_API_BASE = "https://api.deepseek.com"
@@ -51,7 +53,6 @@ async def search_collect_node(state: GraphState) -> dict:
             system_prompt="",
             backend=composite_backend,
             store=store,
-            response_format=ArticleSearchNode
         )
 
         filled_prompt = COLLECT_PROMPT.format(analysis_result=analysis_str)
@@ -60,15 +61,12 @@ async def search_collect_node(state: GraphState) -> dict:
             "messages": [{"role": "user", "content": filled_prompt}]
         })
 
-        # 提取结构化输出（假设 deepagents 按常规 LangChain 方式存放）
-        if hasattr(response, "structured_response"):
-            result = response.structured_response
-        elif isinstance(response, dict) and "structured_response" in response:
-            result = response["structured_response"]
-        else:
-            # 兜底：从最后一条消息解析 JSON
-            content = response["messages"][-1].content
-            result = ArticleSearchNode(**json.loads(content))
+        # 提取最后一条消息的内容（字符串）
+        content = response["messages"][-1].content
+
+        # 解析 JSON 响应（该函数会清理 markdown 并返回 dict）
+        collect_data = parse_json_response(content)
+
 
     except Exception as e:
         return {
@@ -79,7 +77,7 @@ async def search_collect_node(state: GraphState) -> dict:
 
     # 5. 返回更新后的状态
     return {
-        "search_result": result,  # result 已经是 ArticleSearchNode 实例
+        "search_result": collect_data,  # result 已经是 ArticleSearchNode 实例
         "raw_response": None,  # 可根据需要保留调试信息
         "current_node": "search_collect_node",
         "error": None

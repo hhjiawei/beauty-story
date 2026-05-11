@@ -8,7 +8,7 @@ async def main():
 
     initial_state: GraphState = {
         # ── 输入层 ──
-        "input_path": "",  # 文章所在目录或文件路径（工作流入口）
+        "input_path": "D:\\beauty-story\\stories\\wechatessay\\backends\\sources\\source.txt",  # 文章所在目录或文件路径（工作流入口）
         "articles_content": "",  # 可选：直接传入内容，跳过文件读取
 
         # ── map-reduce层 ──

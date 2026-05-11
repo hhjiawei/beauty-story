@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI
 from wechatessay.config import composite_backend, store
 from wechatessay.prompts.vx_prompt import SOURCE_REDUCE_PROMPT, SOURCE_MAP_PROMPT
 from wechatessay.states.vx_state import ArticleAnalyseNode, GraphState
-from wechatessay.utils.vx_util import split_articles, scan_article_files, read_article
+from wechatessay.utils.vx_util import split_articles, scan_article_files, read_article, parse_json_response
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # deepseek-reasoner
 OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
 OPENAI_API_BASE = "https://api.deepseek.com"
-MODEL_NAME = "deepseek-chat"
+MODEL_NAME = "deepseek-reasoner"
 
 
 # # qwen  sk-5fd1dda940aa46d282873be7e02fcd82
@@ -77,7 +77,6 @@ async def map_analyze_single(state: GraphState) -> GraphState:
                 model=model,
                 backend=backend,
                 tools=[],
-                response_format=ArticleAnalyseNode,
                 # system_prompt="你是一个专业的微信公众号文章分析助手。",
             )
 
@@ -86,19 +85,8 @@ async def map_analyze_single(state: GraphState) -> GraphState:
                 "messages": [{"role": "user", "content": prompt}]
             })
 
-            structured = result.get("structured_response")
-            if isinstance(structured, dict):
-                analysis = ArticleAnalyseNode.model_validate(structured)
-            elif isinstance(structured, ArticleAnalyseNode):
-                analysis = structured
-            else:
-                # 兜底解析
-                msgs = result.get("messages", [])
-                if msgs:
-                    parsed = json.loads(msgs[-1].content)
-                    analysis = ArticleAnalyseNode.model_validate(parsed)
-                else:
-                    raise ValueError("无结构化响应")
+            response = result["messages"][-1]
+            analysis = parse_json_response(response.content)
 
             per_results.append(analysis)
             logger.info(f"  ✓ {file_path} -> {analysis.hotspot_title[:30]}...")
@@ -150,7 +138,6 @@ async def reduce_merge_results(state: GraphState) -> GraphState:
             model=model,
             backend=composite_backend,
             store=store,
-            response_format=ArticleAnalyseNode,
             system_prompt="你是一个信息整合专家，擅长合并多源信息。",
         )
 
@@ -159,20 +146,10 @@ async def reduce_merge_results(state: GraphState) -> GraphState:
             "messages": [{"role": "user", "content": prompt}]
         })
 
-        structured = result.get("structured_response")
-        if isinstance(structured, dict):
-            merged = ArticleAnalyseNode.model_validate(structured)
-        elif isinstance(structured, ArticleAnalyseNode):
-            merged = structured
-        else:
-            msgs = result.get("messages", [])
-            if msgs:
-                parsed = json.loads(msgs[-1].content)
-                merged = ArticleAnalyseNode.model_validate(parsed)
-            else:
-                raise ValueError("Reduce 阶段无结构化响应")
+        response = result["messages"][-1]
 
-        logger.info(f"  ✓ 汇总完成: {merged.hotspot_title}")
+        # 解析 JSON 响应
+        merged = parse_json_response(response.content)
 
         return {
             **state,
