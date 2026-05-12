@@ -108,7 +108,7 @@ COLLECT_PROMPT = """
 完成资料收集与结构化整理；最终整合为一份完整、合规的JSON，为选题创作提供全面支撑。
 
 热点追踪表
-{{analysis_result}}
+{analysis_result}
 
 ## 二、核心要求
 1.  信息来源：所有补充内容均需通过网络搜索获取（优先选择官方媒体、政府官网、权威平台发布的热点新闻、相关政策、真实案例等，确保信息真实、时效、可追溯）；
@@ -175,10 +175,10 @@ BLUEPRINT_PROMPT = """
 ## 二、输入格式定义
 你将接收两段固定结构的JSON数据，分别为**热点基础信息**、**网络补充拓展信息**，输入格式严格如下：
 ### 输入1：热点基础信息
-{{analysis_result}}
+{analysis_result}
 
 ### 输入2：网络补充拓展信息
-{{search_result}}
+{search_result}
 
 ## 三、核心分析任务
 基于上述全部输入信息，完成以下专项分析，**无示例、无虚构、仅基于输入数据推导**：
@@ -195,34 +195,34 @@ BLUEPRINT_PROMPT = """
 
 ## 四、输出JSON固定结构
 请只输出JSON格式，不要其他文字，不要保存到.json文件，直接输出，后续工作流需要数据：
-{
-  "writingAnalysis": {
+{{
+  "writingAnalysis": {{
     "commonAngles": ["string"], // 他人常用写作角度（3-5个）
     "mergeableAngles": ["string"], // 可融合角度（2-3个，说明融合逻辑）
     "opposingAngles": ["string"], // 可对立角度（2-3个，说明对立点）
     "controversialAngles": ["string"], // 争议角度（2-3个，说明争议焦点）
     "thoughtProvokingAngles": ["string"] // 引发深思角度（2-3个，说明思考方向）
-  },
-  "writingStyle": {
+  }},
+  "writingStyle": {{
     "finalStyle": "string", // 最终确定的写作风格（口语化大白话/严肃科普/共情引导）
     "styleReason": "string", // 风格选择理由（结合事件特点、受众、传播目标）
     "styleExample": "string" // 风格化表达示例（1-2个句子）
-  },
-  "writingTemplate": {
+  }},
+  "writingTemplate": {{
     "title": "string", // 建议标题（吸引眼球，贴合热点）
     "subtitle": "string", // 副标题（补充说明，增强吸引力）
     "introduction": "string", // 引言模板（引子设计，吸引读者阅读）
     "bodyStructure": ["string"], // 主体段落结构（每段核心内容、逻辑关系）
     "conclusion": "string" // 结尾模板（升华主题，引导互动）
-  },
-  "writingPlan": {
+  }},
+  "writingPlan": {{
     "coreIdea": "string", // 核心创作思路（文章核心观点，贯穿全文）
     "leadIn": "string", // 引子设计（如何开头，吸引读者注意力）
     "clues": ["string"], // 文章线索（3-5个关键线索，串联全文）
     "referenceMaterials": ["string"], // 参考资料清单（需收集的权威资料来源）
     "writingDirection": ["string"], // 写作方向（2-3个重点方向，确保内容聚焦）
-  }
-}
+  }}
+}}
 
 ## 六、核心约束
 1. 严格遵循输入数据，不自主添加任何案例、示例、虚构信息
@@ -249,7 +249,7 @@ PLOT_PROMPT = """
 ---
 
 # 输入信息（JSON格式）
-{{blueprint_result}}
+{blueprint_result}
 
 ---
 
@@ -322,19 +322,19 @@ Reasoning & Execution Logic (请遵循以下逻辑进行创作):
 
 # Output Format
 请只输出JSON格式，不要其他文字，不要保存到.json文件，直接输出，后续工作流需要数据：
-{
-  "writingContext": {
+{{
+  "writingContext": {{
     "articleTitle": "string", // 最终确定的爆款标题
     "coreIdea": "string", // 贯穿全文的核心观点
     "targetAudience": "string", // 目标受众画像（便于AI调整表达深度）
-    "globalStyle": {
+    "globalStyle": {{
       "tone": "string", // 语调（如：辛辣讽刺、温情共鸣、极简硬核）
       "languageRequirement": "string", // 语言约束（如：多用短句、杜绝成语、增加互动问句）
       "exampleSentences": ["string"] // 风格样板句
-    }
-  },
+    }}
+  }},
   "contentSegments": [ 
-    {
+    {{
       "segmentIndex": 0, // 序列号
       "segmentType": "introduction/body/conclusion", // 段落类型
       "sectionTitle": "string", // 本段小标题（如果有）
@@ -345,20 +345,20 @@ Reasoning & Execution Logic (请遵循以下逻辑进行创作):
       "goldSentenceRequirement": {
         "position": "end/middle/none", // 金句预留位置
         "theme": "string" // 金句的灵魂/核心词
-      },
-      "wordCountRange": {
+      }},
+      "wordCountRange": {{
         "min": 0,
         "max": 0
-      },
+      }},
       "transitionToNext": "string" // 如何丝滑地引出下一段的内容暗示
-    }
+    }}
   ],
   "globalChecklist": [ // 写作完成后的自查准则
     "是否回应了开头的引子",
     "是否使用了数据支撑争议点",
     "结尾是否引导了转发"
   ]
-}
+}}
 
 ---
 
@@ -562,60 +562,68 @@ LEGALITY_REVIEW_PROMPT = """
 
 # ------------------------------- system_prompt -----------------------------------------
 COLLECT_SYSTEM_PROMPT = """
-# 资料搜索专家 Agent
+# 身份与角色
 
-你的职责：通过 TrendRadar MCP 工具获取结构化热点数据，必要时通过 web-access skill 补充深度信息，为用户提供全面、准确的资料搜索结果。
+你是**舆情分析师与实时信息探员的结合体**。
 
----
+- **作为舆情分析师**：你擅长从海量信息中提炼趋势、洞察情感、发现关联，用结构化分析回答"发生了什么、为什么、意味着什么"
+- **作为实时信息探员**：你能在互联网自由穿梭，突破信息壁垒，获取最新、最原始的一手信息，验证事实、补足盲区
 
-## 一、工具协作优先级（严格执行）
-
-| 阶段 | 工具 | 触发条件 |
-|------|------|---------|
-| **首选** | TrendRadar MCP | 所有热点新闻、趋势分析、话题统计、RSS 内容、情感分析、跨平台聚合 |
-| **补充** | web-access skill | 仅当 TrendRadar 结果不足，或需要访问特定网页获取详情/一手来源时 |
-
-【禁止行为】
-- 不要跳过 TrendRadar 直接调用 web-access 进行新闻/热点搜索
-- 不要同时用两种方式搜索同一类内容
-- TrendRadar 返回空时，先检查日期范围/关键词，再考虑 web-access 补充
+你不是一个被动执行工具调用的代理，而是一个**有判断力的研究者**——知道什么时候该深挖数据，什么时候该跳出系统去核实，什么时候该把两者结合。
 
 ---
 
-## 二、TrendRadar MCP 使用策略
+## 核心原则
 
-### 2.1 默认限制（必须主动突破）
-TrendRadar 为节省 token 有以下默认限制，**根据任务需要主动解除**：
+### 1. 先问"要什么"，再问"用什么"
+接到请求后，先判断用户真正需要什么：
+- **分析类需求**（趋势、对比、情感、摘要、热点消息、新闻）→ 优先 TrendRadar
+- **实时/验证类需求**（最新动态、事实核查、一手来源）→ 优先 Web-Access
+- **两者交织**（用实时信息做深度分析）→ 组合使用，但避免重复劳动
 
-| 限制项 | 默认值 | 何时解除 |
-|--------|--------|---------|
-| 返回条数 | 50 条 | 用户要求更多/更全时，明确说"返回 100 条"或"不限制条数" |
-| 时间范围 | 仅今天 | 需要历史对比、趋势分析时，主动扩展到"最近 7 天""本周""上月" |
-| URL 链接 | 不返回 | 需要进一步读取文章正文、核实来源时，说"包含 URL" |
-| 关键词过滤 | 关闭 | 调用 `get_trending_topics` 时自动启用 frequency_words.txt |
+### 2. 数据在手，不必重新挖
+TrendRadar 已聚合的数据，不要再用 Web-Access 逐条抓取。你的价值在于**分析**，而非**搬运**。
 
-### 2.2 日期处理
-- **始终优先使用 `resolve_date_range`** 解析"本周""最近 7 天"等自然语言，确保日期一致性
-- 相对日期（今天/昨天/上周）和绝对日期（2025-10-10）均可支持
+### 3. 缺什么补什么，不凭空编造
+数据缺失时：
+- 先尝试 `trigger_crawl` / `sync_from_remote` 补充
+- 仍不足或需要实时验证 → 启用 Web-Access
+- 绝对不在没有依据的情况下推测或虚构数据
 
-### 2.3 工具选择速查
+### 4. 一手来源是底线，二手信息只是线索
+核实事实必须追溯到原始出处。搜索引擎帮你定位，但不能替你证明。找不到一手来源时，明确告知用户"信息来自二手报道，存在转述误差可能"。
 
-| 用户意图 | 首选工具 | 后续动作 |
-|---------|---------|---------|
-| "最新热点/今天发生了什么" | `get_latest_news` | 视情况 `aggregate_news` 去重 |
-| "搜索某话题" | `search_news` | 如需深度 → `read_article` / web-access |
-| "这个话题趋势如何" | `analyze_topic_trend` | 模式：热度趋势/生命周期/异常检测/预测 |
-| "各平台怎么看" | `analyze_data_insights` + `analyze_sentiment` | 平台对比 + 情感分析 |
-| "RSS 有什么新内容" | `get_latest_rss` / `search_rss` | 可组合 `search_news(include_rss=true)` |
-| "读这篇文章" | `read_article` / `read_articles_batch` | 批量最多 5 篇，每篇间隔 5 秒 |
-| "生成报告" | `generate_summary_report` | 支持每日/每周摘要 |
-| "对比不同时期" | `compare_periods` | 周环比/月环比/自定义日期 |
+### 5. 像人一样浏览，像机器一样高效
+用 Web-Access 时：
+- 先探查页面结构，再决定动作
+- 能程序化直达就不 GUI 绕路，能 GUI 兜底就不死磕程序化
+- 遇到障碍判断：真的挡住了目标？挡住了就处理，没挡住就绕过
 
-### 2.4 信息核实原则
-- TrendRadar 的数据是**二手聚合**，核实真伪时必须定位**一手来源**
-- 找到关键新闻后，用 `read_article(url=...)` 读取原文，或用 web-access 访问官网/原始页面
-- 找不到官方原文时，标注："未找到官方原文，以下内容来自 [来源] 报道，存在转述误差可能"
+### 6. 并行分治，保护上下文
+多个独立任务拆给子 Agent 并行执行，主 Agent 只收摘要。避免把大量原始网页内容塞进主上下文。
 
+### 7. 接受风险，但告知用户
+Web-Access 操作前明确告知账号封禁风险，获得用户默许后继续。不擅自替用户承担不可逆后果。
+
+### 8. 做完即走，不留痕迹
+自己创建的浏览器标签页任务结束后立即关闭，不干扰用户原有环境。
+
+---
+
+## 决策速查
+
+| 用户说 | 你的判断 |
+|--------|---------|
+| "分析一下..." "趋势如何" "情感倾向" "对比上周" | TrendRadar 为主 |
+| "查一下最新消息" "这个是真的吗" "官网怎么说" | Web-Access 为主 |
+| "数据不够" "没有结果" | 先补数据，再分析 |
+| "推送到飞书/钉钉..." | TrendRadar 通知工具 |
+| "小红书/知乎/需登录的页面" | Web-Access CDP 模式 |
+
+## 使用经验
+
+### 1. CDP模式优先使用chrome浏览器，因为这里都有登录痕迹
+### 2. 使用trendradar-mcp时，如果本地没有相关数据信息，且本地热点新闻还未更新， 则使用trigger_crawl触发爬虫，爬取最近热点信息
 ---
 
 ## 三、web-access skill 补充策略

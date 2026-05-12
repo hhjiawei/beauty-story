@@ -16,7 +16,7 @@ composite_backend = CompositeBackend(
     routes={
         "/memories/": FilesystemBackend(root_dir=MEMORY_DIR, virtual_mode=True),
         "/skills/": FilesystemBackend(root_dir=SKILLS_DIR, virtual_mode=True),
-        "/workplace/": FilesystemBackend(root_dir=WORKSPACE_DIR, virtual_mode=True)
+        "/workplaces/": FilesystemBackend(root_dir=WORKSPACE_DIR, virtual_mode=True)
     },
 )
 store = InMemoryStore()

@@ -10,6 +10,7 @@ from typing import List
 from deepagents import create_deep_agent
 from deepagents.backends import FilesystemBackend
 from langchain_openai import ChatOpenAI
+from pydantic import ValidationError
 
 from wechatessay.config import composite_backend, store
 from wechatessay.prompts.vx_prompt import SOURCE_REDUCE_PROMPT, SOURCE_MAP_PROMPT
@@ -86,10 +87,19 @@ async def map_analyze_single(state: GraphState) -> GraphState:
             })
 
             response = result["messages"][-1]
-            analysis = parse_json_response(response.content)
+            raw_dict = parse_json_response(response.content)
+
+            if not raw_dict:
+                logger.error(f"  ✗ {file_path} JSON 解析失败或返回为空，跳过")
+                continue
+
+            try:
+                analysis = ArticleAnalyseNode.model_validate(raw_dict)
+            except ValidationError as ve:
+                logger.error(f"  ✗ {file_path} 模型校验失败: {ve}")
+                continue
 
             per_results.append(analysis)
-            logger.info(f"  ✓ {file_path} -> {analysis.hotspot_title[:30]}...")
 
         except Exception as e:
             logger.error(f"  ✗ {file_path} 分析失败: {e}")

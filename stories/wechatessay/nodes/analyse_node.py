@@ -12,7 +12,7 @@ import os
 # deepseek-reasoner
 OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
 OPENAI_API_BASE = "https://api.deepseek.com"
-MODEL_NAME = "deepseek-chat"
+MODEL_NAME = "deepseek-reasoner"
 
 
 # # qwen  sk-5fd1dda940aa46d282873be7e02fcd82
@@ -78,7 +78,4 @@ async def blueprint_node(state: GraphState) -> dict:
     # 5. 返回更新状态
     return {
         "blueprint_result": char_data,
-        "raw_response": None,
-        "current_node": "blueprint_node",
-        "error": None,
     }
