@@ -9,7 +9,7 @@ from langchain_openai import ChatOpenAI
 from romanticstory.config.config import llm
 from romanticstory.prompts.romantic_story_prompt import POLISH_PROMPT
 from romanticstory.states.romantic_story_state import MainState, SegmentState
-from wechatessay.utils.json_util import parse_json_response
+from wechatessay_old.utils.json_util import parse_json_response
 
 
 # 配置 API

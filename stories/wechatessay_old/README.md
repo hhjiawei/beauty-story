@@ -1724,25 +1724,847 @@ D+1（复盘日）：
 *本指南持续更新，建议团队每月复盘爆款标题，提炼可复用模式。*
 
 
-
+    
 ------------------------------------------------------
+需要你基于langgraph为框架，deepagents作为每个node的节点的智能体，帮我设计node ,graph,prompt,state,下面是我的任务流程
 
-# 豆包方案
+# 任务流程：
+1 txt文档中存入若干微信公众号文章列表
+2 将各个文章内容投喂给AI 让他分析出全篇的基本信息，以及事件侧重点等额外信息 最后整合成一个消息清单，（这里选择什么数据结构呢？） 
+3 消息补充：网上搜索相关内容，从知乎高赞文章高赞评论、今日头条、个人观点高赞内容中继续搜索，搜索内容需要是汇总消息额外的消息 这里需要人机协同 每次收集完成
+  需要人工检查 若不满意 则提出修改意见
+
+4 整合相关内容，分析都可以从哪些角度写该事件 哪些可以融合 哪些可以对立 哪些有争议 哪些容易引发深思 判定风格 需要人工检查 若不满意 则提出修改意见
+
+5 整理大纲  需要人机协同  若不满意 则提出修改意见 
+6 开始写作 需要人机协同  若不满意 则提出修改意见
+7 排版  需要人机协同  若不满意 则提出修改意见 
+8 检查 错别字 AI感
+9 发布
+
+# 节点介绍
+节点1：source_node 基本信息源节点 
+节点2：collect_node 收集信息节点
+节点3：analyse_node 分析节点
+节点4：plot_node 大纲节点
+节点5：write_node 写作节点
+节点6：composition_node 排版节点
+节点7：legality_node 合规性检测节点
+节点8：publish_node 发布节点
+
+**以上是我的工作流程，其中1,2步骤是一个节点，其他每个步骤对应一个节点**
+**每个节点内都要以下逻辑：调用大模型 → 判断是否需要工具 → 需要就执行工具 → 把结果塞回历史 → 再调用大模型。直到大模型觉得任务完成了，不再调用工具，循环才结束。**
+**可以考虑自动进化机制，用户每次提出修改意见后，可以将修改内容总结记录到memories中，让系统对用户的习惯更加了解**
+
+# 现有的state目前是： 
+
+1 总的state：
+class GraphState(TypedDict):
+
+    # ── 输入层 ──
+    input_path: str                    # 文章所在目录或文件路径（工作流入口）
+
+    per_article_results: List[PerArticleAnalyseNode]  # 将各个文章内容投喂给AI 让他分析出全篇的基本信息和额外信息
+
+    total_article_results: TotalArticleAnalyseNode  # 将List[ArticleAnalyseNode]进行汇总 得到TotalArticleAnalyseNode
+
+    # ── 节点产出层（按工作流顺序） ──
+    search_result: Optional[ArticleSearchNode]      #  热点调研 根据TotalArticleAnalyseNode 进行搜索相关信息 例如进行补充，和额外不同观点信息等 并且将搜索到的内容和TotalArticleAnalyseNode进行合并后返回
+ 
+    blueprint_result: Optional[ArticleBlueprintNode] # 写作蓝图 根据ArticleSearchNode中的内容，分析写作思路，罗列好素材
+
+    plot_result: Optional[ArticlePlotNode]          # 写作指令/情节 根据ArticleBlueprintNode的思路和素材创建大纲
+
+    article_output: Optional[ArticleOutputNode]     # 写作内容 根据大纲内容
+    
+    composition_result: Optional[ArticleOutputNode] # 排版后的内容
+
+    legality_result: Optional[ArticleOutputNode]    # 全面检查后的内容
+
+2 每篇文章提取内容的state
+class PerArticleAnalyseNode(TypedDict):
+       
+     """
+    热点公众号文章创作输入模型 单篇/汇总后的热点追踪表
+
+    用于结构化描述热点事件及创作指导参数，
+    可直接作为 LLM Prompt 的上下文数据源。
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    hotspot_title: str = Field(
+        ...,
+        alias="hotspotTitle",
+        description="热点标题/话题（精准概括事件核心，贴合公众号标题调性）"
+    )
+    vertical_track: str = Field(
+        ...,
+        alias="verticalTrack",
+        description="垂直赛道"
+    )
+    core_demand: str = Field(
+        ...,
+        alias="coreDemand",
+        description="核心诉求/摘要（概括热点本质，明确事件核心问题）"
+    )
+    emotional_tendency: Literal["positive", "negative", "neutral"] = Field(
+        ...,
+        alias="emotionalTendency",
+        description="情感倾向（positive/negative/neutral）"
+    )
+    writing_style: str = Field(
+        ...,
+        alias="writingStyle",
+        description="文风建议（口语化大白话/严肃科普/共情引导及适配理由）"
+    )
+    writing_structure: str = Field(
+        ...,
+        alias="writingStructure",
+        description="行文结构建议（总分总/观点前置/案例穿插/情绪递进及理由）"
+    )
+    event_line: List[str] = Field(
+        default_factory=list,
+        alias="eventLine",
+        description="事件发展经历阶段"
+    )
+    region_scope: str = Field(
+        ...,
+        alias="regionScope",
+        description="精准地域范围（城市/区县/街道/小区/路段）"
+    )
+    public_complaints: str = Field(
+        ...,
+        alias="publicComplaints",
+        description="民间高频吐槽点"
+    )
+    data_comparison: DataComparison = Field(
+        ...,
+        alias="dataComparison",
+        description="数据&对比信息"
+    )
+    extended_content: ExtendedContent = Field(
+        ...,
+        alias="extendedContent",
+        description="延伸拔高素材"
+    )
+    creation_ideas: List[str] = Field(
+        default_factory=list,
+        alias="creationIdeas",
+        description="切入点与创作思路（核心字段，如普通人维权技巧、官方处置效率、痛点反思等）"
+    )
+
+这里都是固定要提前的内容，还要设计几个字段 可以提取一些额外的，该文章特有的、洗稿需要的素材，需要你设计一下这个字段，作为补充信息
+
+class DataComparison(BaseModel):
+    """数据与对比信息"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    key_specific_data: str = Field(
+        ...,
+        alias="keySpecificData",
+        description="关键具象数据（如物业费上涨20%、涉及300户居民）"
+    )
+    horizontal_comparison: Optional[str] = Field(
+        None,
+        alias="horizontalComparison",
+        description="横向对比（如与周边区域、往期情况对比，无则null）"
+    )
+
+
+class ExtendedContent(BaseModel):
+    """延伸拔高素材"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    macro_background: str = Field(
+        ...,
+        alias="macroBackground",
+        description="宏观背景环境（社会、政策背景）"
+    )
+    deep_reasons: str = Field(
+        ...,
+        alias="deepReasons",
+        description="深层原因（根本原因，不局限于表面现象）"
+    )
+    positive_focus: str = Field(
+        ...,
+        alias="positiveFocus",
+        description="正向落点（积极举措、改进方向，提升账号质感）"
+    )
+
+
+3 网络信息收集的state
+class ArticleSearchNode(BaseModel):
+    """
+    热点事件网络调研产出模型
+
+    基于搜索引擎、官方信源、社交媒体等渠道，
+    对热点事件进行事实补充、角度挖掘、素材整理与争议梳理的结构化产出。
+    通常作为 ArticleSearchNode 的前置研究节点，为创作提供弹药。
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    cause_process_result: str = Field(
+        ...,
+        alias="causeProcessResult",
+        description="事件起因、经过、结果补充（完善时间线，明确事件定性，补充一线现场细节）"
+    )
+    topic_angle: str = Field(
+        ...,
+        alias="topicAngle",
+        description="创作角度补充（3-5个贴合的爆款角度，结合痛点与用户需求）"
+    )
+    topic_material: str = Field(
+        ...,
+        alias="topicMaterial",
+        description="支撑材料补充（官方文件、权威报道、真实案例、数据，确保可追溯）"
+    )
+    controversial_points: str = Field(
+        ...,
+        alias="controversialPoints",
+        description="争议焦点梳理（网友评论、多方回应、媒体解读、高频吐槽、遗留争议）"
+    )
+    creation_inspiration: str = Field(
+        ...,
+        alias="creationInspiration",
+        description="创作灵感补充（热点趋势、爆款逻辑、话题延伸、关键词优化）"
+    )
+帮我想想还有哪些信息可以从联网搜索，得到的结果很必要的保存
+
+4 ArticleBlueprintNode 写作思路分析 
+整合相关内容，分析都可以从哪些角度写该事件 哪些可以融合 哪些可以对立 哪些有争议 哪些容易引发深思 判定风格 需要人工检查 若不满意 则提出修改意见
+
+class WritingAnalysis(BaseModel):
+    """写作角度分析"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    common_angles: List[str] = Field(
+        default_factory=list,
+        alias="commonAngles",
+        description="他人常用写作角度（3-5个）"
+    )
+    mergeable_angles: List[str] = Field(
+        default_factory=list,
+        alias="mergeableAngles",
+        description="可融合角度（2-3个，说明融合逻辑）"
+    )
+    opposing_angles: List[str] = Field(
+        default_factory=list,
+        alias="opposingAngles",
+        description="可对立角度（2-3个，说明对立点）"
+    )
+    controversial_angles: List[str] = Field(
+        default_factory=list,
+        alias="controversialAngles",
+        description="争议角度（2-3个，说明争议焦点）"
+    )
+    thought_provoking_angles: List[str] = Field(
+        default_factory=list,
+        alias="thoughtProvokingAngles",
+        description="引发深思角度（2-3个，说明思考方向）"
+    )
+
+
+class WritingStyle(BaseModel):
+    """写作风格定义"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    final_style: str = Field(
+        ...,
+        alias="finalStyle",
+        description="最终确定的写作风格（口语化大白话/严肃科普/共情引导）"
+    )
+    style_reason: str = Field(
+        ...,
+        alias="styleReason",
+        description="风格选择理由（结合事件特点、受众、传播目标）"
+    )
+    style_example: str = Field(
+        ...,
+        alias="styleExample",
+        description="风格化表达示例（1-2个句子）"
+    )
+
+
+class WritingTemplate(BaseModel):
+    """写作模板框架"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    title: str = Field(
+        ...,
+        alias="title",
+        description="建议标题（吸引眼球，贴合热点）"
+    )
+    subtitle: str = Field(
+        ...,
+        alias="subtitle",
+        description="副标题（补充说明，增强吸引力）"
+    )
+    introduction: str = Field(
+        ...,
+        alias="introduction",
+        description="引言模板（引子设计，吸引读者阅读）"
+    )
+    body_structure: List[str] = Field(
+        default_factory=list,
+        alias="bodyStructure",
+        description="主体段落结构（每段核心内容、逻辑关系）"
+    )
+    conclusion: str = Field(
+        ...,
+        alias="conclusion",
+        description="结尾模板（升华主题，引导互动）"
+    )
+
+
+class WritingPlan(BaseModel):
+    """写作执行计划"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    core_idea: str = Field(
+        ...,
+        alias="coreIdea",
+        description="核心创作思路（文章核心观点，贯穿全文）"
+    )
+    lead_in: str = Field(
+        ...,
+        alias="leadIn",
+        description="引子设计（如何开头，吸引读者注意力）"
+    )
+    clues: List[str] = Field(
+        default_factory=list,
+        alias="clues",
+        description="文章线索（3-5个关键线索，串联全文）"
+    )
+    reference_materials: List[str] = Field(
+        default_factory=list,
+        alias="referenceMaterials",
+        description="参考资料清单（需收集的权威资料来源）"
+    )
+    writing_direction: List[str] = Field(
+        default_factory=list,
+        alias="writingDirection",
+        description="写作方向（2-3个重点方向，确保内容聚焦）"
+    )
+
+
+class ArticleBlueprintNode(BaseModel):
+    """
+    文章写作蓝图模型
+
+    基于热点调研与角度分析，输出完整的写作策略、风格定位、
+    模板框架与执行计划，为后续文章生成提供可直接落地的创作方案。
+    """
+    model_config = ConfigDict(populate_by_name=True)
+    # 在 Pydantic 里，...（三个点，叫 Ellipsis）表示这个字段是必填的，没有默认值。
+    writing_analysis: WritingAnalysis = Field(
+        ...,
+        alias="writingAnalysis",
+        description="写作角度分析（常用/融合/对立/争议/深思角度）"
+    )
+    writing_style: WritingStyle = Field(
+        ...,
+        alias="writingStyle",
+        description="写作风格定义（最终风格、选择理由、表达示例）"
+    )
+    writing_template: WritingTemplate = Field(
+        ...,
+        alias="writingTemplate",
+        description="写作模板框架（标题/副标题/引言/主体/结尾）"
+    )
+    writing_plan: WritingPlan = Field(
+        ...,
+        alias="writingPlan",
+        description="写作执行计划（核心思路/引子/线索/资料/方向）"
+    )
+请查阅我设计的该节点state作为参考 请你补充并完善 
+
+5 大纲节点
+大纲需要把上述几个节点的内容进行汇总和总结，请你结合公众号文章大纲所需要的素材和思路进行设计大纲节点
+class ArticlePlotNode(BaseModel):
+    """
+    文章写作指令模型
+
+    作为文章生成节点的直接输入，结构化描述标题、核心观点、
+    目标受众、全局风格，以及逐段落的写作要求。
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    writing_context: WritingContext = Field(
+        ...,
+        alias="writingContext",
+        description="写作上下文（标题、核心观点、受众、风格）"
+    )
+    content_segments: List[ContentSegment] = Field(
+        default_factory=list,
+        alias="contentSegments",
+        description="内容段落列表（按顺序排列，每段独立定义逻辑、情绪、修辞）"
+    )
+    global_checklist: List[str] = Field(
+        default_factory=list,
+        alias="globalChecklist",
+        description="写作完成后的自查准则"
+    )
+
+class GlobalStyle(BaseModel):
+    """全局风格定义"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    tone: str = Field(
+        ...,
+        alias="tone",
+        description="语调（如：辛辣讽刺、温情共鸣、极简硬核）"
+    )
+    language_requirement: str = Field(
+        ...,
+        alias="languageRequirement",
+        description="语言约束（如：多用短句、杜绝成语、增加互动问句）"
+    )
+    example_sentences: List[str] = Field(
+        default_factory=list,
+        alias="exampleSentences",
+        description="风格样板句"
+    )
+
+
+class WritingContext(BaseModel):
+    """写作上下文"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    article_title: str = Field(
+        ...,
+        alias="articleTitle",
+        description="最终确定的爆款标题"
+    )
+    core_idea: str = Field(
+        ...,
+        alias="coreIdea",
+        description="贯穿全文的核心观点"
+    )
+    target_audience: str = Field(
+        ...,
+        alias="targetAudience",
+        description="目标受众画像（便于AI调整表达深度）"
+    )
+    global_style: GlobalStyle = Field(
+        ...,
+        alias="globalStyle",
+        description="全局风格"
+    )
+
+
+class GoldSentenceRequirement(BaseModel):
+    """金句要求"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    position: Literal["end", "middle", "none"] = Field(
+        ...,
+        alias="position",
+        description="金句预留位置（end/middle/none）"
+    )
+    theme: str = Field(
+        ...,
+        alias="theme",
+        description="金句的灵魂/核心词"
+    )
+
+
+class WordCountRange(BaseModel):
+    """字数范围"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    min: int = Field(
+        ...,
+        alias="min",
+        description="最小字数",
+        ge=0
+    )
+    max: int = Field(
+        ...,
+        alias="max",
+        description="最大字数",
+        ge=0
+    )
+
+
+class ContentSegment(BaseModel):
+    """
+    内容段落
+
+    文章由多个段落组成，每个段落有独立的逻辑、情绪、修辞目标。
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    segment_index: int = Field(
+        ...,
+        alias="segmentIndex",
+        description="序列号",
+        ge=0
+    )
+    segment_type: Literal["introduction", "body", "conclusion"] = Field(
+        ...,
+        alias="segmentType",
+        description="段落类型（introduction/body/conclusion）"
+    )
+    section_title: Optional[str] = Field(
+        None,
+        alias="sectionTitle",
+        description="本段小标题（如果有）"
+    )
+    core_logic: str = Field(
+        ...,
+        alias="coreLogic",
+        description="本段必须要讲透的逻辑点"
+    )
+    key_information: List[str] = Field(
+        default_factory=list,
+        alias="keyInformation",
+        description="必须包含的客观事实或线索（来自 clues/reference）"
+    )
+    emotional_objective: str = Field(
+        ...,
+        alias="emotionalObjective",
+        description="读者情绪预期（如：认知失调、深表同情、恍然大悟）"
+    )
+    rhetorical_device: str = Field(
+        ...,
+        alias="rhetoricalDevice",
+        description="建议使用的修辞（如：排比、反问、故事引入）"
+    )
+    gold_sentence_requirement: GoldSentenceRequirement = Field(
+        ...,
+        alias="goldSentenceRequirement",
+        description="金句预留要求"
+    )
+    word_count_range: WordCountRange = Field(
+        ...,
+        alias="wordCountRange",
+        description="字数范围"
+    )
+    transition_to_next: Optional[str] = Field(
+        None,
+        alias="transitionToNext",
+        description="如何丝滑地引出下一段的内容暗示"
+    )
+
+
+6 文章写作节点
+class GoldenSentence(BaseModel):
+    """金句标注"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    position: str = Field(
+        ...,
+        alias="position",
+        description="金句位置（如：第3段）"
+    )
+    text: str = Field(
+        ...,
+        alias="text",
+        description="金句内容"
+    )
+
+
+class ArticlePart(BaseModel):
+    """
+    文章分段
+
+    对应生成文章的一个独立段落/部分，包含完整内容、金句、
+    转发语及阅读节奏说明。
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    part_index: int = Field(
+        ...,
+        alias="partIndex",
+        description="段落编号",
+        ge=1
+    )
+    title_alternatives: List[str] = Field(
+        default_factory=list,
+        alias="title_alternatives",
+        description="文章标题（主标题及1-2个备选）"
+    )
+    content: str = Field(
+        ...,
+        alias="content",
+        description="正文（按 contentSegments 顺序输出，严格遵循节奏与留白要求）"
+    )
+    golden_sentences: List[GoldenSentence] = Field(
+        default_factory=list,
+        alias="golden_sentences",
+        description="金句标注"
+    )
+    share_texts: List[str] = Field(
+        default_factory=list,
+        alias="share_texts",
+        description="转发语建议（2-3条适合朋友圈的简短文案）"
+    )
+    reading_time: str = Field(
+        ...,
+        alias="reading_time",
+        description="预估阅读时间（如：5分钟）"
+    )
+    rhythm: str = Field(
+        ...,
+        alias="rhythm",
+        description="整体节奏简述（如：开头钩子→中段铺陈与反转→结尾落点）"
+    )
+
+
+class ArticleOutputNode(BaseModel):
+    """
+    文章生成输出模型
+
+    基于 ArticleWritingInstruction 指令生成的完整文章输出，
+    按段落分块组织。若原始数据为数组，建议用 ArticlePart 直接解析；
+    若包装为对象形式，使用本模型。
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    parts: List[ArticlePart] = Field(
+        default_factory=list,
+        alias="parts",
+        description="文章分段输出列表"
+    )
+
+以上是暂时的node对应的state,请你继续帮我完善，增加必要的，去掉冗余的。
+
+## prompt创作
+prompt可以先简单完成，如果有必要的话 可以先定义好引入和输出格式， 我再基于prompt进行手动修改。
+
+## 一些需要补充的信息：
+### 1 deepagents的的backend从如下代码中引用：
+
+from pathlib import Path
+
+from deepagents.backends import CompositeBackend, FilesystemBackend
+from dotenv import find_dotenv
+from langgraph.store.memory import InMemoryStore
+
+root = Path(find_dotenv()).parent
+print(" 项目根目录是：" + str(root))
+
+MEMORY_DIR = (root / "workspaces" / "memories").as_posix()
+SKILLS_DIR = (root / "workspaces" / "skills").as_posix()  # 或根据实际结构调整
+WORKSPACE_DIR = (root / "workspaces").as_posix()
+
+composite_backend = CompositeBackend(
+    default=FilesystemBackend(root_dir=root, virtual_mode=True),
+    routes={
+        "/memories/": FilesystemBackend(root_dir=MEMORY_DIR, virtual_mode=True),
+        "/skills/": FilesystemBackend(root_dir=SKILLS_DIR, virtual_mode=True),
+        "/workplaces/": FilesystemBackend(root_dir=WORKSPACE_DIR, virtual_mode=True)
+    },
+)
+store = InMemoryStore()
+
+### 2 可以考虑使用的util
+#### 1) 因为数据源txt文档里保存的连接地址例如：
+https://mp.weixin.qq.com/s/SeTmRiXtn8juGA6E3w6IrQ 
+https://mp.weixin.qq.com/s/SeTmRiXtn8juGA6E3w6reQ 
+
+所以我这里有现有代码，用于读取这个txt文档，读取文章内容，代码如下：
+ file_list = scan_article_files(input_path)  # 文件地址+名称
+ articles = [read_article(f) for f in file_list]  # 读取每篇内容
+scan_article_files和read_article的代码已经完成， input_path地址就是txt文档所在地址
+其中：
+
+def scan_article_files(txt_file_path: str, output_dir: str = None) -> list:
+    """
+    扫描 txt 文件中的微信公众号文章地址列表，爬取文章内容并保存到本地。
+
+    Args:
+        txt_file_path: 包含微信公众号文章 URL 列表的 txt 文件路径
+        output_dir: 文章保存目录，默认为项目 wechatessay/backends/sources 目录
+
+    Returns:
+        保存成功的文件地址列表（相对于 output_dir 的相对路径）
+    """
+
+def read_article(file_path: str) -> str:
+    """读取单篇文章"""
+
+
+#### 2) 还有现有代码：parse_json_response
+parse_json_response(content: str) -> dict:
+
+
+
+# 现有工具
+## mcp_tool.py中
+"""
+MCP 连接封装层。
+负责：
+- 连接 trendradar MCP 服务器
+- 将 MCP 工具转换为 LangChain 标准工具
+- 管理连接生命周期
+"""
+
+import asyncio
+from contextlib import asynccontextmanager
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_core.tools import BaseTool
+
+
+class TrendRadarMCPManager:
+    """
+    trendradar MCP 服务器管理器。
+    使用单例模式避免重复连接，支持 async with 上下文管理。
+    """
+
+    _instance = None
+    _lock = asyncio.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._client = None
+            cls._instance._tools = None
+        return cls._instance
+
+    async def _ensure_connected(self):
+        """懒连接：只在第一次获取工具时建立连接"""
+        if self._client is not None:
+            return
+
+        self._client = MultiServerMCPClient({
+            "trendradar": {
+                "transport": "streamable_http",
+                "url": "http://localhost:3333/mcp"
+                # 如果需要认证，加 headers：
+                # "headers": {"Authorization": "Bearer YOUR_TOKEN"}
+            }
+        })
+        # 显式连接（某些版本需要）
+        # await self._client.connect()
+
+    async def get_tools(self) -> list[BaseTool]:
+        """获取 trendradar 的所有 MCP 工具（已转换为 LangChain 格式）"""
+        await self._ensure_connected()
+        if self._tools is None:
+            self._tools = await self._client.get_tools()
+        return self._tools
+
+    def get_tools_sync(self) -> list[BaseTool]:
+        """同步获取工具（供同步代码调用）"""
+        return asyncio.run(self.get_tools())
+
+    async def disconnect(self):
+        """清理 MCP 连接"""
+        if self._client is not None:
+            # MultiServerMCPClient 支持 async with，这里手动关闭
+            await self._client.__aexit__(None, None, None)
+            self._client = None
+            self._tools = None
+
+    @asynccontextmanager
+    async def session(self):
+        """上下文管理器：自动连接和断开"""
+        try:
+            tools = await self.get_tools()
+            yield tools
+        finally:
+            await self.disconnect()
+
+
+# 全局实例（单例）
+trendradar_manager = TrendRadarMCPManager()
+
+
+## base_tool.py中：
+import os
+import subprocess
+from pathlib import Path
+from typing import Literal
+
+from langchain.tools import tool
+
+
+@tool
+def read_file(path: str) -> str:
+    """Read file content (used to read SKILL.md)."""
+    try:
+        try:
+            return Path(path).read_text(encoding="gbk")
+        except:
+            return Path(path).read_text(encoding="utf-8")
+    except Exception as e:
+        return f"Error: {e}"
+
+
+@tool
+def create_file(file_name: str, file_contents: str) -> str:
+    """Create a text file."""
+    try:
+        file_path = os.path.join(os.getcwd(), file_name)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(file_contents)
+        return f"Created: {file_path}"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+@tool
+def shell_exec(command: str) -> str:
+    """Windows CMD/PowerShell executor (only tool for open browser/screenshot)."""
+    blacklist = ["del", "rm", "format", "rd"]
+    if any(x in command.lower() for x in blacklist):
+        return "❌ Blocked dangerous command"
+    try:
+        res = subprocess.run(command, shell=True, capture_output=True, timeout=20, text=False)
+        stdout = res.stdout.decode("gbk", errors="replace")
+        stderr = res.stderr.decode("gbk", errors="replace")
+        return f"OUT:\n{stdout}\nIN:\n{stderr}".strip()
+    except Exception as e:
+        return f"Exec error: {e}"
+
+@tool
+def tavily_web_search(query: str, max_results: int = 5, topic: Literal["general", "news"] = "news") -> dict:
+    """Search the web for current information."""
+    from tavily import TavilyClient
+    client = TavilyClient(api_key="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")
+    return client.search(query, max_results=max_results, topic=topic)
+
+
+# 目录结构为：
+wechatessay
+    |- backends
+        |- memories
+        |- skills
+        |- sources
+        |- workspaces
+    |- graphs
+        |- graph.py
+    |- nodes
+        |- source_node.py
+        |- collect_node.py
+        |- analyse_node.py
+        |- plot_node.py
+        |- write_node.py
+        |- composition_node.py
+        |- legality_node.py
+        |- publish_node.py
+        |- init.py
+    |- prompts
+        |- vx_prompt.py
+    |- states
+        |- vx_state.py
+    |- tools
+        |- mcp_tools
+            |- mcp_tool.py
+        |- base_tools
+            |- base_tool.py
+    |- utils
+            |- json_utils.py
+    |- config.py
+    |- main.py
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
+根据以上内容 请帮我把完整代码实现出来
 
 
 

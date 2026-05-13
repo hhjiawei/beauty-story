@@ -9,7 +9,7 @@ from langchain_openai import ChatOpenAI
 from romanticstory.config.config import llm
 from romanticstory.prompts.romantic_story_prompt import WRITE_PROMPT
 from romanticstory.states.romantic_story_state import MainState, SegmentState
-from wechatessay.utils.json_util import parse_json_response
+from wechatessay_old.utils.json_util import parse_json_response
 
 # 配置 API
 OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"

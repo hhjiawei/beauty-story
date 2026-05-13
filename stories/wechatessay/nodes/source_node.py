@@ -1,196 +1,262 @@
-# =============================================================================
-# 五、Map 阶段 Node：单篇分析
-# =============================================================================
+"""
+Source Node - 基本信息源节点
+
+职责：
+1. 读取 txt 文件中的微信公众号文章链接
+2. 爬取每篇文章的内容
+3. 使用 Deep Agent 分析每篇文章的基本信息和额外信息
+4. 汇总所有文章的分析结果
+
+Agent 模式：
+- 使用 NodeAgent 执行，自动管理工具调用和记忆
+- 工具通过 Agent Factory 动态注册，不硬编码
+- 聊天记录通过 CompositeBackend 持久化
+"""
+
 import json
-import logging
-import os
-from pathlib import Path
-from typing import List
+from typing import Dict, List, Any
 
-from deepagents import create_deep_agent
-from deepagents.backends import FilesystemBackend
-from langchain_openai import ChatOpenAI
-from pydantic import ValidationError
-
-from wechatessay.config import composite_backend, store
-from wechatessay.prompts.vx_prompt import SOURCE_REDUCE_PROMPT, SOURCE_MAP_PROMPT
-from wechatessay.states.vx_state import ArticleAnalyseNode, GraphState
-from wechatessay.utils.vx_util import split_articles, scan_article_files, read_article, parse_json_response
-
-logger = logging.getLogger(__name__)
-
-# 配置 API
-# OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
-# OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
-# MODEL_NAME = "doubao-seed-2-0-pro-260215"
-
-# deepseek-reasoner
-OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
-OPENAI_API_BASE = "https://api.deepseek.com"
-MODEL_NAME = "deepseek-reasoner"
-
-
-# # qwen  sk-5fd1dda940aa46d282873be7e02fcd82
-# OPENAI_API_KEY = "sk-5fd1dda940aa46d282873be7e02fcd82"
-# OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-# MODEL_NAME = "qwen3.6-plus"
-
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
-
-model = ChatOpenAI(
-    model=MODEL_NAME,
-    temperature=1.5,
+from wechatessay.agents.agent_factory import get_node_agent, discover_tools_for_node
+from wechatessay.agents.memory_manager import get_memory_manager
+from wechatessay.agents.chat_history_store import get_chat_history_store
+from wechatessay.states.vx_state import GraphState, PerArticleAnalyseNode, TotalArticleAnalyseNode
+from wechatessay.prompts import vx_prompt
+from wechatessay.utils.json_utils import parse_json_response
+from wechatessay.config import (
+    DEFAULT_LLM_MODEL,
+    SOURCES_DIR,
 )
 
 
-async def map_analyze_single(state: GraphState) -> GraphState:
+def source_node(state: GraphState, **kwargs) -> Dict[str, Any]:
     """
-    Map 阶段：读取所有文章文件，为每篇生成独立分析。
-    注意：这里用顺序执行演示，生产环境建议用 asyncio.gather 并行。
+    基本信息源节点
+
+    1. 读取 txt 文件中的文章链接
+    2. 爬取文章内容
+    3. 使用 Deep Agent 分析每篇文章
+    4. 返回 per_article_results
+
+    Args:
+        state: 当前图状态
+        **kwargs: 包含 backend, store, thread_id 等来自 graph 的依赖注入
     """
-    input_path = state["input_path"]
-    articles_content = state.get("articles_content")
+    print("\n" + "=" * 50)
+    print("📚 [source_node] 开始读取和分析文章")
+    print("=" * 50)
 
-    # 1. 获取文章列表
-    if articles_content:
-        articles = split_articles(articles_content)
-        file_list = [f"inline_article_{i}" for i in range(len(articles))]
-    else:
-        file_list = scan_article_files(input_path)  # 文件地址+名称
-        articles = [read_article(f) for f in file_list]  # 读取每篇内容
+    # 从 kwargs 获取依赖
+    backend = kwargs.get("backend")
+    store = kwargs.get("store")
+    thread_id = kwargs.get("thread_id", "default")
 
-    # 过滤空内容
-    valid_pairs = [(f, a) for f, a in zip(file_list, articles) if a.strip()]
-    if not valid_pairs:
-        return {**state, "error": "未找到有效文章内容"}
+    input_path = state.get("input_path", "")
 
-    logger.info(f"Map 阶段：共 {len(valid_pairs)} 篇文章待分析")
+    # 1. 读取 txt 文件
+    try:
+        with open(input_path, "r", encoding="utf-8") as f:
+            urls = [line.strip() for line in f if line.strip()]
+    except Exception as e:
+        print(f"❌ 读取文件失败: {e}")
+        return {"error_message": f"读取文件失败: {e}", "should_continue": False}
 
-    # 2. 为每篇文章创建 DeepAgent 并分析
-    backend = FilesystemBackend(root_dir=Path(input_path).parent if input_path else Path.cwd())
+    print(f"📄 发现 {len(urls)} 篇文章链接")
 
-    per_results: List[ArticleAnalyseNode] = []
+    # 2. 分析每篇文章
+    per_article_results = []
 
-    for file_path, article_text in valid_pairs:
-        try:
-            agent = create_deep_agent(  # 可以根据其他参数选用不同skill或者定制化
-                model=model,
-                backend=backend,
-                tools=[],
-                # system_prompt="你是一个专业的微信公众号文章分析助手。",
-            )
+    # 获取已注册的工具列表
+    tools = discover_tools_for_node("source_node")
+    print(f"  🔧 source_node 可用工具: {[t.name for t in tools]}")
 
-            prompt = SOURCE_MAP_PROMPT.format(article_content=article_text)  # 单篇截断保护
-            result = await agent.ainvoke({
-                "messages": [{"role": "user", "content": prompt}]
-            })
+    for i, url in enumerate(urls):
+        print(f"\n🔍 分析第 {i + 1}/{len(urls)} 篇文章: {url[:50]}...")
 
-            response = result["messages"][-1]
-            raw_dict = parse_json_response(response.content)
+        # 获取文章内容（预留用户 read_article 接口）
+        article_content = _fetch_article(url)
 
-            if not raw_dict:
-                logger.error(f"  ✗ {file_path} JSON 解析失败或返回为空，跳过")
-                continue
+        # 使用 Deep Agent 分析文章
+        analysis_result = _analyze_single_article(
+            article_content=article_content,
+            source_url=url,
+            backend=backend,
+            store=store,
+            thread_id=thread_id,
+        )
 
-            try:
-                analysis = ArticleAnalyseNode.model_validate(raw_dict)
-            except ValidationError as ve:
-                logger.error(f"  ✗ {file_path} 模型校验失败: {ve}")
-                continue
+        if analysis_result:
+            per_article_results.append(analysis_result)
+            print(f"✅ 第 {i + 1} 篇文章分析完成: {analysis_result.get('hotspotTitle', 'N/A')}")
+        else:
+            print(f"⚠️ 第 {i + 1} 篇文章分析失败")
 
-            per_results.append(analysis)
-
-        except Exception as e:
-            logger.error(f"  ✗ {file_path} 分析失败: {e}")
-            continue
-
-    if not per_results:
-        return {**state, "error": "所有文章分析均失败"}
+    print(f"\n📊 共分析 {len(per_article_results)} 篇文章")
 
     return {
-        **state,
-        "article_files": [f for f, _ in valid_pairs],
-        "per_article_results": per_results,
+        "per_article_results": per_article_results,
+        "current_node": "source_node"
     }
 
 
-# =============================================================================
-# 六、Reduce 阶段 Node：跨篇汇总
-# =============================================================================
-
-async def reduce_merge_results(state: GraphState) -> GraphState:
+def _fetch_article(url: str) -> str:
     """
-    Reduce 阶段：将多篇分析结果汇总为一份统一的热点追踪表。
+    获取文章内容
+
+    如果用户已实现 read_article，替换为实际调用。
+    目前返回占位符，提示用户接入。
     """
-    per_results = state.get("per_article_results", [])
-    if not per_results:
-        return {**state, "error": "Map 阶段无有效结果，无法汇总"}
-
-    # 如果只有一篇文章，直接返回
-    if len(per_results) == 1:
-        return {
-            **state,
-            "analysis_result": per_results[0],
-        }
-
-    logger.info(f"Reduce 阶段：汇总 {len(per_results)} 篇分析结果")
-
-    # 构建 Reduce 输入
-    per_article_jsons = "\\n\\n---\\n\\n".join([
-        f"【分析结果 {i + 1}】\\n{json.dumps(r.model_dump(by_alias=True), ensure_ascii=False, indent=2)}"
-        for i, r in enumerate(per_results)
-    ])
-
-
     try:
-        agent = create_deep_agent(
-            model=model,
-            backend=composite_backend,
-            store=store,
-            system_prompt="你是一个信息整合专家，擅长合并多源信息。",
+        # 尝试使用用户的 read_article
+        # from utils.article_reader import read_article
+        # return read_article(url)
+        pass
+    except ImportError:
+        pass
+    # 占位符：实际使用时应替换为真实内容
+    return f"[文章内容占位符 - URL: {url}]"
+
+
+def _analyze_single_article(
+    article_content: str,
+    source_url: str,
+    backend=None,
+    store=None,
+    thread_id: str = "default",
+) -> Dict:
+    """
+    使用 Deep Agent 分析单篇文章
+
+    Agent 模式：
+    - NodeAgent 自动处理工具调用循环
+    - 工具动态发现，不硬编码
+    - 聊天记录自动持久化到 CompositeBackend
+    """
+    # 创建 Agent
+    agent = get_node_agent(
+        node_name="source_node",
+        system_prompt=vx_prompt.SOURCE_SYSTEM_PROMPT,
+        llm_model=DEFAULT_LLM_MODEL,
+        temperature=0.7,
+        max_tokens=4000,
+        backend=backend,
+        store=store,
+        thread_id=thread_id,
+    )
+
+    # 构建 prompt
+    json_schema = vx_prompt.get_json_schema_prompt(PerArticleAnalyseNode)
+
+    user_prompt = vx_prompt.SOURCE_USER_PROMPT_TEMPLATE.format(
+        article_content=article_content,
+        source_url=source_url,
+        json_schema=json_schema
+    )
+
+    # 注入用户记忆
+    memory = get_memory_manager(backend=backend, store=store, thread_id=thread_id)
+    memories = memory.context.get_context("user_memories", default=[])
+    if memories:
+        user_prompt += f"\n\n【用户习惯记忆】\n{vx_prompt.format_memories(memories)}"
+
+    # 执行 Agent（自动处理工具调用循环）
+    response = agent.invoke(user_prompt, max_iterations=10, use_memory=True)
+
+    if not response:
+        return None
+
+    # 解析 JSON 结果
+    try:
+        result = parse_json_response(response.content)
+        result['sourceUrl'] = source_url
+        return result
+    except Exception as e:
+        print(f"  ⚠️ JSON 解析失败: {e}")
+        return None
+
+
+# ── Total Analysis Node ──
+
+def total_analysis_node(state: GraphState, **kwargs) -> Dict[str, Any]:
+    """
+    文章汇总分析节点
+
+    将 List[PerArticleAnalyseNode] 进行汇总分析
+    """
+    print("\n" + "=" * 50)
+    print("📊 [total_analysis_node] 开始汇总分析")
+    print("=" * 50)
+
+    # 从 kwargs 获取依赖
+    backend = kwargs.get("backend")
+    store = kwargs.get("store")
+    thread_id = kwargs.get("thread_id", "default")
+
+    per_article_results = state.get("per_article_results", [])
+
+    if not per_article_results:
+        return {"error_message": "没有文章分析结果", "should_continue": False}
+
+    # 使用 Deep Agent 汇总分析
+    total_result = _analyze_total_articles(
+        per_article_results=per_article_results,
+        backend=backend,
+        store=store,
+        thread_id=thread_id,
+    )
+
+    if total_result:
+        print(f"✅ 汇总分析完成: {total_result.get('summary', {}).get('totalCount', 0)} 篇文章")
+        return {
+            "total_article_results": total_result,
+            "current_node": "total_analysis_node"
+        }
+    else:
+        return {"error_message": "汇总分析失败", "should_continue": False}
+
+
+def _analyze_total_articles(
+    per_article_results: List[Dict],
+    backend=None,
+    store=None,
+    thread_id: str = "default",
+) -> Dict:
+    """使用 Deep Agent 汇总分析多篇文章"""
+
+    agent = get_node_agent(
+        node_name="total_analysis_node",
+        system_prompt=vx_prompt.TOTAL_ANALYSIS_SYSTEM_PROMPT,
+        llm_model=DEFAULT_LLM_MODEL,
+        temperature=0.7,
+        max_tokens=4000,
+        backend=backend,
+        store=store,
+        thread_id=thread_id,
+    )
+
+    json_schema = vx_prompt.get_json_schema_prompt(TotalArticleAnalyseNode)
+
+    formatted_results = []
+    for i, r in enumerate(per_article_results):
+        title = r.get('hotspotTitle', f'文章{i + 1}')
+        formatted_results.append(
+            f"\n--- 文章{i + 1}: {title} ---\n{json.dumps(r, ensure_ascii=False, indent=2)[:2000]}"
         )
 
-        prompt = SOURCE_REDUCE_PROMPT.format(per_article_jsons=per_article_jsons)
-        result = await agent.ainvoke({
-            "messages": [{"role": "user", "content": prompt}]
-        })
+    per_article_text = "\n".join(formatted_results)
 
-        response = result["messages"][-1]
+    user_prompt = vx_prompt.TOTAL_ANALYSIS_USER_PROMPT_TEMPLATE.format(
+        article_count=len(per_article_results),
+        per_article_results=per_article_text,
+        json_schema=json_schema
+    )
 
-        # 解析 JSON 响应
-        merged = parse_json_response(response.content)
+    response = agent.invoke(user_prompt, max_iterations=10, use_memory=True)
 
-        return {
-            **state,
-            "analysis_result": merged,
-            "raw_response": merged.model_dump(by_alias=True),
-        }
+    if not response:
+        return None
 
+    try:
+        return parse_json_response(response.content)
     except Exception as e:
-        logger.error(f"Reduce 汇总失败: {e}")
-        # 降级：返回第一篇的结果（避免完全失败）
-        return {
-            "analysis_result": per_results[0]
-        }
-
-
-## **state 是 Python 中的 字典解包（Dictionary Unpacking） 语法。
-"""
-假设 state 是一个字典，比如：
-
-state = {
-    "per_article_results": [...],
-    "some_other_key": "value",
-    "timestamp": "2026-04-28"
-}
-那么 {**state, "analysis_result": merged} 等价于：
-
-{
-    "per_article_results": [...],
-    "some_other_key": "value", 
-    "timestamp": "2026-04-28",
-    "analysis_result": merged   # ← 新增或覆盖这个键
-}
-
-"""
+        print(f"  ⚠️ JSON 解析失败: {e}")
+        return None

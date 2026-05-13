@@ -1,6 +1,6 @@
 import json
 import re
-from wechatessay.utils.vx_util import parse_json_response
+from wechatessay_old.utils.vx_util import parse_json_response
 
 json_text = """
 ```json

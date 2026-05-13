@@ -1,5 +1,6 @@
 """
-MCP 连接封装层。
+MCP 连接封装层
+
 负责：
 - 连接 trendradar MCP 服务器
 - 将 MCP 工具转换为 LangChain 标准工具
@@ -12,10 +13,10 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_core.tools import BaseTool
 
 
-class TrendRadarMCPManager:
+class MCPManager:
     """
-    trendradar MCP 服务器管理器。
-    使用单例模式避免重复连接，支持 async with 上下文管理。
+    MCP 服务器管理器
+    使用单例模式避免重复连接，支持 async with 上下文管理
     """
 
     _instance = None
@@ -33,6 +34,7 @@ class TrendRadarMCPManager:
         if self._client is not None:
             return
 
+        # 这里添加mcp服务
         self._client = MultiServerMCPClient({
             "trendradar": {
                 "transport": "streamable_http",
@@ -41,8 +43,6 @@ class TrendRadarMCPManager:
                 # "headers": {"Authorization": "Bearer YOUR_TOKEN"}
             }
         })
-        # 显式连接（某些版本需要）
-        # await self._client.connect()
 
     async def get_tools(self) -> list[BaseTool]:
         """获取 trendradar 的所有 MCP 工具（已转换为 LangChain 格式）"""
@@ -58,7 +58,6 @@ class TrendRadarMCPManager:
     async def disconnect(self):
         """清理 MCP 连接"""
         if self._client is not None:
-            # MultiServerMCPClient 支持 async with，这里手动关闭
             await self._client.__aexit__(None, None, None)
             self._client = None
             self._tools = None
@@ -74,4 +73,29 @@ class TrendRadarMCPManager:
 
 
 # 全局实例（单例）
-trendradar_manager = TrendRadarMCPManager()
+mcp_manager = MCPManager()
+
+
+async def get_all_tools() -> list[BaseTool]:
+    """
+    获取所有可用工具（基础工具 + MCP 工具）
+
+    Returns:
+        合并后的工具列表
+    """
+    from wechatessay.tools.base_tools.base_tool import BASE_TOOLS
+
+    all_tools = list(BASE_TOOLS)
+
+    try:
+        mcp_tools = await mcp_manager.get_tools()
+        all_tools.extend(mcp_tools)
+    except Exception as e:
+        print(f"⚠️ MCP tools not available: {e}")
+
+    return all_tools
+
+
+def get_all_tools_sync() -> list[BaseTool]:
+    """同步获取所有工具"""
+    return asyncio.run(get_all_tools())

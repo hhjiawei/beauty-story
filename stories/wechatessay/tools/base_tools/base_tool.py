@@ -1,3 +1,9 @@
+"""
+基础工具集
+
+提供文件操作、命令执行、网络搜索等基础工具。
+"""
+
 import os
 import subprocess
 from pathlib import Path
@@ -34,7 +40,7 @@ def create_file(file_name: str, file_contents: str) -> str:
 @tool
 def shell_exec(command: str) -> str:
     """Windows CMD/PowerShell executor (only tool for open browser/screenshot)."""
-    blacklist = ["del", "rm", "format", "rd"]
+    blacklist = ["del", "rm", "format", "rd", "mkfs", "dd"]
     if any(x in command.lower() for x in blacklist):
         return "❌ Blocked dangerous command"
     try:
@@ -45,23 +51,50 @@ def shell_exec(command: str) -> str:
     except Exception as e:
         return f"Exec error: {e}"
 
+
 @tool
 def tavily_web_search(query: str, max_results: int = 5, topic: Literal["general", "news"] = "news") -> dict:
     """Search the web for current information."""
     from tavily import TavilyClient
-    client = TavilyClient(api_key="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")
+    import os
+
+    api_key = os.getenv("TAVILY_API_KEY", "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")
+    client = TavilyClient(api_key=api_key)
     return client.search(query, max_results=max_results, topic=topic)
 
 
+@tool
+def save_draft(file_path: str, content: str) -> str:
+    """
+    保存草稿到指定路径
+
+    Args:
+        file_path: 文件保存路径
+        content: 文件内容
+    """
+    try:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        return f"✅ Draft saved to: {file_path}"
+    except Exception as e:
+        return f"❌ Error saving draft: {e}"
 
 
+@tool
+def read_draft(file_path: str) -> str:
+    """
+    读取草稿文件
+
+    Args:
+        file_path: 草稿文件路径
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception as e:
+        return f"❌ Error reading draft: {e}"
 
 
-
-
-
-
-
-
-
-
+# 工具列表
+BASE_TOOLS = [read_file, create_file, shell_exec, tavily_web_search, save_draft, read_draft]

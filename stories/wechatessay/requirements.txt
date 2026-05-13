@@ -1,0 +1,26 @@
+# 核心框架
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-core>=0.3.0
+
+# DeepAgents（用户自有包）
+# deepagents>=0.1.0
+
+# MCP 工具
+langchain-mcp-adapters>=0.1.0
+
+# Pydantic 数据校验
+pydantic>=2.0.0
+
+# 环境变量管理
+python-dotenv>=1.0.0
+
+# 搜索工具
+tavily-python>=0.5.0
+
+# 可选：LangSmith 追踪
+# langsmith>=0.1.0
+
+# 其他工具
+requests>=2.31.0

@@ -10,7 +10,7 @@ from romanticstory.states.romantic_story_state import MainState
 from langchain_core.messages import HumanMessage
 
 from romanticstory.tools.web_search import internet_search
-from wechatessay.utils.json_util import parse_json_response
+from wechatessay_old.utils.json_util import parse_json_response
 
 # 策划节点，需要灵感和天马行空的设计，大模型也需要偏设计一些的 条理要清晰，要有逻辑   deepseek-reasoner
 
