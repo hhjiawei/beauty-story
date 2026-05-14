@@ -1,223 +1,174 @@
 """
-Write Node - 写作节点
+wechatessay.nodes.write_node
+
+节点5: write_node — 写作节点
 
 职责：
-1. 根据大纲指令写出高质量文章
-2. 严格按大纲结构写作
-3. 标注金句位置，提供转发语
-4. 人机协同：需要人工检查
-
-Agent 模式：NodeAgent 自动管理工具调用和记忆
+1. 严格按照大纲逐段落生成文章
+2. 确保风格、逻辑、情绪、修辞符合大纲要求
+3. 自然融入金句
+4. 需要人工审核
 """
 
+from __future__ import annotations
+
 import json
-from typing import Dict, Any
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List
 
-from wechatessay.agents.agent_factory import get_node_agent, discover_tools_for_node
-from wechatessay.states.vx_state import GraphState, ArticleOutputNode
-from wechatessay.prompts import vx_prompt
+from deepagents import create_deep_agent
+from langchain_core.tools import BaseTool
+
+from wechatessay.agents.memory_manager import get_memory_manager
+from wechatessay.config import BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG
+from wechatessay.prompts.vx_prompt import WRITE_NODE_SYSTEM_PROMPT
+from wechatessay.states.vx_state import ArticleOutputNode, GraphState
+from wechatessay.tools.base_tools.base_tool import get_base_tools
+from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
-from wechatessay.config import WRITE_LLM_MODEL, HUMAN_IN_THE_LOOP, MAX_REVISION_ROUNDS
 
 
-def write_node(state: GraphState, **kwargs) -> Dict[str, Any]:
-    """写作节点"""
-    print("\n" + "=" * 50)
-    print("✍️ [write_node] 开始写作文章")
-    print("=" * 50)
+def _load_backend():
+    """加载 Deep Agents backend 配置。"""
+    from deepagents.backends import CompositeBackend, FilesystemBackend
+    root = Path(BACKEND_CONFIG["root_dir"])
+    return CompositeBackend(
+        default=FilesystemBackend(root_dir=root, virtual_mode=BACKEND_CONFIG["virtual_mode"]),
+        routes={
+            "/memories/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/memories/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+            "/skills/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/skills/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+            "/workspaces/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/workspaces/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+        },
+    )
 
-    backend = kwargs.get("backend")
-    store = kwargs.get("store")
-    thread_id = kwargs.get("thread_id", "default")
 
-    plot = state.get("plot_result", {})
-    blueprint = state.get("blueprint_result", {})
-    search_result = state.get("search_result", {})
-    human_feedback = state.get("human_feedback")
-    revision_count = state.get("revision_count", 0)
+def _create_write_agent(tools: List[BaseTool]) -> Any:
+    """创建 write_node 的 Deep Agent。"""
+    backend = _load_backend()
+    mm = get_memory_manager()
+    memory_context = mm.build_memory_context("文章写作")
 
-    tools = discover_tools_for_node("write_node")
-    print(f"  🔧 write_node 可用工具: {[t.name for t in tools]}")
+    system_prompt = WRITE_NODE_SYSTEM_PROMPT
+    if memory_context:
+        system_prompt = f"{memory_context}\n\n{system_prompt}"
 
-    if human_feedback and human_feedback.lower() not in ["ok", "满意", "continue"]:
-        if revision_count >= MAX_REVISION_ROUNDS:
-            print(f"⚠️ 达到最大修改轮次 ({MAX_REVISION_ROUNDS})")
-            return {
-                "article_output": state.get("article_output", {}),
-                "awaiting_human": False,
-                "human_feedback": None,
-                "current_node": "write_node"
-            }
+    memory_files = []
+    mem_file = Path(MEMORY_CONFIG["long_term_file"])
+    if mem_file.exists():
+        memory_files.append(str(mem_file))
 
-        print(f"📝 收到修改意见（第{revision_count}轮）: {human_feedback[:100]}...")
-        article = _revise_article(
-            original_article=state.get("article_output", {}),
-            human_feedback=human_feedback,
-            plot=plot,
-            blueprint=blueprint,
-            revision_history=state.get("article_output", {}).get("revisionHistory", []),
-            backend=backend,
-            store=store,
-            thread_id=thread_id,
-        )
-    else:
-        article = _write_article(
-            plot=plot,
-            blueprint=blueprint,
-            search_result=search_result,
-            backend=backend,
-            store=store,
-            thread_id=thread_id,
-        )
-
-    if not article:
-        return {"error_message": "文章写作失败", "should_continue": False}
-
-    # 显示摘要
-    parts = article.get("parts", [])
-    full_text = article.get("fullText", "")
-    total_chars = len(full_text) if full_text else sum(len(p.get("content", "")) for p in parts)
-    print(f"   - 总字数: {total_chars}")
-    print(f"   - 段落数: {len(parts)}")
-
-    if HUMAN_IN_THE_LOOP and not human_feedback:
-        print(vx_prompt.HUMAN_FEEDBACK_PROMPT.format(
-            content_display=_format_article_for_display(article)
-        ))
-        return {
-            "article_output": article,
-            "awaiting_human": True,
-            "current_node": "write_node"
-        }
-
-    return {
-        "article_output": article,
-        "awaiting_human": False,
-        "human_feedback": None,
-        "current_node": "write_node"
-    }
+    return create_deep_agent(
+        model=MODEL_CONFIG.get("writing_model", MODEL_CONFIG["default_model"]),
+        tools=tools,
+        system_prompt=system_prompt,
+        backend=backend,
+        memory=memory_files,
+        name="article_writer",
+    )
 
 
 def _write_article(
-    plot: Dict,
-    blueprint: Dict,
-    search_result: Dict,
-    backend=None,
-    store=None,
-    thread_id: str = "default",
-) -> Dict:
-    """写作文章"""
-    agent = get_node_agent(
-        node_name="write_node",
-        system_prompt=vx_prompt.WRITE_SYSTEM_PROMPT,
-        llm_model=WRITE_LLM_MODEL,
-        temperature=0.9,
-        max_tokens=8000,
-        backend=backend,
-        store=store,
-        thread_id=thread_id,
-    )
+    plot: Dict[str, Any],
+    blueprint: Dict[str, Any],
+    agent: Any,
+) -> ArticleOutputNode:
+    """按照大纲写作文章。"""
+    context = json.dumps({
+        "plot": plot,
+        "blueprint": blueprint,
+    }, ensure_ascii=False, indent=2)
 
-    json_schema = vx_prompt.get_json_schema_prompt(ArticleOutputNode)
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                f"请严格按照以下大纲和写作蓝图，逐段落生成公众号文章。\n\n"
+                f"{context}\n\n"
+                f"请以 JSON 格式输出 ArticleOutputNode 结构，"
+                f"包含完整的文章分段、金句标注、转发语等。"
+            ),
+        }
+    ]
 
-    user_prompt = vx_prompt.WRITE_USER_PROMPT_TEMPLATE.format(
-        plot=json.dumps(plot, ensure_ascii=False, indent=2)[:3000],
-        blueprint=json.dumps(blueprint, ensure_ascii=False, indent=2)[:2000],
-        search_result=json.dumps(search_result, ensure_ascii=False, indent=2)[:1500],
-        memories="（暂无用户习惯记忆）",
-        json_schema=json_schema
-    )
-
-    response = agent.invoke(user_prompt, max_iterations=10, use_memory=True)
-
-    if not response:
-        return None
+    result = agent.invoke({"messages": messages})
+    response_content = result["messages"][-1].content if result.get("messages") else ""
 
     try:
-        result = parse_json_response(response.content)
-        result['humanFeedback'] = None
-        result['revisionCount'] = 0
-        result['revisionHistory'] = []
-
-        # 拼接完整文本
-        parts = result.get("parts", [])
-        if parts:
-            result['fullText'] = "\n\n".join([p.get("content", "") for p in parts])
-            for part in parts:
-                part['actualWordCount'] = len(part.get("content", ""))
-
-        return result
+        parsed = parse_json_response(response_content)
+        if isinstance(parsed, dict):
+            article_data = parsed.get("article_output") or parsed
+            article = ArticleOutputNode.model_validate(article_data)
+            # 拼接完整文本
+            article.full_text = "\n\n".join(
+                part.content for part in article.parts
+            )
+            article.metadata = {
+                "totalWordCount": len(article.full_text),
+                "readingTime": f"{max(1, len(article.full_text) // 300)}分钟",
+                "generatedAt": datetime.now().isoformat(),
+            }
+            return article
     except Exception as e:
-        print(f"  ⚠️ JSON 解析失败: {e}")
-        return None
+        print(f"[write_node] 解析文章失败: {e}")
+
+    return ArticleOutputNode(parts=[], full_text="")
 
 
-def _revise_article(
-    original_article: Dict,
-    human_feedback: str,
-    plot: Dict,
-    blueprint: Dict,
-    revision_history: list,
-    backend=None,
-    store=None,
-    thread_id: str = "default",
-) -> Dict:
-    """修改文章"""
-    agent = get_node_agent(
-        node_name="write_node",
-        system_prompt=vx_prompt.WRITE_SYSTEM_PROMPT,
-        llm_model=WRITE_LLM_MODEL,
-        temperature=0.9,
-        max_tokens=8000,
-        backend=backend,
-        store=store,
-        thread_id=thread_id,
+async def write_node_async(state: GraphState) -> GraphState:
+    """write_node 异步执行入口。"""
+    plot = state.get("plot_result")
+    blueprint = state.get("blueprint_result")
+
+    if not plot:
+        state["error_message"] = "缺少 plot_result"
+        state["error_node"] = "write_node"
+        return state
+
+    print(f"[write_node] 开始写作: {plot.writing_context.article_title}")
+
+    base_tools = get_base_tools()
+    mcp_tools = await get_total_tools()
+    total_tools = list(base_tools) + list(mcp_tools)
+
+    agent = _create_write_agent(total_tools)
+
+    article = _write_article(
+        plot.model_dump(by_alias=True),
+        blueprint.model_dump(by_alias=True) if blueprint else {},
+        agent,
     )
 
-    response = agent.invoke_with_revision(
-        original_result=json.dumps(original_article, ensure_ascii=False, indent=2),
-        human_feedback=human_feedback,
-        revision_history=revision_history,
-        max_iterations=5,
+    state["article_output"] = article
+    state["current_node"] = "write_node"
+    state["node_status"]["write_node"] = "waiting_human"
+
+    state["pending_human_review"] = {
+        "node": "write_node",
+        "content": article.model_dump(by_alias=True),
+        "instruction": "请检查文章内容是否符合大纲要求，风格是否一致，金句是否自然。",
+    }
+
+    mm = get_memory_manager()
+    mm.add_short_term(
+        f"write_{datetime.now().isoformat()}",
+        {"word_count": article.metadata.get("totalWordCount", 0)},
     )
 
-    if not response:
-        return original_article
-
-    try:
-        result = parse_json_response(response.content)
-        new_history = revision_history.copy()
-        new_history.append(human_feedback)
-        result['revisionHistory'] = new_history
-        result['revisionCount'] = len(new_history)
-        result['humanFeedback'] = human_feedback
-
-        parts = result.get("parts", [])
-        if parts:
-            result['fullText'] = "\n\n".join([p.get("content", "") for p in parts])
-
-        return result
-    except Exception:
-        return original_article
+    print(f"[write_node] 完成: {article.metadata.get('totalWordCount', 0)} 字")
+    return state
 
 
-def _format_article_for_display(article: Dict) -> str:
-    """格式化文章展示"""
-    parts = article.get("parts", [])
-    display = "\n📄 文章内容\n═══════════════════════════════════════════\n\n"
-    for part in parts:
-        idx = part.get("partIndex", 0)
-        content = part.get("content", "[无内容]")
-        golden = part.get("goldenSentences", [])
-        share = part.get("shareTexts", [])
-        display += f"─── 第{idx}段 ───\n{content[:500]}\n"
-        if golden:
-            display += f"\n✨ 金句:\n"
-            for gs in golden[:2]:
-                display += f"   「{gs.get('text', 'N/A')[:60]}」\n"
-        if share:
-            display += f"\n📤 转发语:\n"
-            for st in share[:2]:
-                display += f"   {st[:60]}\n"
-        display += "\n"
-    return display
+def write_node(state: GraphState) -> GraphState:
+    """write_node 同步入口。"""
+    import asyncio
+    return asyncio.run(write_node_async(state))

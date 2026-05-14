@@ -1,188 +1,181 @@
 """
-Publish Node - 发布节点
+wechatessay.nodes.publish_node
+
+节点8: publish_node — 发布节点
 
 职责：
-1. 整理发布所需全部信息
-2. 生成文章摘要和关键词
-3. 准备朋友圈转发文案
-4. 保存最终草稿
-
-Agent 模式：NodeAgent 执行发布整理
+1. 生成微信公众号 HTML 格式
+2. 配置发布参数
+3. 记录发布日志
+4. 支持定时发布
 """
 
+from __future__ import annotations
+
 import json
-import os
 from datetime import datetime
-from typing import Dict, Any
+from pathlib import Path
+from typing import Any, Dict, List
 
-from wechatessay.agents.agent_factory import get_node_agent, discover_tools_for_node
-from wechatessay.states.vx_state import GraphState, PublishNode
-from wechatessay.prompts import vx_prompt
+from deepagents import create_deep_agent
+from langchain_core.tools import BaseTool
+
+from wechatessay.agents.memory_manager import get_memory_manager
+from wechatessay.config import BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG, PUBLISH_CONFIG
+from wechatessay.prompts.vx_prompt import PUBLISH_NODE_SYSTEM_PROMPT
+from wechatessay.states.vx_state import CompositionNode, GraphState, PublishNode
+from wechatessay.tools.base_tools.base_tool import get_base_tools
+from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
-from wechatessay.config import DEFAULT_LLM_MODEL, WORKSPACE_DIR
 
 
-def publish_node(state: GraphState, **kwargs) -> Dict[str, Any]:
-    """发布节点"""
-    print("\n" + "=" * 50)
-    print("🚀 [publish_node] 开始整理发布信息")
-    print("=" * 50)
-
-    backend = kwargs.get("backend")
-    store = kwargs.get("store")
-    thread_id = kwargs.get("thread_id", "default")
-
-    article_output = state.get("article_output", {})
-    composition_result = state.get("composition_result", {})
-    legality_result = state.get("legality_result", {})
-    blueprint = state.get("blueprint_result", {})
-
-    tools = discover_tools_for_node("publish_node")
-    print(f"  🔧 publish_node 可用工具: {[t.name for t in tools]}")
-
-    full_text = article_output.get("fullText", "")
-    if not full_text:
-        parts = article_output.get("parts", [])
-        full_text = "\n\n".join([p.get("content", "") for p in parts])
-
-    title = "未命名文章"
-    parts = article_output.get("parts", [])
-    if parts and parts[0].get("titleAlternatives"):
-        title = parts[0]["titleAlternatives"][0]
-    else:
-        wt = blueprint.get("writingTemplate", {})
-        if wt:
-            title = wt.get("title", title)
-
-    publish_result = _prepare_publish(
-        title=title,
-        content=full_text,
-        composition=composition_result,
-        legality=legality_result,
-        blueprint=blueprint,
-        backend=backend,
-        store=store,
-        thread_id=thread_id,
+def _load_backend():
+    """加载 Deep Agents backend 配置。"""
+    from deepagents.backends import CompositeBackend, FilesystemBackend
+    root = Path(BACKEND_CONFIG["root_dir"])
+    return CompositeBackend(
+        default=FilesystemBackend(root_dir=root, virtual_mode=BACKEND_CONFIG["virtual_mode"]),
+        routes={
+            "/memories/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/memories/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+            "/skills/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/skills/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+            "/workspaces/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/workspaces/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+        },
     )
 
-    draft_path = _save_draft(title, full_text, composition_result)
-    publish_result["originalDraftPath"] = draft_path
 
-    print(f"   - 标题: {publish_result.get('finalTitle', 'N/A')[:40]}")
-    print(f"   - 草稿路径: {draft_path}")
+def _create_publish_agent(tools: List[BaseTool]) -> Any:
+    """创建 publish_node 的 Deep Agent。"""
+    backend = _load_backend()
+    mm = get_memory_manager()
+    memory_context = mm.build_memory_context("文章发布")
 
-    return {
-        "publish_result": publish_result,
-        "should_continue": False,
-        "current_node": "publish_node"
-    }
+    system_prompt = PUBLISH_NODE_SYSTEM_PROMPT
+    if memory_context:
+        system_prompt = f"{memory_context}\n\n{system_prompt}"
+
+    memory_files = []
+    mem_file = Path(MEMORY_CONFIG["long_term_file"])
+    if mem_file.exists():
+        memory_files.append(str(mem_file))
+
+    return create_deep_agent(
+        model=MODEL_CONFIG.get("review_model", MODEL_CONFIG["default_model"]),
+        tools=tools,
+        system_prompt=system_prompt,
+        backend=backend,
+        memory=memory_files,
+        name="publisher",
+    )
 
 
 def _prepare_publish(
-    title: str,
-    content: str,
-    composition: Dict,
-    legality: Dict,
-    blueprint: Dict,
-    backend=None,
-    store=None,
-    thread_id: str = "default",
-) -> Dict:
-    """使用 Agent 整理发布信息"""
-    agent = get_node_agent(
-        node_name="publish_node",
-        system_prompt=vx_prompt.PUBLISH_SYSTEM_PROMPT,
-        llm_model=DEFAULT_LLM_MODEL,
-        temperature=0.5,
-        max_tokens=2000,
-        backend=backend,
-        store=store,
-        thread_id=thread_id,
-    )
+    composition: Dict[str, Any],
+    legality: Dict[str, Any],
+    agent: Any,
+) -> PublishNode:
+    """准备发布。"""
+    context = json.dumps({
+        "composition": composition,
+        "legality": legality,
+        "publish_config": PUBLISH_CONFIG,
+    }, ensure_ascii=False, indent=2)
 
-    json_schema = vx_prompt.get_json_schema_prompt(PublishNode)
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                f"请将以下排版后的文章转化为微信公众号可发布的 HTML 格式。\n\n"
+                f"{context}\n\n"
+                f"请以 JSON 格式输出 PublishNode 结构，"
+                f"包含完整的 HTML、发布配置和日志。"
+            ),
+        }
+    ]
 
-    user_prompt = vx_prompt.PUBLISH_USER_PROMPT_TEMPLATE.format(
-        article_content=content[:1500],
-        composition_result=json.dumps(composition, ensure_ascii=False, indent=2)[:1000],
-        legality_result=json.dumps(legality, ensure_ascii=False, indent=2)[:500],
-        blueprint=json.dumps(blueprint, ensure_ascii=False, indent=2)[:500],
-        json_schema=json_schema
-    )
-
-    response = agent.invoke(user_prompt, max_iterations=5, use_memory=True)
-
-    if not response:
-        return _default_publish(title, content)
+    result = agent.invoke({"messages": messages})
+    response_content = result["messages"][-1].content if result.get("messages") else ""
 
     try:
-        result = parse_json_response(response.content)
-        result.setdefault('finalTitle', title)
-        result.setdefault('finalContent', content)
-        result.setdefault('isPublished', False)
-        result.setdefault('publishTime', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        return result
-    except Exception:
-        return _default_publish(title, content)
-
-
-def _default_publish(title: str, content: str) -> Dict:
-    """默认发布信息"""
-    summary = content[:100] + "..." if len(content) > 100 else content
-    keywords = [w for w in title.replace("，", " ").split() if len(w) > 2][:5]
-    if not keywords:
-        keywords = ["公众号文章"]
-
-    return {
-        "platforms": [{"platformName": "微信公众号", "isEnabled": True}],
-        "finalTitle": title,
-        "finalContent": content,
-        "summary": summary,
-        "keywords": keywords,
-        "coverImageUrl": None,
-        "isPublished": False,
-        "publishTime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "originalDraftPath": None
-    }
-
-
-def _save_draft(title: str, content: str, composition: Dict) -> str:
-    """保存草稿"""
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    safe = "".join(c if c.isalnum() or c in '._-' else '_' for c in title[:20])
-
-    draft_dir = os.path.join(WORKSPACE_DIR, "drafts")
-    os.makedirs(draft_dir, exist_ok=True)
-
-    md_path = os.path.join(draft_dir, f"{safe}_{ts}.md")
-    md_content = f"""# {title}
-
-> 生成时间: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-
----
-
-{content}
-
----
-
-*本文由 AI 辅助创作*
-"""
-    try:
-        with open(md_path, "w", encoding="utf-8") as f:
-            f.write(md_content)
-        print(f"  ✅ Markdown 草稿已保存: {md_path}")
+        parsed = parse_json_response(response_content)
+        if isinstance(parsed, dict):
+            pub_data = parsed.get("publish_result") or parsed
+            return PublishNode.model_validate(pub_data)
     except Exception as e:
-        print(f"  ⚠️ 保存失败: {e}")
+        print(f"[publish_node] 解析发布结果失败: {e}")
 
-    # HTML 版本
-    html = composition.get("formattedHtml", "")
-    if html:
-        html_path = os.path.join(draft_dir, f"{safe}_{ts}.html")
-        try:
-            with open(html_path, "w", encoding="utf-8") as f:
-                f.write(html)
-            print(f"  ✅ HTML 草稿已保存: {html_path}")
-        except Exception as e:
-            print(f"  ⚠️ HTML 保存失败: {e}")
+    # fallback: 生成基本 HTML
+    article_text = composition.get("formatted_article", {}).get("fullText", "")
+    html = f"""
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+                  font-size:15px;line-height:1.75;color:#333;padding:16px;">
+        {article_text}
+    </body>
+    </html>
+    """
 
-    return md_path
+    return PublishNode(
+        publish_config={
+            "platform": "wechat",
+            "tags": [],
+            "isOriginal": True,
+        },
+        publish_status="draft",
+        final_article_html=html,
+        publish_log=[f"[{datetime.now().isoformat()}] 文章进入发布队列"],
+    )
+
+
+async def publish_node_async(state: GraphState) -> GraphState:
+    """publish_node 异步执行入口。"""
+    composition = state.get("composition_result")
+    legality = state.get("legality_result")
+
+    if not composition:
+        state["error_message"] = "缺少 composition_result"
+        state["error_node"] = "publish_node"
+        return state
+
+    print(f"[publish_node] 开始准备发布")
+
+    base_tools = get_base_tools()
+    mcp_tools = await get_total_tools()
+    total_tools = list(base_tools) + list(mcp_tools)
+
+    agent = _create_publish_agent(total_tools)
+
+    publish = _prepare_publish(
+        composition.model_dump(by_alias=True),
+        legality.model_dump(by_alias=True) if legality else {},
+        agent,
+    )
+
+    state["publish_result"] = publish
+    state["current_node"] = "publish_node"
+    state["node_status"]["publish_node"] = "completed"
+
+    mm = get_memory_manager()
+    mm.add_long_term(
+        content=f"发布文章: {publish.publish_config.get('tags', [])}",
+        mtype="publish_record",
+        tags=["publish"],
+    )
+
+    print(f"[publish_node] 完成: 状态={publish.publish_status}")
+    return state
+
+
+def publish_node(state: GraphState) -> GraphState:
+    """publish_node 同步入口。"""
+    import asyncio
+    return asyncio.run(publish_node_async(state))

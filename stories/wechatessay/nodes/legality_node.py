@@ -1,237 +1,190 @@
 """
-Legality Node - 合规性检测节点
+wechatessay.nodes.legality_node
+
+节点7: legality_node — 合规性检测节点
 
 职责：
-1. 错别字检查
-2. AI味检测
-3. 敏感词审查
-4. 事实核查
-5. 版权风险检查
-6. 极端情绪检查
-7. 隐私泄露检查
-
-Agent 模式：NodeAgent 执行合规检查，结合规则检查
+1. 错别字/标点检查
+2. AI 感检测
+3. 敏感内容检查
+4. 事实性检查
+5. 文风一致性检查
+6. 自动修正（如果可能）
 """
 
+from __future__ import annotations
+
 import json
-import re
-from typing import Dict, Any, List
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List
 
-from wechatessay.agents.agent_factory import get_node_agent, discover_tools_for_node
-from wechatessay.states.vx_state import GraphState, LegalityNode as LegalityState
-from wechatessay.prompts import vx_prompt
+from deepagents import create_deep_agent
+from langchain_core.tools import BaseTool
+
+from wechatessay.agents.memory_manager import get_memory_manager
+from wechatessay.config import BACKEND_CONFIG, LEGALITY_CONFIG, MEMORY_CONFIG, MODEL_CONFIG
+from wechatessay.prompts.vx_prompt import LEGALITY_NODE_SYSTEM_PROMPT
+from wechatessay.states.vx_state import (
+    ArticleOutputNode,
+    CompositionNode,
+    GraphState,
+    LegalityCheckResult,
+)
+from wechatessay.tools.base_tools.base_tool import get_base_tools
+from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
-from wechatessay.config import DEFAULT_LLM_MODEL
 
 
-# 敏感词
-SENSITIVE_WORDS = [
-    "反动", "颠覆", "分裂", "暴乱", "政变",
-    "色情", "淫秽",
-    "屠杀", "残杀", "血腥",
-    "种族歧视", "地域歧视",
-]
-
-# AI 套话模式
-AI_PATTERNS = [
-    r"让我们", r"不难发现", r"总而言之", r"值得注意的是",
-    r"在这个.*时代", r"随着.*的发展", r"这是一个.*的问题",
-    r"相信.*会", r"笔者", r"本文", r"综上所述", r"由此可见",
-]
-
-
-def legality_node(state: GraphState, **kwargs) -> Dict[str, Any]:
-    """合规检查节点"""
-    print("\n" + "=" * 50)
-    print("🔍 [legality_node] 开始合规检查")
-    print("=" * 50)
-
-    backend = kwargs.get("backend")
-    store = kwargs.get("store")
-    thread_id = kwargs.get("thread_id", "default")
-
-    article_output = state.get("article_output", {})
-    blueprint = state.get("blueprint_result", {})
-
-    full_text = article_output.get("fullText", "")
-    if not full_text:
-        parts = article_output.get("parts", [])
-        full_text = "\n\n".join([p.get("content", "") for p in parts])
-
-    if not full_text:
-        return {"error_message": "没有文章内容", "should_continue": False}
-
-    # Agent + 规则双重检查
-    legality_result = _check_with_agent(full_text, blueprint, backend, store, thread_id)
-
-    if not legality_result:
-        legality_result = _rule_based_check(full_text)
-
-    # 显示结果
-    print(f"   - 综合评分: {legality_result.get('overallScore', 0)}/100")
-    print(f"   - AI味评分: {legality_result.get('aiFlavorScore', 0)}/100 (越低越好)")
-    print(f"   - 是否通过: {'✅' if legality_result.get('isPassed') else '❌'}")
-    issues = legality_result.get("issues", [])
-    print(f"   - 问题数量: {len(issues)}")
-    for issue in issues[:5]:
-        emoji = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(issue.get("severity"), "⚪")
-        print(f"     {emoji} [{issue.get('severity', '?')}] {issue.get('issueType', '?')}: {issue.get('suggestion', 'N/A')[:50]}")
-
-    return {
-        "legality_result": legality_result,
-        "current_node": "legality_node"
-    }
+def _load_backend():
+    """加载 Deep Agents backend 配置。"""
+    from deepagents.backends import CompositeBackend, FilesystemBackend
+    root = Path(BACKEND_CONFIG["root_dir"])
+    return CompositeBackend(
+        default=FilesystemBackend(root_dir=root, virtual_mode=BACKEND_CONFIG["virtual_mode"]),
+        routes={
+            "/memories/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/memories/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+            "/skills/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/skills/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+            "/workspaces/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/workspaces/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+        },
+    )
 
 
-def _check_with_agent(
-    article_content: str,
-    blueprint: Dict,
-    backend=None,
-    store=None,
-    thread_id: str = "default",
-) -> Dict:
-    """使用 Agent 进行合规检查"""
-    agent = get_node_agent(
-        node_name="legality_node",
-        system_prompt=vx_prompt.LEGALITY_SYSTEM_PROMPT,
-        llm_model=DEFAULT_LLM_MODEL,
-        temperature=0.3,
-        max_tokens=6000,
+def _create_legality_agent(tools: List[BaseTool]) -> Any:
+    """创建 legality_node 的 Deep Agent。"""
+    backend = _load_backend()
+    mm = get_memory_manager()
+    memory_context = mm.build_memory_context("合规检查")
+
+    system_prompt = LEGALITY_NODE_SYSTEM_PROMPT
+    if memory_context:
+        system_prompt = f"{memory_context}\n\n{system_prompt}"
+
+    memory_files = []
+    mem_file = Path(MEMORY_CONFIG["long_term_file"])
+    if mem_file.exists():
+        memory_files.append(str(mem_file))
+
+    return create_deep_agent(
+        model=MODEL_CONFIG.get("review_model", MODEL_CONFIG["default_model"]),
+        tools=tools,
+        system_prompt=system_prompt,
         backend=backend,
-        store=store,
-        thread_id=thread_id,
+        memory=memory_files,
+        name="legality_checker",
     )
 
-    json_schema = vx_prompt.get_json_schema_prompt(LegalityState)
 
-    user_prompt = vx_prompt.LEGALITY_USER_PROMPT_TEMPLATE.format(
-        article_content=article_content[:2500],
-        blueprint=json.dumps(blueprint, ensure_ascii=False, indent=2)[:1000],
-        json_schema=json_schema
-    )
+def _check_article(
+    article: Dict[str, Any],
+    target_style: str,
+    agent: Any,
+) -> LegalityCheckResult:
+    """执行合规检查。"""
+    context = json.dumps({
+        "article": article,
+        "target_style": target_style,
+        "sensitive_keywords": LEGALITY_CONFIG["sensitive_keywords"],
+        "ai_markers": LEGALITY_CONFIG["ai_markers"],
+        "max_ai_score": LEGALITY_CONFIG["max_ai_score"],
+    }, ensure_ascii=False, indent=2)
 
-    response = agent.invoke(user_prompt, max_iterations=5, use_memory=True)
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                f"请对以下文章进行全面的合规性检查。\n\n"
+                f"{context}\n\n"
+                f"请以 JSON 格式输出 LegalityCheckResult 结构，"
+                f"包含所有检查维度和修改建议。"
+            ),
+        }
+    ]
 
-    if not response:
-        return None
+    result = agent.invoke({"messages": messages})
+    response_content = result["messages"][-1].content if result.get("messages") else ""
 
     try:
-        result = parse_json_response(response.content)
-
-        # 合并规则检查结果
-        rule_result = _rule_based_check(article_content)
-        result['checkItems'] = rule_result.get('checkItems', [])
-
-        # 合并问题
-        existing = result.get('issues', [])
-        seen = {i.get('location', '') for i in existing}
-        for ri in rule_result.get('issues', []):
-            if ri.get('location', '') not in seen:
-                existing.append(ri)
-        result['issues'] = existing
-
-        score = _calc_score(existing, result.get('aiFlavorScore', 50))
-        result['overallScore'] = score
-        result['isPassed'] = score >= 70
-
-        return result
+        parsed = parse_json_response(response_content)
+        if isinstance(parsed, dict):
+            check_data = parsed.get("legality_result") or parsed
+            return LegalityCheckResult.model_validate(check_data)
     except Exception as e:
-        print(f"  ⚠️ Agent 检查失败: {e}，使用规则检查")
-        return None
+        print(f"[legality_node] 解析检查结果失败: {e}")
+
+    return LegalityCheckResult(
+        is_passed=False,
+        overall_score=0,
+        ai_flavor_score=1.0,
+        readability_score=0.0,
+        correction_suggestions=["检查失败，请人工审核"],
+    )
 
 
-def _rule_based_check(article_content: str) -> Dict:
-    """规则检查（备用）"""
-    issues = []
-    check_items = []
+async def legality_node_async(state: GraphState) -> GraphState:
+    """legality_node 异步执行入口。"""
+    composition = state.get("composition_result")
 
-    # 敏感词
-    check_items.append("敏感词检查")
-    for word in SENSITIVE_WORDS:
-        if word in article_content:
-            idx = article_content.find(word)
-            issues.append({
-                "issueType": "sensitive_word",
-                "location": f"第{idx // 100 + 1}行附近",
-                "originalText": word,
-                "suggestion": f"移除或替换「{word}」",
-                "severity": "high"
-            })
+    if not composition:
+        state["error_message"] = "缺少 composition_result"
+        state["error_node"] = "legality_node"
+        return state
 
-    # AI味
-    check_items.append("AI味检测")
-    ai_count = 0
-    for pattern in AI_PATTERNS:
-        matches = re.findall(pattern, article_content)
-        ai_count += len(matches)
-        for match in matches:
-            idx = article_content.find(match)
-            issues.append({
-                "issueType": "ai_flavor",
-                "location": f"第{idx // 100 + 1}行附近",
-                "originalText": match,
-                "suggestion": f"替换AI套话「{match}」",
-                "severity": "medium"
-            })
+    print(f"[legality_node] 开始合规检查")
 
-    ai_score = max(0, 100 - ai_count * 10)
+    base_tools = get_base_tools()
+    mcp_tools = await get_total_tools()
+    total_tools = list(base_tools) + list(mcp_tools)
 
-    # 标点
-    check_items.append("标点符号检查")
-    if re.search(r'[，。！？]{3,}', article_content):
-        issues.append({
-            "issueType": "typo",
-            "location": "全文",
-            "originalText": "连续标点",
-            "suggestion": "避免连续使用多个标点",
-            "severity": "low"
-        })
+    agent = _create_legality_agent(total_tools)
 
-    # 段落长度
-    check_items.append("段落长度检查")
-    for i, para in enumerate(article_content.split('\n')):
-        if len(para) > 300:
-            issues.append({
-                "issueType": "typo",
-                "location": f"第{i+1}段",
-                "originalText": para[:50] + "...",
-                "suggestion": "段落过长，建议拆分",
-                "severity": "low"
-            })
+    blueprint = state.get("blueprint_result")
+    target_style = blueprint.writing_style.final_style if blueprint else "口语化大白话"
 
-    score = _calc_score(issues, ai_score)
+    legality = _check_article(
+        composition.model_dump(by_alias=True),
+        target_style,
+        agent,
+    )
 
-    return {
-        "isPassed": score >= 70,
-        "overallScore": score,
-        "issues": issues,
-        "typoCheck": [i["suggestion"] for i in issues if i["issueType"] == "typo"],
-        "aiFlavorAnalysis": f"检测到 {ai_count} 处 AI 特征",
-        "aiFlavorScore": ai_score,
-        "suggestions": _gen_suggestions(issues),
-        "correctedText": None,
-        "checkItems": check_items
-    }
+    state["legality_result"] = legality
+    state["current_node"] = "legality_node"
+
+    # 判断是否通过
+    if legality.is_passed and legality.ai_flavor_score <= LEGALITY_CONFIG["max_ai_score"]:
+        state["node_status"]["legality_node"] = "completed"
+        print(f"[legality_node] 通过检查: 得分={legality.overall_score}")
+    else:
+        state["node_status"]["legality_node"] = "waiting_human"
+        state["pending_human_review"] = {
+            "node": "legality_node",
+            "content": legality.model_dump(by_alias=True),
+            "instruction": (
+                f"合规检查发现问题，AI感得分={legality.ai_flavor_score:.2f}，"
+                f"总分={legality.overall_score}。请检查问题列表并决定是否需要修改。"
+            ),
+        }
+        print(f"[legality_node] 检查未通过: 得分={legality.overall_score}")
+
+    mm = get_memory_manager()
+    mm.add_short_term(
+        f"legality_{datetime.now().isoformat()}",
+        {"passed": legality.is_passed, "score": legality.overall_score},
+    )
+
+    return state
 
 
-def _calc_score(issues: List[Dict], ai_flavor_score: int) -> int:
-    """计算评分"""
-    base = 100
-    for issue in issues:
-        s = issue.get("severity", "low")
-        base -= {"high": 15, "medium": 8, "low": 3}.get(s, 3)
-    return max(0, min(100, int(base * 0.7 + ai_flavor_score * 0.3)))
-
-
-def _gen_suggestions(issues: List[Dict]) -> List[str]:
-    """生成优化建议"""
-    suggestions = []
-    high = sum(1 for i in issues if i.get("severity") == "high")
-    ai = sum(1 for i in issues if i.get("issueType") == "ai_flavor")
-    if high > 0:
-        suggestions.append(f"优先处理 {high} 个高危问题")
-    if ai > 3:
-        suggestions.append("AI味较重，建议增加个人化表达")
-    suggestions.append("通读全文确保语气自然流畅")
-    suggestions.append("检查标点符号使用是否规范")
-    return suggestions
+def legality_node(state: GraphState) -> GraphState:
+    """legality_node 同步入口。"""
+    import asyncio
+    return asyncio.run(legality_node_async(state))

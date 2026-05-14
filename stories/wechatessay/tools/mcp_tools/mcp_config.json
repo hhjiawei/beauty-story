@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "trendradar": {
+      "transport": "streamable_http",
+      "url": "http://localhost:3333/mcp",
+      "headers": {
+        "Authorization": "Bearer ${TRENDRADAR_TOKEN}"
+      },
+      "description": "热点趋势雷达 MCP 服务，提供热点追踪、趋势分析工具",
+      "enabled": true,
+      "timeout": 30000
+    },
+    "search": {
+      "transport": "streamable_http",
+      "url": "http://localhost:3334/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SEARCH_TOKEN}"
+      },
+      "description": "搜索引擎 MCP 服务，提供网络搜索、新闻检索工具",
+      "enabled": true,
+      "timeout": 30000
+    },
+    "content": {
+      "transport": "streamable_http",
+      "url": "http://localhost:3335/mcp",
+      "headers": {
+        "Authorization": "Bearer ${CONTENT_TOKEN}"
+      },
+      "description": "内容处理 MCP 服务，提供文章抓取、内容提取工具",
+      "enabled": true,
+      "timeout": 30000
+    },
+    "image": {
+      "transport": "streamable_http",
+      "url": "http://localhost:3336/mcp",
+      "headers": {
+        "Authorization": "Bearer ${IMAGE_TOKEN}"
+      },
+      "description": "图片处理 MCP 服务，提供图片生成、图片编辑工具",
+      "enabled": false,
+      "timeout": 60000
+    }
+  }
+}

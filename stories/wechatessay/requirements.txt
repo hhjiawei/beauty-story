@@ -1,26 +1,35 @@
-# 核心框架
-langgraph>=0.2.0
-langchain>=0.3.0
-langchain-openai>=0.2.0
+# wechatessay 依赖包
+# 安装: pip install -r requirements.txt
+
+# ── 核心框架 ──
+deepagents>=0.1.0
+langgraph>=0.3.0
 langchain-core>=0.3.0
-
-# DeepAgents（用户自有包）
-# deepagents>=0.1.0
-
-# MCP 工具
 langchain-mcp-adapters>=0.1.0
 
-# Pydantic 数据校验
+# ── LLM 模型 ──
+# 根据使用的模型提供商选择安装：
+# langchain-google-genai    # Google Gemini
+# langchain-openai          # OpenAI
+# langchain-anthropic       # Anthropic Claude
+# langchain-ollama          # Ollama 本地模型
+
+# ── MCP ──
+# MCP 适配器已通过 langchain-mcp-adapters 安装
+# 如需特定 MCP 服务器，请单独安装
+
+# ── 向量/RAG ──
+numpy>=1.24.0
+rank-bm25>=0.2.2
+
+# ── 配置 ──
+python-dotenv>=1.0.0
 pydantic>=2.0.0
 
-# 环境变量管理
-python-dotenv>=1.0.0
-
-# 搜索工具
+# ── 搜索工具 ──
 tavily-python>=0.5.0
 
-# 可选：LangSmith 追踪
-# langsmith>=0.1.0
-
-# 其他工具
-requests>=2.31.0
+# ── 可选工具 ──
+# beautifulsoup4>=4.12.0   # HTML 解析（文章抓取增强）
+# requests>=2.31.0         # HTTP 请求
+# lxml>=4.9.0              # XML/HTML 解析器

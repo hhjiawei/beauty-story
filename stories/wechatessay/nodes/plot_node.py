@@ -1,211 +1,169 @@
 """
-Plot Node - 大纲节点
+wechatessay.nodes.plot_node
+
+节点4: plot_node — 大纲节点
 
 职责：
-1. 基于写作蓝图设计详细文章大纲
-2. 规划每段内容、情绪、修辞
-3. 预留金句位置
-4. 人机协同：需要人工检查
-
-Agent 模式：NodeAgent 自动管理工具调用循环和记忆
+1. 整合前面所有节点的内容
+2. 生成详细的公众号文章大纲
+3. 每段包含逻辑、情绪、修辞、金句等详细指令
+4. 需要人工审核
 """
 
+from __future__ import annotations
+
 import json
-from typing import Dict, Any
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List
 
-from wechatessay.agents.agent_factory import get_node_agent, discover_tools_for_node
-from wechatessay.states.vx_state import GraphState, ArticlePlotNode
-from wechatessay.prompts import vx_prompt
+from deepagents import create_deep_agent
+from langchain_core.tools import BaseTool
+
+from wechatessay.agents.memory_manager import get_memory_manager
+from wechatessay.config import BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG
+from wechatessay.prompts.vx_prompt import PLOT_NODE_SYSTEM_PROMPT
+from wechatessay.states.vx_state import ArticlePlotNode, GraphState
+from wechatessay.tools.base_tools.base_tool import get_base_tools
+from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
-from wechatessay.config import PLOT_LLM_MODEL, HUMAN_IN_THE_LOOP, MAX_REVISION_ROUNDS
 
 
-def plot_node(state: GraphState, **kwargs) -> Dict[str, Any]:
-    """大纲节点"""
-    print("\n" + "=" * 50)
-    print("📋 [plot_node] 开始设计文章大纲")
-    print("=" * 50)
+def _load_backend():
+    """加载 Deep Agents backend 配置。"""
+    from deepagents.backends import CompositeBackend, FilesystemBackend
+    root = Path(BACKEND_CONFIG["root_dir"])
+    return CompositeBackend(
+        default=FilesystemBackend(root_dir=root, virtual_mode=BACKEND_CONFIG["virtual_mode"]),
+        routes={
+            "/memories/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/memories/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+            "/skills/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/skills/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+            "/workspaces/": FilesystemBackend(
+                root_dir=Path(BACKEND_CONFIG["routes"]["/workspaces/"]["root_dir"]),
+                virtual_mode=True,
+            ),
+        },
+    )
 
-    backend = kwargs.get("backend")
-    store = kwargs.get("store")
-    thread_id = kwargs.get("thread_id", "default")
 
-    blueprint = state.get("blueprint_result", {})
-    human_feedback = state.get("human_feedback")
-    revision_count = state.get("revision_count", 0)
+def _create_plot_agent(tools: List[BaseTool]) -> Any:
+    """创建 plot_node 的 Deep Agent。"""
+    backend = _load_backend()
+    mm = get_memory_manager()
+    memory_context = mm.build_memory_context("大纲设计")
 
-    tools = discover_tools_for_node("plot_node")
-    print(f"  🔧 plot_node 可用工具: {[t.name for t in tools]}")
+    system_prompt = PLOT_NODE_SYSTEM_PROMPT
+    if memory_context:
+        system_prompt = f"{memory_context}\n\n{system_prompt}"
 
-    if human_feedback and human_feedback.lower() not in ["ok", "满意", "continue"]:
-        if revision_count >= MAX_REVISION_ROUNDS:
-            print(f"⚠️ 达到最大修改轮次 ({MAX_REVISION_ROUNDS})")
-            return {
-                "plot_result": state.get("plot_result", {}),
-                "awaiting_human": False,
-                "human_feedback": None,
-                "current_node": "plot_node"
-            }
+    memory_files = []
+    mem_file = Path(MEMORY_CONFIG["long_term_file"])
+    if mem_file.exists():
+        memory_files.append(str(mem_file))
 
-        print(f"📝 收到修改意见（第{revision_count}轮）: {human_feedback[:100]}...")
-        plot = _revise_plot(
-            original_plot=state.get("plot_result", {}),
-            human_feedback=human_feedback,
-            blueprint=blueprint,
-            revision_history=state.get("plot_result", {}).get("revisionHistory", []),
-            backend=backend,
-            store=store,
-            thread_id=thread_id,
-        )
-    else:
-        plot = _generate_plot(
-            blueprint=blueprint,
-            backend=backend,
-            store=store,
-            thread_id=thread_id,
-        )
-
-    if not plot:
-        return {"error_message": "大纲生成失败", "should_continue": False}
-
-    # 显示摘要
-    wc = plot.get("writingContext", {})
-    print(f"   - 标题: {wc.get('articleTitle', 'N/A')[:40]}")
-    print(f"   - 核心观点: {wc.get('coreIdea', 'N/A')[:50]}")
-    segments = plot.get("contentSegments", [])
-    print(f"   - 段落数: {len(segments)}")
-    for seg in segments:
-        print(f"     [{seg.get('segmentType', '?')}] {seg.get('sectionTitle', '无标题')}")
-
-    if HUMAN_IN_THE_LOOP and not human_feedback:
-        print(vx_prompt.HUMAN_FEEDBACK_PROMPT.format(
-            content_display=_format_plot_for_display(plot)
-        ))
-        return {
-            "plot_result": plot,
-            "awaiting_human": True,
-            "current_node": "plot_node"
-        }
-
-    return {
-        "plot_result": plot,
-        "awaiting_human": False,
-        "human_feedback": None,
-        "current_node": "plot_node"
-    }
+    return create_deep_agent(
+        model=MODEL_CONFIG.get("writing_model", MODEL_CONFIG["default_model"]),
+        tools=tools,
+        system_prompt=system_prompt,
+        backend=backend,
+        memory=memory_files,
+        name="plot_designer",
+    )
 
 
 def _generate_plot(
-    blueprint: Dict,
-    backend=None,
-    store=None,
-    thread_id: str = "default",
-) -> Dict:
-    """生成大纲"""
-    agent = get_node_agent(
-        node_name="plot_node",
-        system_prompt=vx_prompt.PLOT_SYSTEM_PROMPT,
-        llm_model=PLOT_LLM_MODEL,
-        temperature=0.7,
-        max_tokens=4000,
-        backend=backend,
-        store=store,
-        thread_id=thread_id,
-    )
+    blueprint: Dict[str, Any],
+    search_result: Dict[str, Any],
+    agent: Any,
+) -> ArticlePlotNode:
+    """生成文章大纲。"""
+    context = json.dumps({
+        "blueprint": blueprint,
+        "search_result": search_result,
+    }, ensure_ascii=False, indent=2)
 
-    json_schema = vx_prompt.get_json_schema_prompt(ArticlePlotNode)
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                f"基于以下写作蓝图和搜索结果，设计详细的公众号文章大纲。\n\n"
+                f"{context}\n\n"
+                f"请严格按 JSON 格式输出 ArticlePlotNode 结构，"
+                f"包含完整的段落级写作指令。"
+            ),
+        }
+    ]
 
-    user_prompt = vx_prompt.PLOT_USER_PROMPT_TEMPLATE.format(
-        blueprint=json.dumps(blueprint, ensure_ascii=False, indent=2)[:3000],
-        memories="（暂无用户习惯记忆）",
-        word_count_min=1500,
-        word_count_max=3000,
-        json_schema=json_schema
-    )
-
-    response = agent.invoke(user_prompt, max_iterations=10, use_memory=True)
-
-    if not response:
-        return None
+    result = agent.invoke({"messages": messages})
+    response_content = result["messages"][-1].content if result.get("messages") else ""
 
     try:
-        result = parse_json_response(response.content)
-        result['humanFeedback'] = None
-        result['revisionCount'] = 0
-        result['revisionHistory'] = []
-        result['overallWordCount'] = {"min": 1500, "max": 3000}
-        return result
+        parsed = parse_json_response(response_content)
+        if isinstance(parsed, dict):
+            plot_data = parsed.get("plot_result") or parsed
+            return ArticlePlotNode.model_validate(plot_data)
     except Exception as e:
-        print(f"  ⚠️ JSON 解析失败: {e}")
-        return None
+        print(f"[plot_node] 解析大纲失败: {e}")
 
-
-def _revise_plot(
-    original_plot: Dict,
-    human_feedback: str,
-    blueprint: Dict,
-    revision_history: list,
-    backend=None,
-    store=None,
-    thread_id: str = "default",
-) -> Dict:
-    """修改大纲"""
-    agent = get_node_agent(
-        node_name="plot_node",
-        system_prompt=vx_prompt.PLOT_SYSTEM_PROMPT,
-        llm_model=PLOT_LLM_MODEL,
-        temperature=0.7,
-        max_tokens=4000,
-        backend=backend,
-        store=store,
-        thread_id=thread_id,
+    return ArticlePlotNode(
+        writing_context={"articleTitle": "", "coreIdea": "", "targetAudience": "",
+                         "globalStyle": {"tone": "", "languageRequirement": ""}},
+        content_segments=[],
+        global_checklist=[],
     )
 
-    response = agent.invoke_with_revision(
-        original_result=json.dumps(original_plot, ensure_ascii=False, indent=2),
-        human_feedback=human_feedback,
-        revision_history=revision_history,
-        max_iterations=5,
+
+async def plot_node_async(state: GraphState) -> GraphState:
+    """plot_node 异步执行入口。"""
+    blueprint = state.get("blueprint_result")
+    search_result = state.get("search_result")
+
+    if not blueprint:
+        state["error_message"] = "缺少 blueprint_result"
+        state["error_node"] = "plot_node"
+        return state
+
+    print(f"[plot_node] 开始生成大纲")
+
+    base_tools = get_base_tools()
+    mcp_tools = await get_total_tools()
+    total_tools = list(base_tools) + list(mcp_tools)
+
+    agent = _create_plot_agent(total_tools)
+
+    plot_result = _generate_plot(
+        blueprint.model_dump(by_alias=True),
+        search_result.model_dump(by_alias=True) if search_result else {},
+        agent,
     )
 
-    if not response:
-        return original_plot
+    state["plot_result"] = plot_result
+    state["current_node"] = "plot_node"
+    state["node_status"]["plot_node"] = "waiting_human"
 
-    try:
-        result = parse_json_response(response.content)
-        new_history = revision_history.copy()
-        new_history.append(human_feedback)
-        result['revisionHistory'] = new_history
-        result['revisionCount'] = len(new_history)
-        result['humanFeedback'] = human_feedback
-        result['overallWordCount'] = original_plot.get('overallWordCount', {"min": 1500, "max": 3000})
-        return result
-    except Exception:
-        return original_plot
+    state["pending_human_review"] = {
+        "node": "plot_node",
+        "content": plot_result.model_dump(by_alias=True),
+        "instruction": "请检查大纲结构是否合理，段落逻辑是否清晰，金句位置是否恰当。",
+    }
+
+    mm = get_memory_manager()
+    mm.add_short_term(
+        f"plot_{datetime.now().isoformat()}",
+        {"title": plot_result.writing_context.article_title, "segments": len(plot_result.content_segments)},
+    )
+
+    print(f"[plot_node] 完成: {len(plot_result.content_segments)} 段")
+    return state
 
 
-def _format_plot_for_display(plot: Dict) -> str:
-    """格式化大纲展示"""
-    wc = plot.get("writingContext", {})
-    segments = plot.get("contentSegments", [])
-    checklist = plot.get("globalChecklist", [])
-
-    display = f"""
-📋 文章大纲
-📰 标题: {wc.get('articleTitle', 'N/A')}
-💡 核心观点: {wc.get('coreIdea', 'N/A')[:80]}
-
-📐 段落结构:
-"""
-    for seg in segments:
-        emoji = {"introduction": "🚀", "body": "📄", "conclusion": "🎯"}.get(seg.get("segmentType"), "📄")
-        wc_range = seg.get("wordCountRange", {})
-        display += f"\n{emoji} 第{seg.get('segmentIndex', 0)}段 [{seg.get('segmentType', '?')}] {seg.get('sectionTitle', '无标题')}\n"
-        display += f"   逻辑: {seg.get('coreLogic', 'N/A')[:80]}\n"
-        display += f"   情绪: {seg.get('emotionalObjective', 'N/A')[:50]}\n"
-        display += f"   字数: {wc_range.get('min', '?')}-{wc_range.get('max', '?')}字\n"
-
-    display += f"\n✅ 自查清单:\n"
-    for i, item in enumerate(checklist[:10], 1):
-        display += f"{i}. {item}\n"
-    return display
+def plot_node(state: GraphState) -> GraphState:
+    """plot_node 同步入口。"""
+    import asyncio
+    return asyncio.run(plot_node_async(state))

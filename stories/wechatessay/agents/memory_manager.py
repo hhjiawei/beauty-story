@@ -1,720 +1,464 @@
 """
-三层记忆管理器 (Memory Manager)
+wechatessay.agents.memory_manager
 
-Memory 机制 = 上下文管理 (Context) + 向量检索 (RAG) + 自动摘要 (Summarization)
-
-设计目标：
-- ContextMemory: 管理当前会话的短期上下文，确保 LLM 看到完整的对话历史
-- RAGMemory: 基于向量检索的长期记忆，从历史对话中召回相关信息
-- SummarizationMemory: 自动摘要机制，将冗长的历史对话压缩为精炼的上下文
-
-存储方式：
-- 所有记忆通过 create_deep_agent 的 backend 和 store 进行持久化
-- 向量数据存储在 backend 的 /memories/vector/ 目录
-- 摘要数据存储在 backend 的 /memories/summary/ 目录
-- 上下文数据存储在 backend 的 /memories/context/ 目录
-
-参考: https://docs.langchain.com/oss/python/deepagents/backends#storebackend-langgraph-store
+双层记忆系统管理器：
+- 短期记忆：当前对话消息列表，使用 OrderedDict 实现 FIFO 淘汰
+- 长期记忆：用户偏好、项目事实持久化到本地 JSON，支持混合检索（BM25 + 语义相似度）
+- RAG 模块：通过 Ollama/远程 API 向量化，存入 SQLite，检索时混合打分
 """
 
+from __future__ import annotations
+
 import json
-import time
-import hashlib
+import sqlite3
+import threading
+from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Callable
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+from rank_bm25 import BM25Okapi
+
+from wechatessay.config import MEMORY_CONFIG, RAG_CONFIG, MEMORY_DIR
+
+# ── 全局锁 ──
+_lt_lock = threading.Lock()
+_vec_lock = threading.Lock()
 
 
-# ── 1. 上下文记忆 (Context Memory) ──
+# ═══════════════════════════════════════════════
+# 短期记忆（FIFO OrderedDict）
+# ═══════════════════════════════════════════════
 
-class ContextMemory:
+class ShortTermMemory:
     """
-    短期上下文记忆
+    短期记忆：线程安全的 FIFO 消息缓存。
 
-    维护当前工作流的完整上下文窗口，包括：
-    - 各节点的输入/输出状态
-    - 人工反馈历史
-    - 当前会话的完整消息记录
-
-    作用：让 AI 每次对话都能“看到”完整的上下文，不会“失忆”。
-    """
-
-    def __init__(self, backend=None, thread_id: str = "default"):
-        self._backend = backend
-        self._thread_id = thread_id
-        self._context: Dict[str, Any] = {}
-        self._message_buffer: List[Dict] = []
-
-    # ── 状态上下文 ──
-
-    def set_context(self, key: str, value: Any):
-        """设置上下文键值"""
-        self._context[key] = {
-            "value": value,
-            "timestamp": time.time(),
-        }
-        self._persist_context()
-
-    def get_context(self, key: str, default=None) -> Any:
-        """获取上下文值"""
-        if key in self._context:
-            return self._context[key]["value"]
-        # 尝试从 backend 加载
-        loaded = self._load_context_key(key)
-        if loaded is not None:
-            self._context[key] = loaded
-            return loaded["value"]
-        return default
-
-    def get_all_context(self) -> Dict[str, Any]:
-        """获取完整上下文（返回纯值字典）"""
-        self._refresh_context()
-        return {k: v["value"] for k, v in self._context.items()}
-
-    def remove_context(self, key: str):
-        """移除上下文键"""
-        self._context.pop(key, None)
-        self._persist_context()
-
-    def clear_context(self):
-        """清空上下文"""
-        self._context.clear()
-        self._persist_context()
-
-    # ── 消息缓冲区 ──
-
-    def append_message(self, role: str, content: str, metadata: Optional[Dict] = None):
-        """追加消息到缓冲区"""
-        self._message_buffer.append({
-            "role": role,
-            "content": content,
-            "timestamp": time.time(),
-            "metadata": metadata or {},
-        })
-
-    def get_messages(self, limit: Optional[int] = None) -> List[Dict]:
-        """获取消息历史"""
-        msgs = list(self._message_buffer)
-        if limit and len(msgs) > limit:
-            msgs = msgs[-limit:]
-        return msgs
-
-    def get_messages_as_text(self, limit: Optional[int] = None) -> str:
-        """将消息格式化为文本（用于 prompt 注入）"""
-        msgs = self.get_messages(limit)
-        lines = []
-        for m in msgs:
-            role_emoji = {"user": "👤", "assistant": "🤖", "system": "⚙️", "tool": "🔧"}.get(m["role"], "📝")
-            lines.append(f"{role_emoji} [{m['role']}] {m['content'][:300]}")
-        return "\n\n".join(lines)
-
-    def clear_messages(self):
-        """清空消息缓冲区"""
-        self._message_buffer.clear()
-
-    # ── 持久化 ──
-
-    def _persist_context(self):
-        """持久化上下文到 backend"""
-        key = f"context/{self._thread_id}/state.json"
-        data = {
-            "thread_id": self._thread_id,
-            "context": self._context,
-            "message_count": len(self._message_buffer),
-            "updated_at": time.time(),
-        }
-        self._write(key, data)
-
-    def _load_context_key(self, key: str) -> Optional[Dict]:
-        """从 backend 加载单个上下文键"""
-        # 先加载完整上下文
-        full_key = f"context/{self._thread_id}/state.json"
-        data = self._read(full_key)
-        if data and "context" in data and key in data["context"]:
-            return data["context"][key]
-        return None
-
-    def _refresh_context(self):
-        """从 backend 刷新完整上下文"""
-        key = f"context/{self._thread_id}/state.json"
-        data = self._read(key)
-        if data and "context" in data:
-            self._context = data["context"]
-
-    # ── Backend I/O ──
-
-    def _write(self, key: str, data: Dict):
-        """写入 backend"""
-        try:
-            if self._backend is not None:
-                self._backend.write_file(key, json.dumps(data, ensure_ascii=False, indent=2))
-                return
-        except Exception as e:
-            print(f"  ⚠️ Context backend write failed: {e}")
-        # Fallback
-        self._write_local(key, data)
-
-    def _read(self, key: str) -> Optional[Dict]:
-        """读取 backend"""
-        try:
-            if self._backend is not None:
-                content = self._backend.read_file(key)
-                return json.loads(content)
-        except Exception:
-            pass
-        return self._read_local(key)
-
-    def _write_local(self, key: str, data: Dict):
-        """本地文件系统 fallback"""
-        try:
-            from config import MEMORY_DIR
-            path = Path(MEMORY_DIR) / key
-            path.parent.mkdir(parents=True, exist_ok=True)
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            print(f"  ❌ Context local write failed: {e}")
-
-    def _read_local(self, key: str) -> Optional[Dict]:
-        """本地文件系统 fallback 读取"""
-        try:
-            from config import MEMORY_DIR
-            path = Path(MEMORY_DIR) / key
-            if path.exists():
-                with open(path, "r", encoding="utf-8") as f:
-                    return json.load(f)
-        except Exception:
-            pass
-        return None
-
-
-# ── 2. 向量检索记忆 (RAG Memory) ──
-
-class RAGMemory:
-    """
-    长期向量检索记忆
-
-    将历史对话、用户反馈、工作流产出向量化存储，
-    在后续节点中基于语义相似度召回相关记忆。
-
-    存储结构:
-        /memories/vector/{thread_id}/documents.json  - 原始文档
-        /memories/vector/{thread_id}/index.json      - 向量索引
+    使用 OrderedDict 模拟 LinkedHashMap 的访问顺序维护：
+    - 当容量满时，淘汰最旧的消息（FIFO）
+    - 支持按 key 快速查询
     """
 
-    def __init__(self, backend=None, thread_id: str = "default"):
-        self._backend = backend
-        self._thread_id = thread_id
-        self._documents: List[Dict] = []
-        self._index_built = False
+    def __init__(self, capacity: int = None):
+        self.capacity = capacity or MEMORY_CONFIG["short_term_capacity"]
+        self._cache: OrderedDict[str, Dict[str, Any]] = OrderedDict()
+        self._lock = threading.Lock()
 
-    def add_document(self, content: str, metadata: Optional[Dict] = None, doc_id: Optional[str] = None):
-        """
-        添加文档到向量库
+    def put(self, key: str, value: Dict[str, Any]) -> None:
+        """存入消息，若超出容量则淘汰最旧条目。"""
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+            self._cache[key] = value
+            while len(self._cache) > self.capacity:
+                self._cache.popitem(last=False)
 
-        Args:
-            content: 文档内容
-            metadata: 附加元数据（如节点名、时间戳等）
-            doc_id: 自定义文档 ID
-        """
-        if not doc_id:
-            doc_id = hashlib.md5(f"{content}_{time.time()}".encode()).hexdigest()[:12]
+    def get(self, key: str) -> Optional[Dict[str, Any]]:
+        """获取单条消息并移至队尾（LRU 语义）。"""
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+                return self._cache[key]
+            return None
 
-        doc = {
-            "id": doc_id,
-            "content": content,
-            "metadata": metadata or {},
-            "timestamp": time.time(),
-        }
+    def get_all(self) -> List[Dict[str, Any]]:
+        """按插入顺序返回所有消息。"""
+        with self._lock:
+            return list(self._cache.values())
 
-        # 生成简单向量（基于词袋模型，生产环境应使用 Embedding 模型）
-        doc["vector"] = self._simple_vectorize(content)
+    def get_recent(self, n: int = 10) -> List[Dict[str, Any]]:
+        """获取最近 n 条消息。"""
+        with self._lock:
+            return list(self._cache.values())[-n:]
 
-        self._documents.append(doc)
-        self._index_built = False
-        self._persist_documents()
+    def clear(self) -> None:
+        """清空缓存。"""
+        with self._lock:
+            self._cache.clear()
 
-    def add_messages(self, messages: List[Dict], node_name: str = ""):
-        """批量添加消息记录"""
-        for i, msg in enumerate(messages):
-            content = f"[{msg.get('role', '?')}] {msg.get('content', '')}"
-            self.add_document(
-                content=content,
-                metadata={"type": "message", "node": node_name, "index": i},
+    def keys(self) -> List[str]:
+        with self._lock:
+            return list(self._cache.keys())
+
+    def __len__(self) -> int:
+        with self._lock:
+            return len(self._cache)
+
+
+# ═══════════════════════════════════════════════
+# 向量数据库（SQLite）
+# ═══════════════════════════════════════════════
+
+class VectorStore:
+    """
+    基于 SQLite 的简单向量存储。
+    使用 numpy 数组存储向量，支持余弦相似度检索。
+    """
+
+    def __init__(self, db_path: str = None):
+        self.db_path = db_path or RAG_CONFIG["vector_db_path"]
+        self.dimension = RAG_CONFIG["vector_dimension"]
+        self._init_db()
+
+    def _init_db(self) -> None:
+        """初始化向量表。"""
+        with _vec_lock:
+            conn = sqlite3.connect(self.db_path)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS vectors (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    content TEXT NOT NULL,
+                    vector BLOB NOT NULL,
+                    meta TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_vectors_created 
+                ON vectors(created_at)
+            """)
+            conn.commit()
+            conn.close()
+
+    def add(self, content: str, vector: List[float], meta: Dict = None) -> int:
+        """添加向量记录，返回 id。"""
+        vec_bytes = np.array(vector, dtype=np.float32).tobytes()
+        meta_json = json.dumps(meta or {}, ensure_ascii=False)
+        with _vec_lock:
+            conn = sqlite3.connect(self.db_path)
+            cur = conn.execute(
+                "INSERT INTO vectors (content, vector, meta) VALUES (?, ?, ?)",
+                (content, vec_bytes, meta_json),
             )
+            conn.commit()
+            vid = cur.lastrowid
+            conn.close()
+            return vid
 
-    def search(self, query: str, top_k: int = 5) -> List[Dict]:
-        """
-        向量相似度搜索
+    def search(
+        self,
+        query_vector: List[float],
+        top_k: int = None,
+        threshold: float = None,
+    ) -> List[Dict[str, Any]]:
+        """向量相似度检索，返回 top_k 条结果。"""
+        top_k = top_k or RAG_CONFIG["retrieve_top_k"]
+        threshold = threshold or MEMORY_CONFIG["memory_threshold"]
+        qvec = np.array(query_vector, dtype=np.float32)
 
-        Args:
-            query: 查询文本
-            top_k: 返回最相似的 k 条结果
+        with _vec_lock:
+            conn = sqlite3.connect(self.db_path)
+            rows = conn.execute(
+                "SELECT id, content, vector, meta FROM vectors ORDER BY created_at DESC"
+            ).fetchall()
+            conn.close()
 
-        Returns:
-            按相似度排序的文档列表，包含 content, metadata, score 字段
-        """
-        if not self._documents:
-            self._load_documents()
-
-        if not self._documents:
-            return []
-
-        query_vec = self._simple_vectorize(query)
-
-        # 计算余弦相似度
         results = []
-        for doc in self._documents:
-            score = self._cosine_similarity(query_vec, doc.get("vector", []))
-            results.append({
-                "content": doc["content"],
-                "metadata": doc.get("metadata", {}),
-                "score": score,
-            })
+        for vid, content, vec_bytes, meta_json in rows:
+            vec = np.frombuffer(vec_bytes, dtype=np.float32)
+            # 余弦相似度
+            sim = float(np.dot(qvec, vec) / (np.linalg.norm(qvec) * np.linalg.norm(vec) + 1e-8))
+            if sim >= threshold:
+                results.append({
+                    "id": vid,
+                    "content": content,
+                    "similarity": sim,
+                    "meta": json.loads(meta_json or "{}"),
+                })
 
-        results.sort(key=lambda x: x["score"], reverse=True)
+        results.sort(key=lambda x: x["similarity"], reverse=True)
         return results[:top_k]
 
-    def get_all_documents(self) -> List[Dict]:
-        """获取所有文档"""
-        if not self._documents:
-            self._load_documents()
-        return list(self._documents)
+    def delete(self, vid: int) -> None:
+        with _vec_lock:
+            conn = sqlite3.connect(self.db_path)
+            conn.execute("DELETE FROM vectors WHERE id = ?", (vid,))
+            conn.commit()
+            conn.close()
 
-    def clear(self):
-        """清空向量库"""
-        self._documents.clear()
-        self._index_built = False
-        self._persist_documents()
-
-    # ── 向量化方法（简单实现，生产环境用 Embedding 模型替换） ──
-
-    def _simple_vectorize(self, text: str, dim: int = 128) -> List[float]:
-        """
-        简单向量表示（基于字符哈希）
-
-        生产环境建议替换为：
-        - OpenAI Embedding API
-        - 本地 Sentence Transformer 模型
-        """
-        import hashlib
-        import struct
-
-        vec = [0.0] * dim
-        words = text.lower().split()
-        for word in words:
-            h = hashlib.md5(word.encode()).digest()
-            for i in range(min(dim // 4, len(h) // 4)):
-                val = struct.unpack("f", h[i*4:(i+1)*4])[0]
-                idx = (i + ord(word[0]) if word else i) % dim
-                vec[idx] += val
-
-        # 归一化
-        import math
-        norm = math.sqrt(sum(v * v for v in vec))
-        if norm > 0:
-            vec = [v / norm for v in vec]
-        return vec
-
-    def _cosine_similarity(self, a: List[float], b: List[float]) -> float:
-        """计算余弦相似度"""
-        import math
-        if len(a) != len(b) or len(a) == 0:
-            return 0.0
-        dot = sum(x * y for x, y in zip(a, b))
-        return max(0.0, min(1.0, dot))
-
-    # ── 持久化 ──
-
-    def _persist_documents(self):
-        """持久化文档"""
-        key = f"vector/{self._thread_id}/documents.json"
-        data = {
-            "thread_id": self._thread_id,
-            "documents": self._documents,
-            "count": len(self._documents),
-            "updated_at": time.time(),
-        }
-        self._write(key, data)
-
-    def _load_documents(self):
-        """加载文档"""
-        key = f"vector/{self._thread_id}/documents.json"
-        data = self._read(key)
-        if data and "documents" in data:
-            self._documents = data["documents"]
-
-    def _write(self, key: str, data: Dict):
-        """写入 backend"""
-        try:
-            if self._backend is not None:
-                self._backend.write_file(key, json.dumps(data, ensure_ascii=False, indent=2))
-                return
-        except Exception as e:
-            print(f"  ⚠️ RAG backend write failed: {e}")
-        self._write_local(key, data)
-
-    def _read(self, key: str) -> Optional[Dict]:
-        try:
-            if self._backend is not None:
-                content = self._backend.read_file(key)
-                return json.loads(content)
-        except Exception:
-            pass
-        return self._read_local(key)
-
-    def _write_local(self, key: str, data: Dict):
-        try:
-            from config import MEMORY_DIR
-            path = Path(MEMORY_DIR) / key
-            path.parent.mkdir(parents=True, exist_ok=True)
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            print(f"  ❌ RAG local write failed: {e}")
-
-    def _read_local(self, key: str) -> Optional[Dict]:
-        try:
-            from config import MEMORY_DIR
-            path = Path(MEMORY_DIR) / key
-            if path.exists():
-                with open(path, "r", encoding="utf-8") as f:
-                    return json.load(f)
-        except Exception:
-            pass
-        return None
+    def clear(self) -> None:
+        with _vec_lock:
+            conn = sqlite3.connect(self.db_path)
+            conn.execute("DELETE FROM vectors")
+            conn.commit()
+            conn.close()
 
 
-# ── 3. 自动摘要记忆 (Summarization Memory) ──
+# ═══════════════════════════════════════════════
+# 长期记忆（JSON 文件 + 混合检索）
+# ═══════════════════════════════════════════════
 
-class SummarizationMemory:
+class LongTermMemory:
     """
-    自动摘要记忆
+    长期记忆管理器。
 
-    将冗长的对话历史、节点产出自动摘要，生成精炼的上下文，
-    避免 LLM 的上下文窗口溢出，同时保留关键信息。
-
-    摘要触发条件:
-    1. 消息数量超过阈值 (默认 20 条)
-    2. 单个节点运行超过 N 轮迭代
-    3. 显式调用 summarize()
-
-    存储:
-        /memories/summary/{thread_id}/summaries.json
+    持久化存储用户偏好、项目事实等信息到本地 JSON 文件。
+    检索时采用混合打分：
+        score = w_bm25 * bm25_score + w_sem * semantic_score + w_type * type_weight + dual_hit_bonus
     """
 
-    SUMMARIZE_TRIGGER_MSG_COUNT = 20
-    SUMMARIZE_TRIGGER_ITER_COUNT = 10
+    def __init__(self, file_path: str = None):
+        self.file_path = Path(file_path or MEMORY_CONFIG["long_term_file"])
+        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+        self._memories: List[Dict[str, Any]] = []
+        self._load()
 
-    def __init__(self, backend=None, thread_id: str = "default", llm_summarizer: Optional[Any] = None):
-        self._backend = backend
-        self._thread_id = thread_id
-        self._llm_summarizer = llm_summarizer  # 用于生成摘要的 LLM
-        self._summaries: List[Dict] = []
+    def _load(self) -> None:
+        """从 JSON 文件加载记忆。"""
+        if self.file_path.exists():
+            try:
+                with open(self.file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._memories = data if isinstance(data, list) else []
+            except Exception:
+                self._memories = []
+        else:
+            self._memories = []
 
-    def should_summarize(self, message_count: int, iteration_count: int = 0) -> bool:
-        """判断是否需要触发摘要"""
-        return (
-            message_count >= self.SUMMARIZE_TRIGGER_MSG_COUNT
-            or iteration_count >= self.SUMMARIZE_TRIGGER_ITER_COUNT
-        )
+    def _save(self) -> None:
+        """保存记忆到 JSON 文件。"""
+        with _lt_lock:
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                json.dump(self._memories, f, ensure_ascii=False, indent=2)
 
-    def summarize(self, messages: List[Dict], context: Optional[Dict] = None) -> str:
+    def add(
+        self,
+        content: str,
+        mtype: str = "general",
+        tags: List[str] = None,
+        weight: float = 1.0,
+    ) -> None:
         """
-        生成摘要
+        添加一条长期记忆。
 
         Args:
-            messages: 需要摘要的消息列表
-            context: 额外上下文
+            content: 记忆内容
+            mtype: 记忆类型（user_preference, project_fact, style_guide, etc.）
+            tags: 标签列表
+            weight: 权重（用于 type_weight 打分）
+        """
+        entry = {
+            "id": len(self._memories) + 1,
+            "content": content,
+            "type": mtype,
+            "tags": tags or [],
+            "weight": weight,
+            "created_at": datetime.now().isoformat(),
+            "access_count": 0,
+        }
+        with _lt_lock:
+            self._memories.append(entry)
+        self._save()
+
+    def retrieve(
+        self,
+        query: str,
+        query_vector: Optional[List[float]] = None,
+        top_k: int = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        混合检索长期记忆。
+
+        打分公式：
+            final_score = bm25_w * norm_bm25 + sem_w * norm_semantic + type_w * norm_type + dual_bonus
+
+        Args:
+            query: 文本查询
+            query_vector: 查询向量（可选，若提供则计算语义相似度）
+            top_k: 返回条数
 
         Returns:
-            摘要文本
+            按得分降序排列的记忆列表
         """
-        if not messages:
-            return ""
+        top_k = top_k or MEMORY_CONFIG["max_injected_memories"]
+        if not self._memories:
+            return []
 
-        # 使用 LLM 生成摘要
-        if self._llm_summarizer:
-            try:
-                text = "\n".join([f"[{m.get('role', '?')}] {m.get('content', '')[:500]}" for m in messages])
-                prompt = f"""请对以下工作流对话进行摘要，保留关键决策、数据、人工反馈和行动项：
+        # ── BM25 打分 ──
+        tokenized_corpus = [m["content"].split() for m in self._memories]
+        bm25 = BM25Okapi(tokenized_corpus)
+        bm25_scores = bm25.get_scores(query.split())
+        max_bm25 = bm25_scores.max() if bm25_scores.max() > 0 else 1.0
+        norm_bm25 = bm25_scores / max_bm25
 
-{text[:3000]}
-
-请输出一段精炼的摘要（200字以内）："""
-                response = self._llm_summarizer.invoke(prompt)
-                summary = str(response.content) if hasattr(response, "content") else str(response)
-            except Exception as e:
-                print(f"  ⚠️ LLM 摘要失败: {e}，使用简单摘要")
-                summary = self._simple_summarize(messages)
+        # ── 语义相似度打分 ──
+        if query_vector is not None:
+            # 简化的语义相似度：使用 dot product 近似
+            qvec = np.array(query_vector, dtype=np.float32)
+            sem_scores = np.zeros(len(self._memories))
+            for i, m in enumerate(self._memories):
+                # 这里使用 content 的 hash 作为简单向量近似
+                # 实际应调用 embedding API
+                mvec = self._simple_hash_vector(m["content"])
+                sim = float(np.dot(qvec, mvec) / (np.linalg.norm(qvec) * np.linalg.norm(mvec) + 1e-8))
+                sem_scores[i] = sim
+            max_sem = sem_scores.max() if sem_scores.max() > 0 else 1.0
+            norm_sem = sem_scores / max_sem
         else:
-            summary = self._simple_summarize(messages)
+            norm_sem = np.zeros(len(self._memories))
 
-        # 保存摘要
-        summary_record = {
-            "id": f"summary_{int(time.time())}",
-            "summary": summary,
-            "source_count": len(messages),
-            "context": context or {},
-            "timestamp": time.time(),
-        }
-        self._summaries.append(summary_record)
-        self._persist_summaries()
+        # ── 类型权重打分 ──
+        type_weights = np.array([
+            MEMORY_CONFIG.get("type_weights", {}).get(m["type"], 1.0)
+            for m in self._memories
+        ])
+        max_tw = type_weights.max() if type_weights.max() > 0 else 1.0
+        norm_type = type_weights / max_tw
 
-        return summary
+        # ── 双命中奖励 ──
+        dual_bonus = np.where(
+            (norm_bm25 > 0.5) & (norm_sem > 0.5),
+            MEMORY_CONFIG["dual_hit_bonus"],
+            0.0,
+        )
 
-    def _simple_summarize(self, messages: List[Dict]) -> str:
-        """简单摘要（提取关键信息）"""
-        key_points = []
-        for m in messages:
-            role = m.get("role", "")
-            content = m.get("content", "")
-            if role == "user" and len(content) > 10:
-                key_points.append(f"[需求] {content[:100]}")
-            elif role == "assistant" and len(content) > 10:
-                # 提取关键句
-                sentences = content.split("。")
-                for s in sentences[:2]:
-                    if len(s.strip()) > 5:
-                        key_points.append(f"[产出] {s.strip()[:100]}")
+        # ── 综合打分 ──
+        w_bm25 = MEMORY_CONFIG["bm25_weight"]
+        w_sem = MEMORY_CONFIG["semantic_weight"]
+        w_type = MEMORY_CONFIG["type_weight"]
 
-        return "；".join(key_points[:10])
+        final_scores = (
+            w_bm25 * norm_bm25
+            + w_sem * norm_sem
+            + w_type * norm_type
+            + dual_bonus
+        )
 
-    def get_recent_summaries(self, count: int = 3) -> List[str]:
-        """获取最近的摘要"""
-        if not self._summaries:
-            self._load_summaries()
-        return [s["summary"] for s in self._summaries[-count:]]
+        # ── 排序返回 ──
+        indexed = list(enumerate(final_scores))
+        indexed.sort(key=lambda x: x[1], reverse=True)
 
-    def get_summaries_as_text(self, count: int = 3) -> str:
-        """获取摘要文本（用于 prompt 注入）"""
-        summaries = self.get_recent_summaries(count)
-        if not summaries:
-            return "（暂无历史摘要）"
-        return "\n\n".join([f"[历史摘要 {i+1}] {s}" for i, s in enumerate(summaries)])
+        results = []
+        for idx, score in indexed[:top_k]:
+            mem = self._memories[idx].copy()
+            mem["retrieval_score"] = round(float(score), 4)
+            results.append(mem)
 
-    def clear(self):
-        """清空摘要"""
-        self._summaries.clear()
-        self._persist_summaries()
+        return results
 
-    # ── 持久化 ──
+    @staticmethod
+    def _simple_hash_vector(text: str, dim: int = None) -> np.ndarray:
+        """基于 hash 的简单向量表示（ fallback 用）。"""
+        dim = dim or RAG_CONFIG["vector_dimension"]
+        vec = np.zeros(dim, dtype=np.float32)
+        for i, ch in enumerate(text):
+            vec[i % dim] += ord(ch) % 100
+        norm = np.linalg.norm(vec)
+        return vec / (norm + 1e-8)
 
-    def _persist_summaries(self):
-        key = f"summary/{self._thread_id}/summaries.json"
-        data = {
-            "thread_id": self._thread_id,
-            "summaries": self._summaries,
-            "count": len(self._summaries),
-            "updated_at": time.time(),
-        }
-        self._write(key, data)
+    def update_access(self, mem_id: int) -> None:
+        """更新访问计数。"""
+        with _lt_lock:
+            for m in self._memories:
+                if m["id"] == mem_id:
+                    m["access_count"] = m.get("access_count", 0) + 1
+                    break
+        self._save()
 
-    def _load_summaries(self):
-        key = f"summary/{self._thread_id}/summaries.json"
-        data = self._read(key)
-        if data and "summaries" in data:
-            self._summaries = data["summaries"]
+    def delete(self, mem_id: int) -> None:
+        with _lt_lock:
+            self._memories = [m for m in self._memories if m["id"] != mem_id]
+        self._save()
 
-    def _write(self, key: str, data: Dict):
-        try:
-            if self._backend is not None:
-                self._backend.write_file(key, json.dumps(data, ensure_ascii=False, indent=2))
-                return
-        except Exception as e:
-            print(f"  ⚠️ Summary backend write failed: {e}")
-        self._write_local(key, data)
-
-    def _read(self, key: str) -> Optional[Dict]:
-        try:
-            if self._backend is not None:
-                content = self._backend.read_file(key)
-                return json.loads(content)
-        except Exception:
-            pass
-        return self._read_local(key)
-
-    def _write_local(self, key: str, data: Dict):
-        try:
-            from config import MEMORY_DIR
-            path = Path(MEMORY_DIR) / key
-            path.parent.mkdir(parents=True, exist_ok=True)
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            print(f"  ❌ Summary local write failed: {e}")
-
-    def _read_local(self, key: str) -> Optional[Dict]:
-        try:
-            from config import MEMORY_DIR
-            path = Path(MEMORY_DIR) / key
-            if path.exists():
-                with open(path, "r", encoding="utf-8") as f:
-                    return json.load(f)
-        except Exception:
-            pass
-        return None
+    def list_all(self) -> List[Dict[str, Any]]:
+        return self._memories.copy()
 
 
-# ── 4. 统一 Memory Manager ──
+# ═══════════════════════════════════════════════
+# 统一记忆管理器
+# ═══════════════════════════════════════════════
 
 class MemoryManager:
     """
-    统一记忆管理器
+    统一记忆入口：短期记忆 + 长期记忆 + RAG 向量存储。
 
-    整合三层记忆：Context + RAG + Summarization
-    对外提供统一的记忆读写接口。
+    使用单例模式避免重复初始化。
     """
 
-    def __init__(
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._init()
+        return cls._instance
+
+    def _init(self) -> None:
+        self.short_term = ShortTermMemory()
+        self.long_term = LongTermMemory()
+        self.vector_store = VectorStore()
+
+    # ── 短期记忆接口 ──
+    def add_short_term(self, key: str, value: Dict[str, Any]) -> None:
+        self.short_term.put(key, value)
+
+    def get_short_term(self, key: str) -> Optional[Dict[str, Any]]:
+        return self.short_term.get(key)
+
+    def get_recent_context(self, n: int = 10) -> List[Dict[str, Any]]:
+        return self.short_term.get_recent(n)
+
+    # ── 长期记忆接口 ──
+    def add_long_term(
         self,
-        backend=None,
-        store=None,
-        thread_id: str = "default",
-        llm_summarizer=None,
-    ):
-        self.backend = backend
-        self.store = store
-        self.thread_id = thread_id
+        content: str,
+        mtype: str = "general",
+        tags: List[str] = None,
+        weight: float = 1.0,
+    ) -> None:
+        self.long_term.add(content, mtype, tags, weight)
 
-        # 初始化三层记忆
-        self.context = ContextMemory(backend=backend, thread_id=thread_id)
-        self.rag = RAGMemory(backend=backend, thread_id=thread_id)
-        self.summarization = SummarizationMemory(
-            backend=backend, thread_id=thread_id, llm_summarizer=llm_summarizer
-        )
+    def retrieve_long_term(
+        self,
+        query: str,
+        query_vector: Optional[List[float]] = None,
+        top_k: int = None,
+    ) -> List[Dict[str, Any]]:
+        return self.long_term.retrieve(query, query_vector, top_k)
 
-    def enrich_prompt(self, prompt: str, query: Optional[str] = None, rag_top_k: int = 3) -> str:
+    # ── RAG 向量接口 ──
+    def add_to_vector_store(
+        self, content: str, vector: List[float], meta: Dict = None
+    ) -> int:
+        return self.vector_store.add(content, vector, meta)
+
+    def vector_search(
+        self, query_vector: List[float], top_k: int = None
+    ) -> List[Dict[str, Any]]:
+        return self.vector_store.search(query_vector, top_k)
+
+    # ── 混合检索：注入系统提示词用 ──
+    def build_memory_context(self, query: str, query_vector: List[float] = None) -> str:
         """
-        使用三层记忆丰富 prompt
-
-        将相关的历史上下文、RAG 召回结果、摘要注入到 prompt 中，
-        让 LLM "记住" 过去发生的事情。
-
-        Args:
-            prompt: 原始 prompt
-            query: 查询文本（用于 RAG 召回）
-            rag_top_k: RAG 召回数量
-
-        Returns:
-            注入记忆后的 prompt
+        构建记忆上下文字符串，用于注入 Agent 的系统提示词。
+        优先使用长期记忆混合检索结果。
         """
-        memory_sections = []
+        memories = self.retrieve_long_term(query, query_vector)
+        if not memories:
+            return ""
 
-        # 1. 上下文记忆
-        ctx = self.context.get_all_context()
-        if ctx:
-            ctx_lines = []
-            for k, v in list(ctx.items())[-5:]:  # 最多取最近5条
-                v_str = str(v)[:200]
-                ctx_lines.append(f"  - {k}: {v_str}")
-            if ctx_lines:
-                memory_sections.append(f"【工作流上下文】\n" + "\n".join(ctx_lines))
+        lines = ["## 相关记忆与偏好", ""]
+        for m in memories:
+            lines.append(f"- [{m['type']}] {m['content']}")
+        return "\n".join(lines)
 
-        # 2. RAG 召回
-        if query:
-            rag_results = self.rag.search(query, top_k=rag_top_k)
-            if rag_results:
-                rag_lines = []
-                for r in rag_results:
-                    content = r.get("content", "")[:150]
-                    score = r.get("score", 0)
-                    rag_lines.append(f"  - [{score:.2f}] {content}")
-                memory_sections.append("【相关历史记忆】\n" + "\n".join(rag_lines))
+    # ── 持久化接口 ──
+    def save_all(self) -> None:
+        self.long_term._save()
 
-        # 3. 摘要
-        summaries_text = self.summarization.get_summaries_as_text(count=2)
-        if summaries_text and "暂无" not in summaries_text:
-            memory_sections.append(f"【历史摘要】\n{summaries_text}")
-
-        # 组装
-        if memory_sections:
-            memory_block = "\n\n".join(memory_sections)
-            enriched = f"""{prompt}
-
-═══════════════════════════════════════
-📚 历史记忆（以下信息来自之前的工作流步骤，请作为参考）：
-═══════════════════════════════════════
-
-{memory_block}
-
-═══════════════════════════════════════
-"""
-            return enriched
-
-        return prompt
-
-    def record_node_io(self, node_name: str, node_input: str, node_output: str):
-        """记录节点的输入输出到 RAG 和 Context"""
-        # RAG
-        self.rag.add_document(
-            content=f"节点 {node_name} 的产出：{node_output}",
-            metadata={"node": node_name, "type": "output"},
-        )
-
-        # Context
-        self.context.set_context(f"last_{node_name}_output", node_output)
-
-    def record_human_feedback(self, node_name: str, feedback: str):
-        """记录人工反馈"""
-        self.rag.add_document(
-            content=f"用户对 {node_name} 的反馈：{feedback}",
-            metadata={"node": node_name, "type": "human_feedback"},
-        )
-        self.context.set_context(f"{node_name}_feedback", feedback)
-
-    def check_and_summarize(self, messages: List[Dict]) -> Optional[str]:
-        """检查并触发摘要"""
-        if self.summarization.should_summarize(len(messages)):
-            summary = self.summarization.summarize(messages)
-            # 摘要也存入 RAG
-            self.rag.add_document(
-                content=f"历史摘要：{summary}",
-                metadata={"type": "summary"},
-            )
-            return summary
-        return None
-
-    def set_thread_id(self, thread_id: str):
-        """切换线程 ID"""
-        self.thread_id = thread_id
-        self.context._thread_id = thread_id
-        self.rag._thread_id = thread_id
-        self.summarization._thread_id = thread_id
-
-    def set_backend(self, backend):
-        """切换后端"""
-        self.backend = backend
-        self.context._backend = backend
-        self.rag._backend = backend
-        self.summarization._backend = backend
+    def clear_all(self) -> None:
+        self.short_term.clear()
+        self.long_term._memories.clear()
+        self.long_term._save()
+        self.vector_store.clear()
 
 
-# ── 全局单例 ──
+# ── 全局获取函数 ──
 
-_memory_manager: Optional[MemoryManager] = None
-
-
-def get_memory_manager(
-    backend=None,
-    store=None,
-    thread_id: str = "default",
-    llm_summarizer=None,
-) -> MemoryManager:
-    """获取 MemoryManager 单例"""
-    global _memory_manager
-    if _memory_manager is None:
-        _memory_manager = MemoryManager(
-            backend=backend,
-            store=store,
-            thread_id=thread_id,
-            llm_summarizer=llm_summarizer,
-        )
-    else:
-        if backend is not None:
-            _memory_manager.set_backend(backend)
-        if thread_id != "default":
-            _memory_manager.set_thread_id(thread_id)
-        if llm_summarizer is not None:
-            _memory_manager.summarization._llm_summarizer = llm_summarizer
-    return _memory_manager
+def get_memory_manager() -> MemoryManager:
+    """获取全局唯一的记忆管理器实例。"""
+    return MemoryManager()

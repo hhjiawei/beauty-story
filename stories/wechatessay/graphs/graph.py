@@ -1,391 +1,594 @@
 """
-微信公众号文章创作工作流 - LangGraph 图定义（v2 架构）
+wechatessay.graphs.graph
 
-核心改进：
-1. CompositeBackend 初始化并注入每个节点
-2. Memory 机制集成（Context + RAG + Summarization）
-3. Skill 自动加载
-4. 聊天记录通过 CompositeBackend 持久化到 records
-5. 节点通过 kwargs 接收 backend/store/thread_id
+LangGraph 图定义。
 
-工作流：
-source → total_analysis → collect → analyse → plot → write → composition → legality → publish
+职责：
+1. 定义 8 个节点（source/collect/analyse/plot/write/composition/legality/publish）
+2. 定义节点间的路由逻辑
+3. 实现人机协同的 interrupt 机制
+4. 管理重试逻辑
+
+路由逻辑：
+- source_node -> collect_node（自动）
+- collect_node -> human_review -> collect_node（retry）/ analyse_node（approve）
+- analyse_node -> human_review -> analyse_node（retry）/ plot_node（approve）
+- plot_node -> human_review -> plot_node（retry）/ write_node（approve）
+- write_node -> human_review -> write_node（retry）/ composition_node（approve）
+- composition_node -> human_review -> composition_node（retry）/ legality_node（approve）
+- legality_node -> publish_node（自动通过）/ human_review（未通过）
+- publish_node -> END
 """
 
-import json
-from typing import Dict, Any, Literal
-from pathlib import Path
+from __future__ import annotations
 
-from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.store.memory import InMemoryStore
+from datetime import datetime
+from typing import Any, Dict, Literal, Optional
 
-from wechatessay.states.vx_state import GraphState
-from wechatessay.config import (
-    HUMAN_IN_THE_LOOP,
-    MAX_REVISION_ROUNDS,
-    MEMORY_DIR,
-    WORKSPACE_DIR,
-    SKILLS_DIR,
-    AUTO_LOAD_SKILLS,
-    BACKEND_ROOT,
-    BACKEND_VIRTUAL_MODE,
-)
+from langgraph.graph import END, START, StateGraph
+from langgraph.types import Command, interrupt
 
-# ── 节点 ──
-from wechatessay.nodes.source_node import source_node, total_analysis_node
-from wechatessay.nodes.collect_node import collect_node
+from wechatessay.config import HITL_CONFIG
 from wechatessay.nodes.analyse_node import analyse_node
-from wechatessay.nodes.plot_node import plot_node
-from wechatessay.nodes.write_node import write_node
+from wechatessay.nodes.collect_node import collect_node
 from wechatessay.nodes.composition_node import composition_node
 from wechatessay.nodes.legality_node import legality_node
+from wechatessay.nodes.plot_node import plot_node
 from wechatessay.nodes.publish_node import publish_node
-
-# ── Agent 基础设施 ──
-from wechatessay.agents.agent_factory import load_skills
-from wechatessay.agents.memory_manager import get_memory_manager
-from wechatessay.agents.chat_history_store import get_chat_history_store
+from wechatessay.nodes.source_node import source_node
+from wechatessay.nodes.write_node import write_node
+from wechatessay.states.vx_state import GraphState, HumanReviewRecord, ReviewDecision
 
 
-# ═══════════════════════════════════════════════════════════
-# 1. CompositeBackend 初始化
-# ═══════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════
+# 人机协同路由函数
+# ═══════════════════════════════════════════════
 
-def init_deepagents_backend():
+def human_review_router(state: GraphState) -> str:
     """
-    初始化 DeepAgents CompositeBackend
+    人工审核路由。
 
-    返回 (composite_backend, store) 元组
+    检查 pending_human_review，根据人工决策路由：
+    - approve: 继续下一节点
+    - revise/retry: 返回当前节点重新执行
+    - reject: 返回上一节点
     """
-    from dotenv import find_dotenv
+    pending = state.get("pending_human_review")
+    if not pending:
+        return "approve"
 
-    root = Path(find_dotenv()).parent if find_dotenv() else Path(__file__).parent.parent
+    current_node = state.get("current_node", "")
+    retry_counts = state.get("retry_counts", {})
+    max_retry = HITL_CONFIG["max_retry"]
 
-    _MEMORY_DIR = (root / "backends" / "memories").as_posix()
-    _SKILLS_DIR = (root / "backends" / "skills").as_posix()
-    _WORKSPACE_DIR = (root / "backends" / "workspaces").as_posix()
+    # 获取人工评审记录
+    reviews = state.get("human_reviews", [])
+    last_review = reviews[-1] if reviews else None
+
+    if not last_review:
+        return "waiting"
+
+    decision = last_review.decision
+    node_name = last_review.node_name
+
+    # 清理 pending
+    state["pending_human_review"] = None
+
+    if decision == ReviewDecision.APPROVE:
+        print(f"[router] {node_name} 人工审核通过")
+        return "approve"
+
+    elif decision == ReviewDecision.RETRY or decision == ReviewDecision.REVISE:
+        current_retries = retry_counts.get(node_name, 0)
+        if current_retries >= max_retry:
+            print(f"[router] {node_name} 已达到最大重试次数({max_retry})，强制通过")
+            return "approve"
+
+        retry_counts[node_name] = current_retries + 1
+        state["retry_counts"] = retry_counts
+        state["revision_notes"] = last_review.comment
+        print(f"[router] {node_name} 需要修改/重试 (第{current_retries + 1}次)")
+        return "retry"
+
+    elif decision == ReviewDecision.REJECT:
+        print(f"[router] {node_name} 被拒绝，返回上一节点")
+        return "reject"
+
+    return "waiting"
+
+
+def route_after_human(state: GraphState, current_node: str) -> Command:
+    """
+    人工审核后的路由决策。
+
+    返回 Command 对象以控制流程走向。
+    """
+    decision = human_review_router(state)
+
+    if decision == "approve":
+        # 根据当前节点确定下一节点
+        node_flow = {
+            "collect_node": "analyse_node",
+            "analyse_node": "plot_node",
+            "plot_node": "write_node",
+            "write_node": "composition_node",
+            "composition_node": "legality_node",
+        }
+        next_node = node_flow.get(current_node)
+        if next_node:
+            return Command(goto=next_node)
+        return Command(goto=END)
+
+    elif decision == "retry":
+        # 返回当前节点重新执行
+        return Command(goto=current_node)
+
+    elif decision == "reject":
+        # 返回上一节点
+        node_reverse = {
+            "collect_node": "source_node",
+            "analyse_node": "collect_node",
+            "plot_node": "analyse_node",
+            "write_node": "plot_node",
+            "composition_node": "write_node",
+        }
+        prev_node = node_reverse.get(current_node, "source_node")
+        return Command(goto=prev_node)
+
+    else:
+        # waiting: 继续等待人工输入（保持当前状态）
+        return Command(goto=current_node)
+
+
+# ═══════════════════════════════════════════════
+# 节点包装器（人机协同中断）
+# ═══════════════════════════════════════════════
+
+def source_node_wrapper(state: GraphState) -> GraphState:
+    """source_node 包装器 — 无需人工审核。"""
+    try:
+        return source_node(state)
+    except Exception as e:
+        state["error_message"] = str(e)
+        state["error_node"] = "source_node"
+        state["node_status"]["source_node"] = "failed"
+        return state
+
+
+def collect_node_wrapper(state: GraphState) -> GraphState:
+    """collect_node 包装器 — 需要人工审核。"""
+    # 检查是否需要重试
+    revision = state.get("revision_notes")
+    if revision:
+        # 在 agent 调用中注入修改意见
+        # 这里通过 memory 或 prompt 注入
+        state["revision_notes"] = None  # 消费掉
 
     try:
-        from deepagents.backends import CompositeBackend, FilesystemBackend
+        state = collect_node(state)
+    except Exception as e:
+        state["error_message"] = str(e)
+        state["error_node"] = "collect_node"
+        state["node_status"]["collect_node"] = "failed"
 
-        composite_backend = CompositeBackend(
-            default=FilesystemBackend(root_dir=root, virtual_mode=True),
-            routes={
-                "/memories/": FilesystemBackend(root_dir=_MEMORY_DIR, virtual_mode=True),
-                "/skills/": FilesystemBackend(root_dir=_SKILLS_DIR, virtual_mode=True),
-                "/workplaces/": FilesystemBackend(root_dir=_WORKSPACE_DIR, virtual_mode=True)
-            },
+    # 如果需要人工审核，触发 interrupt
+    if state.get("pending_human_review"):
+        return state  # 等待外部注入人工决策
+    return state
+
+
+def analyse_node_wrapper(state: GraphState) -> GraphState:
+    """analyse_node 包装器 — 需要人工审核。"""
+    revision = state.get("revision_notes")
+    if revision:
+        state["revision_notes"] = None
+
+    try:
+        state = analyse_node(state)
+    except Exception as e:
+        state["error_message"] = str(e)
+        state["error_node"] = "analyse_node"
+        state["node_status"]["analyse_node"] = "failed"
+
+    if state.get("pending_human_review"):
+        return state
+    return state
+
+
+def plot_node_wrapper(state: GraphState) -> GraphState:
+    """plot_node 包装器 — 需要人工审核。"""
+    revision = state.get("revision_notes")
+    if revision:
+        state["revision_notes"] = None
+
+    try:
+        state = plot_node(state)
+    except Exception as e:
+        state["error_message"] = str(e)
+        state["error_node"] = "plot_node"
+        state["node_status"]["plot_node"] = "failed"
+
+    if state.get("pending_human_review"):
+        return state
+    return state
+
+
+def write_node_wrapper(state: GraphState) -> GraphState:
+    """write_node 包装器 — 需要人工审核。"""
+    revision = state.get("revision_notes")
+    if revision:
+        state["revision_notes"] = None
+
+    try:
+        state = write_node(state)
+    except Exception as e:
+        state["error_message"] = str(e)
+        state["error_node"] = "write_node"
+        state["node_status"]["write_node"] = "failed"
+
+    if state.get("pending_human_review"):
+        return state
+    return state
+
+
+def composition_node_wrapper(state: GraphState) -> GraphState:
+    """composition_node 包装器 — 需要人工审核。"""
+    revision = state.get("revision_notes")
+    if revision:
+        state["revision_notes"] = None
+
+    try:
+        state = composition_node(state)
+    except Exception as e:
+        state["error_message"] = str(e)
+        state["error_node"] = "composition_node"
+        state["node_status"]["composition_node"] = "failed"
+
+    if state.get("pending_human_review"):
+        return state
+    return state
+
+
+def legality_node_wrapper(state: GraphState) -> GraphState:
+    """legality_node 包装器 — 自动通过或人工审核。"""
+    try:
+        state = legality_node(state)
+    except Exception as e:
+        state["error_message"] = str(e)
+        state["error_node"] = "legality_node"
+        state["node_status"]["legality_node"] = "failed"
+
+    if state.get("pending_human_review"):
+        return state
+    return state
+
+
+def publish_node_wrapper(state: GraphState) -> GraphState:
+    """publish_node 包装器 — 无需人工审核。"""
+    try:
+        return publish_node(state)
+    except Exception as e:
+        state["error_message"] = str(e)
+        state["error_node"] = "publish_node"
+        state["node_status"]["publish_node"] = "failed"
+        return state
+
+
+# ═══════════════════════════════════════════════
+# 条件路由函数
+# ═══════════════════════════════════════════════
+
+def route_after_source(state: GraphState) -> str:
+    """source_node 后的路由。"""
+    if state.get("error_message"):
+        return END
+    return "collect_node"
+
+
+def route_after_collect(state: GraphState) -> str:
+    """collect_node 后的路由。"""
+    if state.get("error_message"):
+        return END
+    status = state.get("node_status", {}).get("collect_node", "")
+    if status == "waiting_human":
+        return "human_review"
+    return "analyse_node"
+
+
+def route_after_analyse(state: GraphState) -> str:
+    """analyse_node 后的路由。"""
+    if state.get("error_message"):
+        return END
+    status = state.get("node_status", {}).get("analyse_node", "")
+    if status == "waiting_human":
+        return "human_review"
+    return "plot_node"
+
+
+def route_after_plot(state: GraphState) -> str:
+    """plot_node 后的路由。"""
+    if state.get("error_message"):
+        return END
+    status = state.get("node_status", {}).get("plot_node", "")
+    if status == "waiting_human":
+        return "human_review"
+    return "write_node"
+
+
+def route_after_write(state: GraphState) -> str:
+    """write_node 后的路由。"""
+    if state.get("error_message"):
+        return END
+    status = state.get("node_status", {}).get("write_node", "")
+    if status == "waiting_human":
+        return "human_review"
+    return "composition_node"
+
+
+def route_after_composition(state: GraphState) -> str:
+    """composition_node 后的路由。"""
+    if state.get("error_message"):
+        return END
+    status = state.get("node_status", {}).get("composition_node", "")
+    if status == "waiting_human":
+        return "human_review"
+    return "legality_node"
+
+
+def route_after_legality(state: GraphState) -> str:
+    """legality_node 后的路由。"""
+    if state.get("error_message"):
+        return END
+    status = state.get("node_status", {}).get("legality_node", "")
+    if status == "waiting_human":
+        return "human_review"
+    return "publish_node"
+
+
+def human_review_node(state: GraphState) -> GraphState:
+    """
+    人工审核节点。
+
+    此节点使用 LangGraph 的 interrupt 机制暂停图执行，
+    等待外部输入人工评审决策。
+
+    外部需要：
+    1. 读取 state["pending_human_review"] 获取待审核内容
+    2. 将人工决策写入 state["human_reviews"]
+    3. 调用 graph.invoke 继续执行
+    """
+    pending = state.get("pending_human_review")
+    if not pending:
+        return state
+
+    # 使用 interrupt 暂停执行
+    decision = interrupt({
+        "type": "human_review",
+        "node": pending.get("node"),
+        "content": pending.get("content"),
+        "instruction": pending.get("instruction"),
+    })
+
+    # 处理外部传入的决策
+    if decision:
+        review = HumanReviewRecord(
+            node_name=pending.get("node", "unknown"),
+            decision=decision.get("decision", "retry"),
+            comment=decision.get("comment", ""),
+            reviewed_at=datetime.now().isoformat(),
+            retry_count=state.get("retry_counts", {}).get(pending.get("node"), 0),
         )
 
-        store = InMemoryStore()
-        print("✅ CompositeBackend 初始化成功")
-        return composite_backend, store
+        reviews = state.get("human_reviews", [])
+        reviews.append(review)
+        state["human_reviews"] = reviews
 
-    except ImportError as e:
-        print(f"⚠️ DeepAgents 导入失败: {e}，使用本地 fallback")
-        return None, InMemoryStore()
+        # 清理 pending
+        state["pending_human_review"] = None
 
+        # 根据决策更新节点状态
+        node_name = pending.get("node")
+        if review.decision == ReviewDecision.APPROVE:
+            state["node_status"][node_name] = "approved"
+        elif review.decision in (ReviewDecision.RETRY, ReviewDecision.REVISE):
+            state["node_status"][node_name] = "retrying"
+            state["revision_notes"] = review.comment
+        elif review.decision == ReviewDecision.REJECT:
+            state["node_status"][node_name] = "rejected"
 
-# ═══════════════════════════════════════════════════════════
-# 2. 节点包装器（注入 backend/store/thread_id）
-# ═══════════════════════════════════════════════════════════
-
-class NodeWrapper:
-    """
-    节点包装器
-
-    将 backend、store、thread_id 通过 kwargs 注入到每个节点函数中。
-    同时记录节点生命周期事件到 ChatHistoryStore。
-    """
-
-    def __init__(self, node_func, backend, store, thread_id: str):
-        self.node_func = node_func
-        self.backend = backend
-        self.store = store
-        self.thread_id = thread_id
-
-    def __call__(self, state: GraphState) -> Dict[str, Any]:
-        node_name = self.node_func.__name__
-
-        # 记录节点开始
-        try:
-            chat_store = get_chat_history_store(self.backend, self.thread_id)
-            chat_store.record_node_event(node_name, "start", {"state_keys": list(state.keys())})
-        except Exception:
-            pass
-
-        # 注入依赖并执行节点
-        result = self.node_func(
-            state,
-            backend=self.backend,
-            store=self.store,
-            thread_id=self.thread_id,
-        )
-
-        # 记录节点结束
-        try:
-            chat_store = get_chat_history_store(self.backend, self.thread_id)
-            chat_store.record_node_event(node_name, "end", {"result_keys": list(result.keys()) if result else []})
-        except Exception:
-            pass
-
-        return result
+    return state
 
 
-# ═══════════════════════════════════════════════════════════
-# 3. 路由函数
-# ═══════════════════════════════════════════════════════════
+def route_after_human_review(state: GraphState) -> str:
+    """人工审核后的路由决策。"""
+    reviews = state.get("human_reviews", [])
+    if not reviews:
+        return END
 
-def route_after_human_feedback(state: GraphState) -> str:
-    """
-    根据人工反馈决定下一步走向
-    """
-    awaiting_human = state.get("awaiting_human", False)
-    human_feedback = state.get("human_feedback")
-    should_continue = state.get("should_continue", True)
+    last_review = reviews[-1]
+    node_name = last_review.node_name
 
-    if not should_continue:
-        return "end"
-
-    if not awaiting_human:
-        return "continue"
-
-    if human_feedback:
-        fb = human_feedback.lower().strip()
-        if fb in ["ok", "满意", "continue", "y", "yes", "通过"]:
-            return "continue"
-        if fb in ["stop", "终止", "结束", "exit", "quit", "n", "no"]:
-            return "end"
-        return "revise"
-
-    return "wait"
-
-
-def route_from_source(state: GraphState) -> str:
-    if state.get("error_message"):
-        return "end"
-    return "total_analysis"
-
-
-def route_from_total_analysis(state: GraphState) -> str:
-    if state.get("error_message"):
-        return "end"
-    return "collect"
-
-
-def route_from_collect(state: GraphState) -> str:
-    r = route_after_human_feedback(state)
-    return {"end": "end", "revise": "collect", "wait": "wait", "continue": "analyse"}.get(r, "wait")
-
-
-def route_from_analyse(state: GraphState) -> str:
-    r = route_after_human_feedback(state)
-    return {"end": "end", "revise": "analyse", "wait": "wait", "continue": "plot"}.get(r, "wait")
-
-
-def route_from_plot(state: GraphState) -> str:
-    r = route_after_human_feedback(state)
-    return {"end": "end", "revise": "plot", "wait": "wait", "continue": "write"}.get(r, "wait")
-
-
-def route_from_write(state: GraphState) -> str:
-    r = route_after_human_feedback(state)
-    return {"end": "end", "revise": "write", "wait": "wait", "continue": "composition"}.get(r, "wait")
-
-
-def route_from_composition(state: GraphState) -> str:
-    r = route_after_human_feedback(state)
-    return {"end": "end", "revise": "composition", "wait": "wait", "continue": "legality"}.get(r, "wait")
-
-
-def route_from_legality(state: GraphState) -> str:
-    if state.get("error_message"):
-        return "end"
-    return "publish"
-
-
-# ═══════════════════════════════════════════════════════════
-# 4. 记忆加载/保存节点
-# ═══════════════════════════════════════════════════════════
-
-def make_load_memories_node(backend, store, thread_id: str):
-    """创建加载记忆节点"""
-    def load_memories(state: GraphState) -> Dict[str, Any]:
-        memory = get_memory_manager(backend=backend, store=store, thread_id=thread_id)
-
-        # 从 context 加载用户记忆
-        user_memories = memory.context.get_context("user_memories", default=[])
-
-        # 从 RAG 加载历史文档
-        docs = memory.rag.get_all_documents()
-
-        print(f"📚 记忆加载: {len(user_memories)} 条用户记忆, {len(docs)} 条历史文档")
-
-        return {
-            "user_memories": user_memories,
-            "current_node": "load_memories"
-        }
-
-    return load_memories
-
-
-def make_save_memory_node(backend, store, thread_id: str):
-    """创建保存记忆节点"""
-    def save_memory(state: GraphState) -> Dict[str, Any]:
-        human_feedback = state.get("human_feedback")
-        current_node = state.get("current_node", "")
-
-        if not human_feedback or human_feedback.lower() in ["ok", "满意", "continue", "y", "yes"]:
-            return {}
-
-        memory = get_memory_manager(backend=backend, store=store, thread_id=thread_id)
-
-        # 记录到 RAG
-        memory.record_human_feedback(current_node, human_feedback)
-
-        # 记录到 context
-        existing = memory.context.get_context("user_memories", default=[])
-        if human_feedback not in existing:
-            existing.append(human_feedback)
-            memory.context.set_context("user_memories", existing)
-
-        print(f"🧠 已保存记忆: {human_feedback[:80]}...")
-        return {}
-
-    return save_memory
-
-
-# ═══════════════════════════════════════════════════════════
-# 5. 构建图
-# ═══════════════════════════════════════════════════════════
-
-def build_workflow(backend=None, store=None, thread_id: str = "default") -> StateGraph:
-    """构建工作流图"""
-    print("🏗️ 构建工作流图...")
-
-    workflow = StateGraph(GraphState)
-
-    # 加载 skills
-    if AUTO_LOAD_SKILLS:
-        try:
-            load_skills(SKILLS_DIR)
-        except Exception as e:
-            print(f"  ⚠️ Skill 加载失败: {e}")
-
-    # 包装节点
-    nodes = {
-        "load_memories": make_load_memories_node(backend, store, thread_id),
-        "source_node": NodeWrapper(source_node, backend, store, thread_id),
-        "total_analysis_node": NodeWrapper(total_analysis_node, backend, store, thread_id),
-        "collect_node": NodeWrapper(collect_node, backend, store, thread_id),
-        "analyse_node": NodeWrapper(analyse_node, backend, store, thread_id),
-        "plot_node": NodeWrapper(plot_node, backend, store, thread_id),
-        "write_node": NodeWrapper(write_node, backend, store, thread_id),
-        "composition_node": NodeWrapper(composition_node, backend, store, thread_id),
-        "legality_node": NodeWrapper(legality_node, backend, store, thread_id),
-        "publish_node": NodeWrapper(publish_node, backend, store, thread_id),
-        "save_memory": make_save_memory_node(backend, store, thread_id),
+    # 获取当前节点流程映射
+    node_flow = {
+        "collect_node": "analyse_node",
+        "analyse_node": "plot_node",
+        "plot_node": "write_node",
+        "write_node": "composition_node",
+        "composition_node": "legality_node",
+    }
+    node_reverse = {
+        "collect_node": "source_node",
+        "analyse_node": "collect_node",
+        "plot_node": "analyse_node",
+        "write_node": "plot_node",
+        "composition_node": "write_node",
+        "legality_node": "composition_node",
     }
 
-    for name, node in nodes.items():
-        workflow.add_node(name, node)
+    if last_review.decision == ReviewDecision.APPROVE:
+        next_node = node_flow.get(node_name)
+        if next_node:
+            # 将对应节点状态更新为 ready 以继续流程
+            return next_node
+        return "publish_node"
 
-    # ── 边 ──
-    workflow.add_edge(START, "load_memories")
-    workflow.add_edge("load_memories", "source_node")
+    elif last_review.decision in (ReviewDecision.RETRY, ReviewDecision.REVISE):
+        return node_name  # 返回当前节点重新执行
 
+    elif last_review.decision == ReviewDecision.REJECT:
+        return node_reverse.get(node_name, "source_node")
+
+    return END
+
+
+# ═══════════════════════════════════════════════
+# 构建图
+# ═══════════════════════════════════════════════
+
+def build_graph() -> StateGraph:
+    """
+    构建完整的 LangGraph 工作流。
+
+    返回编译后的 StateGraph 实例。
+    """
+    workflow = StateGraph(GraphState)
+
+    # ── 添加节点 ──
+    workflow.add_node("source_node", source_node_wrapper)
+    workflow.add_node("collect_node", collect_node_wrapper)
+    workflow.add_node("analyse_node", analyse_node_wrapper)
+    workflow.add_node("plot_node", plot_node_wrapper)
+    workflow.add_node("write_node", write_node_wrapper)
+    workflow.add_node("composition_node", composition_node_wrapper)
+    workflow.add_node("legality_node", legality_node_wrapper)
+    workflow.add_node("publish_node", publish_node_wrapper)
+    workflow.add_node("human_review", human_review_node)
+
+    # ── 定义入口 ──
+    workflow.set_entry_point("source_node")
+
+    # ── 定义边 ──
+    # source -> collect
     workflow.add_conditional_edges(
-        "source_node", route_from_source,
-        {"total_analysis": "total_analysis_node", "end": END}
+        "source_node",
+        route_after_source,
+        {"collect_node": "collect_node", END: END},
     )
 
+    # collect -> human_review / analyse
     workflow.add_conditional_edges(
-        "total_analysis_node", route_from_total_analysis,
-        {"collect": "collect_node", "end": END}
+        "collect_node",
+        route_after_collect,
+        {"human_review": "human_review", "analyse_node": "analyse_node", END: END},
     )
 
+    # analyse -> human_review / plot
     workflow.add_conditional_edges(
-        "collect_node", route_from_collect,
-        {"collect": "collect_node", "analyse": "analyse_node", "wait": END, "end": END}
+        "analyse_node",
+        route_after_analyse,
+        {"human_review": "human_review", "plot_node": "plot_node", END: END},
     )
 
+    # plot -> human_review / write
     workflow.add_conditional_edges(
-        "analyse_node", route_from_analyse,
-        {"analyse": "analyse_node", "plot": "plot_node", "wait": END, "end": END}
+        "plot_node",
+        route_after_plot,
+        {"human_review": "human_review", "write_node": "write_node", END: END},
     )
 
+    # write -> human_review / composition
     workflow.add_conditional_edges(
-        "plot_node", route_from_plot,
-        {"plot": "plot_node", "write": "write_node", "wait": END, "end": END}
+        "write_node",
+        route_after_write,
+        {"human_review": "human_review", "composition_node": "composition_node", END: END},
     )
 
+    # composition -> human_review / legality
     workflow.add_conditional_edges(
-        "write_node", route_from_write,
-        {"write": "write_node", "composition": "composition_node", "wait": END, "end": END}
+        "composition_node",
+        route_after_composition,
+        {"human_review": "human_review", "legality_node": "legality_node", END: END},
     )
 
+    # legality -> human_review / publish
     workflow.add_conditional_edges(
-        "composition_node", route_from_composition,
-        {"composition": "composition_node", "legality": "legality_node", "wait": END, "end": END}
+        "legality_node",
+        route_after_legality,
+        {"human_review": "human_review", "publish_node": "publish_node", END: END},
     )
 
-    workflow.add_conditional_edges(
-        "legality_node", route_from_legality,
-        {"publish": "publish_node", "end": END}
-    )
-
+    # publish -> END
     workflow.add_edge("publish_node", END)
 
-    print("✅ 工作流图构建完成")
-    return workflow
-
-
-def create_graph(checkpointer=None, store=None, backend=None, thread_id: str = "default"):
-    """
-    创建编译后的图实例
-
-    Args:
-        checkpointer: 检查点保存器
-        store: Store 实例
-        backend: CompositeBackend 实例
-        thread_id: 线程 ID
-
-    Returns:
-        编译后的图
-    """
-    if checkpointer is None:
-        checkpointer = MemorySaver()
-
-    if store is None:
-        store = InMemoryStore()
-
-    workflow = build_workflow(backend=backend, store=store, thread_id=thread_id)
-
-    graph = workflow.compile(
-        checkpointer=checkpointer,
-        store=store,
+    # human_review -> 路由回各节点
+    workflow.add_conditional_edges(
+        "human_review",
+        route_after_human_review,
+        {
+            "source_node": "source_node",
+            "collect_node": "collect_node",
+            "analyse_node": "analyse_node",
+            "plot_node": "plot_node",
+            "write_node": "write_node",
+            "composition_node": "composition_node",
+            "legality_node": "legality_node",
+            "publish_node": "publish_node",
+            END: END,
+        },
     )
 
-    print("✅ 图编译完成")
-    return graph
+    return workflow.compile()
 
 
-# ═══════════════════════════════════════════════════════════
-# 6. 可视化
-# ═══════════════════════════════════════════════════════════
+def build_graph_no_hitl() -> StateGraph:
+    """
+    构建无人工干预的 LangGraph 工作流（用于自动化测试）。
 
-def visualize_graph(graph, output_path: str = "workflow_graph"):
-    """可视化工作流图"""
-    try:
-        mermaid_code = graph.get_graph().draw_mermaid()
+    所有人工审核节点自动通过。
+    """
+    workflow = StateGraph(GraphState)
 
-        mermaid_file = Path(output_path).with_suffix(".mmd")
-        with open(mermaid_file, "w", encoding="utf-8") as f:
-            f.write(mermaid_code)
+    # 包装器：自动通过人工审核
+    def auto_approve(state: GraphState) -> GraphState:
+        pending = state.get("pending_human_review")
+        if pending:
+            review = HumanReviewRecord(
+                node_name=pending.get("node", "unknown"),
+                decision=ReviewDecision.APPROVE,
+                comment="auto approve",
+                reviewed_at=datetime.now().isoformat(),
+            )
+            reviews = state.get("human_reviews", [])
+            reviews.append(review)
+            state["human_reviews"] = reviews
+            state["pending_human_review"] = None
+            state["node_status"][pending.get("node", "")] = "approved"
+        return state
 
-        print(f"📊 Mermaid 图已保存: {mermaid_file}")
-        print("💡 可在 https://mermaid.live/ 预览")
+    workflow.add_node("source_node", source_node_wrapper)
+    workflow.add_node("collect_node", collect_node_wrapper)
+    workflow.add_node("analyse_node", analyse_node_wrapper)
+    workflow.add_node("plot_node", plot_node_wrapper)
+    workflow.add_node("write_node", write_node_wrapper)
+    workflow.add_node("composition_node", composition_node_wrapper)
+    workflow.add_node("legality_node", legality_node_wrapper)
+    workflow.add_node("publish_node", publish_node_wrapper)
+    workflow.add_node("auto_approve", auto_approve)
 
-    except Exception as e:
-        print(f"⚠️ 可视化失败: {e}")
+    workflow.set_entry_point("source_node")
+
+    workflow.add_edge("source_node", "collect_node")
+    workflow.add_edge("collect_node", "auto_approve")
+    workflow.add_edge("auto_approve", "analyse_node")
+    workflow.add_edge("analyse_node", "auto_approve")
+    workflow.add_edge("auto_approve", "plot_node")
+    workflow.add_edge("plot_node", "auto_approve")
+    workflow.add_edge("auto_approve", "write_node")
+    workflow.add_edge("write_node", "auto_approve")
+    workflow.add_edge("auto_approve", "composition_node")
+    workflow.add_edge("composition_node", "auto_approve")
+    workflow.add_edge("auto_approve", "legality_node")
+    workflow.add_edge("legality_node", "publish_node")
+    workflow.add_edge("publish_node", END)
+
+    return workflow.compile()

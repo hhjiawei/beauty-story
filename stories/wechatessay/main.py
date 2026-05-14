@@ -1,270 +1,271 @@
 """
-微信公众号文章创作工作流 - 主程序入口（v2 架构）
+wechatessay.main
 
-基于 LangGraph + DeepAgents 的完整文章创作工作流。
+项目入口文件。
 
-使用方法:
-    python main.py --input articles.txt [--auto] [--memory]
+使用方法：
+    python -m wechatessay.main --input /path/to/articles.txt
 
-v2 架构改进：
-- 使用 create_deep_agent 创建节点 Agent
-- CompositeBackend 持久化聊天记录到 records
-- Memory 三层机制：Context + RAG + Summarization
-- 工具动态注册，不硬编码
-- Skill 自动加载
+工作流程：
+1. 读取 txt 文件中的文章链接列表
+2. 构建 LangGraph 并执行
+3. 处理人机协同中断
+4. 输出最终结果
 """
 
-import os
-import sys
-import json
+from __future__ import annotations
+
 import argparse
-import uuid
+import json
+import os
+from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
 
-from dotenv import load_dotenv
-load_dotenv()
-
-if not os.getenv("OPENAI_API_KEY"):
-    print("⚠️ 警告: OPENAI_API_KEY 未设置，请在 .env 文件中配置")
-
-ROOT = Path(__file__).parent
-sys.path.insert(0, str(ROOT))
-
-from graphs.graph import create_graph, init_deepagents_backend
-from states.vx_state import GraphState
-from wechatessay.config import HUMAN_IN_THE_LOOP, MEMORY_DIR
-from agents.memory_manager import get_memory_manager
-from agents.chat_history_store import get_chat_history_store
+from wechatessay.config import MEMORY_CONFIG, MODEL_CONFIG, PUBLISH_CONFIG, RAG_CONFIG
+from wechatessay.graphs.graph import build_graph, build_graph_no_hitl
+from wechatessay.states.vx_state import GraphState
+from wechatessay.utils.json_utils import safe_json_dump
 
 
-class InteractiveCLI:
-    """交互式命令行界面"""
-
-    def display_welcome(self):
-        print("""
-╔══════════════════════════════════════════════════════════════╗
-║                                                              ║
-║         📝 微信公众号文章 AI 创作工作流 v2.0                  ║
-║                                                              ║
-║    LangGraph + DeepAgents + Memory + Skills                  ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
-        """)
-
-    def display_progress(self, state: Dict[str, Any]):
-        current_node = state.get("current_node", "unknown")
-        node_names = {
-            "load_memories": "📚 加载记忆",
-            "source_node": "📚 读取文章",
-            "total_analysis_node": "📊 汇总分析",
-            "collect_node": "🔍 收集信息",
-            "analyse_node": "🎯 分析角度",
-            "plot_node": "📋 设计大纲",
-            "write_node": "✍️ 写作文章",
-            "composition_node": "🎨 排版设计",
-            "legality_node": "🔍 合规检查",
-            "publish_node": "🚀 发布文章",
-        }
-        print(f"\n{'─' * 50}")
-        print(f"当前步骤: {node_names.get(current_node, current_node)}")
-        print(f"{'─' * 50}")
-
-    def get_human_feedback(self, prompt: str = "") -> str:
-        print()
-        if prompt:
-            print(prompt)
-        print("\n💬 请输入反馈:")
-        print("   ✅ ok / 满意  → 继续")
-        print("   📝 修改意见    → 重新执行")
-        print("   ❌ stop       → 结束")
-        print()
-        try:
-            return input("您的反馈 > ").strip() or "ok"
-        except (EOFError, KeyboardInterrupt):
-            return "stop"
-
-    def display_result(self, state: Dict[str, Any]):
-        publish_result = state.get("publish_result", {})
-        print("""
-╔══════════════════════════════════════════════════════════════╗
-║                      ✅ 工作流完成                            ║
-╚══════════════════════════════════════════════════════════════╝""")
-        if publish_result:
-            print(f"📰 标题: {publish_result.get('finalTitle', 'N/A')}")
-            print(f"📝 摘要: {publish_result.get('summary', 'N/A')[:100]}...")
-            print(f"🏷️ 关键词: {', '.join(publish_result.get('keywords', []))}")
-            print(f"💾 草稿: {publish_result.get('originalDraftPath', 'N/A')}")
-
-        memories = state.get("revision_memories", [])
-        if memories:
-            print(f"\n📊 共记录 {len(memories)} 条修改意见")
-
-
-def run_workflow(input_path: str, auto_mode: bool = False) -> Dict[str, Any]:
+def create_initial_state(input_path: str, writing_config: dict = None) -> GraphState:
     """
-    执行工作流
+    创建初始 GraphState。
+
+    Args:
+        input_path: 文章链接 txt 文件路径
+        writing_config: 写作配置覆盖项（可选）
+
+    Returns:
+        初始化的 GraphState
     """
-    cli = InteractiveCLI()
-    cli.display_welcome()
-
-    if not os.path.exists(input_path):
-        print(f"❌ 文件不存在: {input_path}")
-        return {}
-
-    # 初始化 DeepAgents Backend
-    print("🚀 初始化 DeepAgents Backend...")
-    composite_backend, store = init_deepagents_backend()
-
-    # 初始化 Memory
-    memory = get_memory_manager(backend=composite_backend, store=store)
-
-    # 初始化 ChatHistoryStore
-    thread_id = str(uuid.uuid4())[:8]
-    chat_store = get_chat_history_store(backend=composite_backend, thread_id=thread_id)
-
-    # 创建图
-    graph = create_graph(
-        backend=composite_backend,
-        store=store,
-        thread_id=thread_id,
+    return GraphState(
+        input_path=input_path,
+        per_article_results=[],
+        total_article_results=None,
+        search_result=None,
+        blueprint_result=None,
+        plot_result=None,
+        article_output=None,
+        composition_result=None,
+        legality_result=None,
+        publish_result=None,
+        current_node="",
+        node_status={
+            "source_node": "pending",
+            "collect_node": "pending",
+            "analyse_node": "pending",
+            "plot_node": "pending",
+            "write_node": "pending",
+            "composition_node": "pending",
+            "legality_node": "pending",
+            "publish_node": "pending",
+        },
+        human_reviews=[],
+        pending_human_review=None,
+        revision_notes=None,
+        retry_counts={
+            "collect_node": 0,
+            "analyse_node": 0,
+            "plot_node": 0,
+            "write_node": 0,
+            "composition_node": 0,
+            "legality_node": 0,
+        },
+        writing_config=writing_config or {},
+        error_message=None,
+        error_node=None,
     )
 
-    config = {
-        "configurable": {"thread_id": thread_id},
-        "recursion_limit": 100
-    }
 
-    initial_state: GraphState = {
-        "input_path": input_path,
-        "per_article_results": [],
-        "total_article_results": None,
-        "search_result": None,
-        "blueprint_result": None,
-        "plot_result": None,
-        "article_output": None,
-        "composition_result": None,
-        "legality_result": None,
-        "publish_result": None,
-        "current_node": "",
-        "human_feedback": None,
-        "awaiting_human": False,
-        "revision_count": 0,
-        "should_continue": True,
-        "error_message": None,
-        "user_memories": [],
-        "revision_memories": []
-    }
+def save_result(state: GraphState, output_dir: str = "./output") -> str:
+    """
+    保存最终结果为 JSON 文件。
 
-    print(f"📁 输入: {input_path}")
-    print(f"🧵 线程: {thread_id}")
-    print(f"🤖 人机协同: {'开启' if HUMAN_IN_THE_LOOP and not auto_mode else '关闭'}")
-    print(f"🧠 Memory: Context + RAG + Summarization")
-    print(f"💾 ChatHistory: CompositeBackend records/")
-    print()
+    Returns:
+        输出文件路径
+    """
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_file = out_dir / f"result_{timestamp}.json"
+
+    # 序列化状态
+    state_dict = _serialize_state(state)
+
+    with open(out_file, "w", encoding="utf-8") as f:
+        json.dump(state_dict, f, ensure_ascii=False, indent=2, default=str)
+
+    # 同时保存 HTML
+    if state.get("publish_result"):
+        html_file = out_dir / f"article_{timestamp}.html"
+        with open(html_file, "w", encoding="utf-8") as f:
+            f.write(state["publish_result"].final_article_html)
+        print(f"[main] HTML 已保存: {html_file}")
+
+    # 同时保存纯文本
+    if state.get("article_output"):
+        txt_file = out_dir / f"article_{timestamp}.txt"
+        with open(txt_file, "w", encoding="utf-8") as f:
+            f.write(state["article_output"].full_text)
+        print(f"[main] 文本已保存: {txt_file}")
+
+    print(f"[main] 结果已保存: {out_file}")
+    return str(out_file)
+
+
+def _serialize_state(state: GraphState) -> dict:
+    """将 GraphState 序列化为可 JSON 化的字典。"""
+    result = {}
+    for key, value in state.items():
+        if value is None:
+            result[key] = None
+        elif hasattr(value, "model_dump"):
+            result[key] = value.model_dump(by_alias=True)
+        elif isinstance(value, list):
+            result[key] = [
+                item.model_dump(by_alias=True) if hasattr(item, "model_dump") else item
+                for item in value
+            ]
+        elif isinstance(value, dict):
+            result[key] = {
+                k: v.model_dump(by_alias=True) if hasattr(v, "model_dump") else v
+                for k, v in value.items()
+            }
+        else:
+            result[key] = value
+    return result
+
+
+def print_progress(state: GraphState) -> None:
+    """打印当前进度。"""
+    current = state.get("current_node", "")
+    status = state.get("node_status", {})
+
+    print(f"\n{'=' * 50}")
+    print(f"当前节点: {current}")
+    print(f"节点状态:")
+    for node, st in status.items():
+        icon = {
+            "pending": "⏳",
+            "running": "🔄",
+            "waiting_human": "👤",
+            "approved": "✅",
+            "rejected": "❌",
+            "completed": "✅",
+            "failed": "💥",
+        }.get(st, "❓")
+        print(f"  {icon} {node}: {st}")
+
+    if state.get("pending_human_review"):
+        review = state["pending_human_review"]
+        print(f"\n👤 等待人工审核: {review.get('node')}")
+        print(f"说明: {review.get('instruction', '')}")
+
+    if state.get("error_message"):
+        print(f"\n💥 错误: {state['error_message']} (节点: {state.get('error_node')})")
+
+    print(f"{'=' * 50}\n")
+
+
+def run_workflow(
+    input_path: str,
+    no_hitl: bool = False,
+    output_dir: str = "./output",
+    writing_config: dict = None,
+) -> GraphState:
+    """
+    执行完整工作流。
+
+    Args:
+        input_path: 文章链接 txt 文件路径
+        no_hitl: 是否跳过人工审核（自动通过）
+        output_dir: 输出目录
+        writing_config: 写作配置
+
+    Returns:
+        最终状态
+    """
+    print(f"[main] 开始执行工作流")
+    print(f"[main] 输入文件: {input_path}")
+    print(f"[main] 人工审核: {'关闭' if no_hitl else '开启'}")
+
+    # 1. 创建初始状态
+    state = create_initial_state(input_path, writing_config)
+
+    # 2. 构建图
+    if no_hitl:
+        graph = build_graph_no_hitl()
+    else:
+        graph = build_graph()
+
+    # 3. 执行工作流
     try:
-        current_state = initial_state
+        final_state = graph.invoke(state)
 
-        for event in graph.stream(initial_state, config, stream_mode="values"):
-            current_state = event
+        # 4. 处理可能的人工审核中断
+        if not no_hitl and final_state.get("pending_human_review"):
+            print_progress(final_state)
+            print("[main] 工作流暂停，等待人工审核...")
+            print("[main] 请检查 pending_human_review 内容并注入人工决策")
+            return final_state
 
-            if current_state.get("error_message"):
-                print(f"\n❌ 错误: {current_state['error_message']}")
-                return current_state
+        # 5. 打印进度和保存结果
+        print_progress(final_state)
+        save_result(final_state, output_dir)
 
-            current_node = current_state.get("current_node", "")
-            if current_node:
-                cli.display_progress(current_state)
-
-            # 人机协同
-            if current_state.get("awaiting_human") and not auto_mode:
-                feedback = cli.get_human_feedback()
-                current_state["human_feedback"] = feedback
-                current_state["awaiting_human"] = False
-
-                if feedback.lower() not in ["ok", "满意", "continue", "y", "yes"]:
-                    current_state["revision_count"] = current_state.get("revision_count", 0) + 1
-                    current_state["revision_memories"].append({
-                        "node": current_node,
-                        "feedback": feedback
-                    })
-
-                if feedback.lower() in ["stop", "终止", "结束", "exit", "quit"]:
-                    current_state["should_continue"] = False
-                    print("\n🛑 已终止")
-                    return current_state
-
-                continue
-
-            if current_state.get("publish_result"):
-                break
-
-        cli.display_result(current_state)
-        return current_state
+        return final_state
 
     except Exception as e:
-        print(f"\n❌ 失败: {e}")
-        import traceback
-        traceback.print_exc()
-        return current_state if 'current_state' in locals() else initial_state
+        print(f"[main] 工作流执行失败: {e}")
+        state["error_message"] = str(e)
+        return state
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="微信公众号文章 AI 创作工作流 v2.0",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-示例:
-  python main.py --input articles.txt           # 交互模式
-  python main.py --input articles.txt --auto    # 自动模式
-  python main.py --memory                       # 查看记忆
-  python main.py --reset                        # 重置记忆
-        """
+    """命令行入口。"""
+    parser = argparse.ArgumentParser(description="微信公众号文章 AI 创作工作流")
+    parser.add_argument(
+        "--input", "-i",
+        required=True,
+        help="文章链接 txt 文件路径",
     )
-    parser.add_argument("--input", "-i", type=str, help="文章链接 txt 文件路径")
-    parser.add_argument("--auto", "-a", action="store_true", help="自动模式")
-    parser.add_argument("--memory", "-m", action="store_true", help="查看记忆")
-    parser.add_argument("--reset", "-r", action="store_true", help="重置记忆")
+    parser.add_argument(
+        "--no-hitl",
+        action="store_true",
+        help="跳过人工审核（自动通过）",
+    )
+    parser.add_argument(
+        "--output", "-o",
+        default="./output",
+        help="输出目录",
+    )
+    parser.add_argument(
+        "--style",
+        default="口语化大白话",
+        choices=["口语化大白话", "严肃科普", "共情引导", "讽刺犀利"],
+        help="写作风格",
+    )
+    parser.add_argument(
+        "--word-count",
+        type=int,
+        default=2000,
+        help="目标字数",
+    )
+
     args = parser.parse_args()
 
-    if args.memory:
-        memory_file = Path(MEMORY_DIR) / "user_memories.json"
-        if memory_file.exists():
-            with open(memory_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                print("📚 用户记忆:")
-                for i, m in enumerate(data.get("memories", []), 1):
-                    print(f"  {i}. {m}")
-        else:
-            print("📚 暂无记忆")
-        return
+    writing_config = {
+        "style": args.style,
+        "word_count": args.word_count,
+    }
 
-    if args.reset:
-        memory_file = Path(MEMORY_DIR) / "user_memories.json"
-        if memory_file.exists():
-            memory_file.unlink()
-        print("🗑️ 记忆已重置")
-        return
-
-    if not args.input:
-        print("❌ 请指定 --input")
-        parser.print_help()
-        return
-
-    final_state = run_workflow(args.input, auto_mode=args.auto)
-
-    if final_state:
-        state_file = Path(ROOT) / "backends" / "workspaces" / "last_state.json"
-        state_file.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            simple = {k: v for k, v in final_state.items()
-                     if isinstance(v, (str, int, float, bool, list, dict, type(None)))}
-            with open(state_file, "w", encoding="utf-8") as f:
-                json.dump(simple, f, ensure_ascii=False, indent=2, default=str)
-            print(f"\n💾 状态已保存: {state_file}")
-        except Exception as e:
-            print(f"⚠️ 保存失败: {e}")
+    run_workflow(
+        input_path=args.input,
+        no_hitl=args.no_hitl,
+        output_dir=args.output,
+        writing_config=writing_config,
+    )
 
 
 if __name__ == "__main__":
