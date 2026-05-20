@@ -3,9 +3,10 @@ wechatessay 项目全局配置
 
 集中管理所有路径、模型参数、MCP 配置、Memory 配置等。
 """
-
+import os
 from pathlib import Path
 from dotenv import find_dotenv
+from langchain_openai import ChatOpenAI
 
 # ── 项目根目录 ──
 _ENV_PATH = find_dotenv()
@@ -44,14 +45,40 @@ BACKEND_CONFIG = {
     },
 }
 
+
+# 配置 API
+# OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
+# OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
+# MODEL_NAME = "doubao-seed-2-0-pro-260215"
+
+# deepseek-reasoner
+OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
+OPENAI_API_BASE = "https://api.deepseek.com"
+MODEL_NAME = "deepseek-reasoner"
+
+
+# # qwen  sk-5fd1dda940aa46d282873be7e02fcd82
+# OPENAI_API_KEY = "sk-5fd1dda940aa46d282873be7e02fcd82"
+# OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+# MODEL_NAME = "qwen3.6-plus"
+
+os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
+
+model = ChatOpenAI(
+    model=MODEL_NAME,
+    temperature=1.5,
+)
+
+
 # ── 模型配置 ──
 MODEL_CONFIG = {
     # 使用 provider:model 格式，便于切换
-    "default_model": "google_genai:gemini-2.5-flash",
-    "analysis_model": "google_genai:gemini-2.5-flash",
-    "search_model": "google_genai:gemini-2.5-flash",
-    "writing_model": "google_genai:gemini-2.5-pro",
-    "review_model": "google_genai:gemini-2.5-flash",
+    "default_model": model,
+    "analysis_model": model,
+    "search_model": model,
+    "writing_model": model,
+    "review_model": model,
 }
 
 # ── Memory 配置 ──

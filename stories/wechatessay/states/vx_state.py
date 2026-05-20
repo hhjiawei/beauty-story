@@ -74,10 +74,11 @@ class FlowStatus(str, Enum):
 
 class ReviewDecision(str, Enum):
     """人工评审决策"""
-    APPROVE = "approve"           # 通过，继续下一节点
+    APPROVE = "approve"           # 通过，继续下一节点/下一段
     REJECT = "reject"             # 拒绝，返回上一节点
     REVISE = "revise"             # 需要修改，附带修改意见
     RETRY = "retry"               # 重试当前节点
+    BACK = "back"                 # 【write_node 专用】回退到上一段重写
 
 
 # ═══════════════════════════════════════════════
@@ -1397,3 +1398,18 @@ class GraphState(TypedDict):
     error_message: Optional[str]                      # 错误信息
 
     error_node: Optional[str]                         # 出错节点
+
+    # ── 逐段写作控制（write_node 专用） ──
+    # 这些字段仅在 write_node 逐段写作期间使用
+
+    current_segment_index: int                        # 当前正在写的段落索引（0-based），-1 表示未开始
+
+    segment_contents: List[str]                       # 已完成的段落正文列表（按索引顺序，空字符串表示尚未写）
+
+    segment_golden_sentences: List[Dict[str, Any]]    # 每段的金句标注列表
+
+    segment_approved: List[bool]                      # 每段是否已通过人工审核
+
+    write_node_phase: str                             # write_node 当前阶段："segment"=逐段写作中, "assembly"=组装整体文章, "done"=完成
+
+    total_segments: int                               # 大纲总段落数

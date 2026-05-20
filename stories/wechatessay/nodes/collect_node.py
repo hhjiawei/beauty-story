@@ -24,6 +24,7 @@ from typing import Any, Dict, List
 from deepagents import create_deep_agent
 from langchain_core.tools import BaseTool
 
+from wechatessay.agents.backend import load_backend
 from wechatessay.agents.memory_manager import get_memory_manager
 from wechatessay.config import BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG
 from wechatessay.prompts.vx_prompt import COLLECT_NODE_SYSTEM_PROMPT
@@ -31,29 +32,6 @@ from wechatessay.states.vx_state import ArticleSearchNode, GraphState
 from wechatessay.tools.base_tools.base_tool import get_base_tools
 from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
-
-
-def _load_backend():
-    """加载 Deep Agents backend 配置。"""
-    from deepagents.backends import CompositeBackend, FilesystemBackend
-    root = Path(BACKEND_CONFIG["root_dir"])
-    return CompositeBackend(
-        default=FilesystemBackend(root_dir=root, virtual_mode=BACKEND_CONFIG["virtual_mode"]),
-        routes={
-            "/memories/": FilesystemBackend(
-                root_dir=Path(BACKEND_CONFIG["routes"]["/memories/"]["root_dir"]),
-                virtual_mode=True,
-            ),
-            "/skills/": FilesystemBackend(
-                root_dir=Path(BACKEND_CONFIG["routes"]["/skills/"]["root_dir"]),
-                virtual_mode=True,
-            ),
-            "/workspaces/": FilesystemBackend(
-                root_dir=Path(BACKEND_CONFIG["routes"]["/workspaces/"]["root_dir"]),
-                virtual_mode=True,
-            ),
-        },
-    )
 
 
 def _create_collect_agent(tools: List[BaseTool]) -> Any:
@@ -66,12 +44,13 @@ def _create_collect_agent(tools: List[BaseTool]) -> Any:
     - system_prompt: 信息收集专用提示词
     - backend: CompositeBackend
     """
-    backend = _load_backend()
+    backend = load_backend()
 
     mm = get_memory_manager()
     memory_context = mm.build_memory_context("热点调研")
 
     system_prompt = COLLECT_NODE_SYSTEM_PROMPT
+    # 把聊天记忆整合进来
     if memory_context:
         system_prompt = f"{memory_context}\n\n{system_prompt}"
 
@@ -107,11 +86,11 @@ def _execute_searches(
     core_demand = total_analysis.get("core_demand", "")
     creation_ideas = total_analysis.get("creation_ideas", [])
 
-    # 构建多轮搜索查询
+    # TODO 构建多轮搜索查询
     search_queries = [
         f"{hotspot_title} 最新进展",
-        f"{hotspot_title} 知乎 高赞",
-        f"{hotspot_title} 今日头条 观点",
+        f"{hotspot_title} 知乎 高赞文章、评论",
+        f"{hotspot_title} 今日头条 高赞观点",
         f"{hotspot_title} 争议",
         f"{hotspot_title} 网友评论",
     ]

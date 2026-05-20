@@ -26,6 +26,7 @@ from typing import Any, Dict, List
 from deepagents import create_deep_agent
 from langchain_core.tools import BaseTool
 
+from wechatessay.agents.backend import load_backend
 from wechatessay.agents.memory_manager import get_memory_manager
 from wechatessay.config import BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG
 from wechatessay.prompts.vx_prompt import SOURCE_NODE_SYSTEM_PROMPT
@@ -39,27 +40,6 @@ from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
 
-def _load_backend():
-    """加载 Deep Agents backend 配置。"""
-    from deepagents.backends import CompositeBackend, FilesystemBackend
-    root = Path(BACKEND_CONFIG["root_dir"])
-    return CompositeBackend(
-        default=FilesystemBackend(root_dir=root, virtual_mode=BACKEND_CONFIG["virtual_mode"]),
-        routes={
-            "/memories/": FilesystemBackend(
-                root_dir=Path(BACKEND_CONFIG["routes"]["/memories/"]["root_dir"]),
-                virtual_mode=True,
-            ),
-            "/skills/": FilesystemBackend(
-                root_dir=Path(BACKEND_CONFIG["routes"]["/skills/"]["root_dir"]),
-                virtual_mode=True,
-            ),
-            "/workspaces/": FilesystemBackend(
-                root_dir=Path(BACKEND_CONFIG["routes"]["/workspaces/"]["root_dir"]),
-                virtual_mode=True,
-            ),
-        },
-    )
 
 
 def _create_source_agent(tools: List[BaseTool]) -> Any:
@@ -73,7 +53,7 @@ def _create_source_agent(tools: List[BaseTool]) -> Any:
     - backend: CompositeBackend 虚拟文件系统
     - response_format: 结构化输出（JSON 模式）
     """
-    backend = _load_backend()
+    backend = load_backend()
 
     # 获取记忆上下文
     mm = get_memory_manager()
@@ -120,7 +100,7 @@ def _analyze_articles(articles: List[str], agent: Any) -> List[PerArticleAnalyse
                 "content": (
                     f"请分析以下第 {idx + 1} 篇文章，"
                     f"提取所有结构化信息并以 JSON 格式输出。\n\n"
-                    f"文章内容：\n{article_content[:8000]}\n\n"
+                    f"文章内容：\n{article_content}\n\n"
                     f"请只输出 JSON，不要输出其他内容。"
                 ),
             }
@@ -128,6 +108,7 @@ def _analyze_articles(articles: List[str], agent: Any) -> List[PerArticleAnalyse
 
         # 调用 Agent
         result = agent.invoke({"messages": messages})
+        # 这里应该是json结果
         response_content = result["messages"][-1].content if result.get("messages") else ""
 
         # 解析 JSON 响应
@@ -254,14 +235,13 @@ async def source_node_async(state: GraphState) -> GraphState:
 
     print(f"[source_node] 发现 {len(file_list)} 篇文章")
 
-    file_list = scan_article_files(input_path)  # 文件地址+名称
+    # file_list = scan_article_files(input_path)  # 文件地址+名称
     articles = [read_article(f) for f in file_list]  # 读取每篇内容
 
-    # 2. 读取文章内容
-    for f in file_list:
-        content = read_article(f)
-        if content and not content.startswith("Error"):
-            articles.append(content)
+    # for f in file_list:
+    #     content = read_article(f)
+    #     if content and not content.startswith("Error"):
+    #         articles.append(content)
 
     if not articles:
         state["error_message"] = "未能读取任何文章内容"
@@ -283,7 +263,7 @@ async def source_node_async(state: GraphState) -> GraphState:
         state["error_node"] = "source_node"
         return state
 
-    # 5. 汇总
+    # 5. 汇总 多篇文章的东西进行合并
     total_result = _merge_to_total(per_results)
 
     # 6. 更新状态

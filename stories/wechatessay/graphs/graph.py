@@ -36,7 +36,12 @@ from wechatessay.nodes.legality_node import legality_node
 from wechatessay.nodes.plot_node import plot_node
 from wechatessay.nodes.publish_node import publish_node
 from wechatessay.nodes.source_node import source_node
-from wechatessay.nodes.write_node import write_node
+from wechatessay.nodes.write_node import (
+    handle_segment_approve,
+    handle_segment_back,
+    handle_segment_revise,
+    write_node,
+)
 from wechatessay.states.vx_state import GraphState, HumanReviewRecord, ReviewDecision
 
 
@@ -316,12 +321,24 @@ def route_after_plot(state: GraphState) -> str:
 
 
 def route_after_write(state: GraphState) -> str:
-    """write_node 后的路由。"""
+    """
+    write_node 后的路由。
+
+    【特殊处理】write_node 有段级 HITL（scope="segment"）和
+    节点级 HITL（scope="node"/assembly_review）：
+    - 段级：审核完一段后回到 write_node 继续写下一段
+    - 节点级：全部写完后审核整体文章，通过后进入 composition_node
+    """
     if state.get("error_message"):
         return END
     status = state.get("node_status", {}).get("write_node", "")
     if status == "waiting_human":
         return "human_review"
+    # 如果 write_node_phase 是 segment/assembly 且没有 pending，说明已完成
+    phase = state.get("write_node_phase", "")
+    if phase in ("segment", "assembly") and not state.get("pending_human_review"):
+        # 需要继续写（可能是首次进入或回退后）
+        return "write_node"
     return "composition_node"
 
 
@@ -395,12 +412,23 @@ def human_review_node(state: GraphState) -> GraphState:
             state["revision_notes"] = review.comment
         elif review.decision == ReviewDecision.REJECT:
             state["node_status"][node_name] = "rejected"
+        elif review.decision == ReviewDecision.BACK:
+            # 【write_node 段级专用】回退到上一段
+            state["node_status"][node_name] = "backing"
 
     return state
 
 
 def route_after_human_review(state: GraphState) -> str:
-    """人工审核后的路由决策。"""
+    """
+    人工审核后的路由决策。
+
+    【write_node 段级特殊处理】
+    当 write_node 的审核 scope 为 "segment" 时：
+    - approve → 调用 handle_segment_approve，若还有段则回 write_node，否则 assembly
+    - revise → 调用 handle_segment_revise，回 write_node 重写当前段
+    - back   → 调用 handle_segment_back，回 write_node 回退到上一段
+    """
     reviews = state.get("human_reviews", [])
     if not reviews:
         return END
@@ -408,7 +436,38 @@ def route_after_human_review(state: GraphState) -> str:
     last_review = reviews[-1]
     node_name = last_review.node_name
 
-    # 获取当前节点流程映射
+    # ── write_node 段级特殊路由 ──
+    if node_name == "write_node":
+        # 获取最后一次 pending 的 scope（审核完成后 pending 被清理，需从记录推断）
+        # 通过 write_node_phase 判断当前处于哪个阶段
+        phase = state.get("write_node_phase", "")
+
+        if phase == "segment" and last_review.decision == ReviewDecision.APPROVE:
+            # 段级 approve：推进到下一段或进入组装
+            handle_segment_approve(state)
+            return "write_node"
+
+        elif phase == "segment" and last_review.decision in (ReviewDecision.RETRY, ReviewDecision.REVISE):
+            # 段级 revise：重写当前段
+            handle_segment_revise(state, last_review.comment)
+            return "write_node"
+
+        elif phase == "segment" and last_review.decision in (ReviewDecision.REJECT, ReviewDecision.BACK):
+            # 段级 back：回退到上一段
+            handle_segment_back(state)
+            return "write_node"
+
+        elif phase in ("assembly", "assembly_review"):
+            # 节点级审核（整体文章）
+            node_flow = {"write_node": "composition_node"}
+            if last_review.decision == ReviewDecision.APPROVE:
+                return node_flow.get(node_name, "composition_node")
+            elif last_review.decision in (ReviewDecision.RETRY, ReviewDecision.REVISE):
+                return node_name  # 回到 write_node 重新组装
+            elif last_review.decision == ReviewDecision.REJECT:
+                return "plot_node"  # 整体不认可，回大纲节点
+
+    # ── 通用路由（其他节点） ──
     node_flow = {
         "collect_node": "analyse_node",
         "analyse_node": "plot_node",
@@ -428,7 +487,6 @@ def route_after_human_review(state: GraphState) -> str:
     if last_review.decision == ReviewDecision.APPROVE:
         next_node = node_flow.get(node_name)
         if next_node:
-            # 将对应节点状态更新为 ready 以继续流程
             return next_node
         return "publish_node"
 
@@ -496,11 +554,17 @@ def build_graph() -> StateGraph:
         {"human_review": "human_review", "write_node": "write_node", END: END},
     )
 
-    # write -> human_review / composition
+    # write -> human_review / write_node(自循环,逐段继续) / composition
+    # 【关键】write_node 可以路由回自身，实现逐段写作的循环
     workflow.add_conditional_edges(
         "write_node",
         route_after_write,
-        {"human_review": "human_review", "composition_node": "composition_node", END: END},
+        {
+            "human_review": "human_review",
+            "write_node": "write_node",  # 自循环：逐段继续写下一段
+            "composition_node": "composition_node",
+            END: END,
+        },
     )
 
     # composition -> human_review / legality
@@ -545,10 +609,12 @@ def build_graph_no_hitl() -> StateGraph:
     构建无人工干预的 LangGraph 工作流（用于自动化测试）。
 
     所有人工审核节点自动通过。
+    【write_node 逐段写作】在 no_hitl 模式下自动 approve 每一段，
+    循环直到所有段写完，然后自动 approve 整体组装。
     """
     workflow = StateGraph(GraphState)
 
-    # 包装器：自动通过人工审核
+    # ── 通用自动通过 ──
     def auto_approve(state: GraphState) -> GraphState:
         pending = state.get("pending_human_review")
         if pending:
@@ -565,6 +631,62 @@ def build_graph_no_hitl() -> StateGraph:
             state["node_status"][pending.get("node", "")] = "approved"
         return state
 
+    # ── write_node 段级自动通过（特殊处理） ──
+    def auto_approve_segment(state: GraphState) -> GraphState:
+        """
+        write_node 段级审核的自动处理。
+
+        - 如果还有段落未写：调用 handle_segment_approve，回到 write_node
+        - 如果全部写完（assembly_review 阶段）：调用通用 auto_approve
+        """
+        phase = state.get("write_node_phase", "")
+        pending = state.get("pending_human_review")
+
+        if phase in ("segment", "assembly") and pending:
+            # 段级 approve：推进到下一段
+            handle_segment_approve(state)
+            # 清理 pending
+            state["pending_human_review"] = None
+            # 追加评审记录
+            reviews = state.get("human_reviews", [])
+            reviews.append(HumanReviewRecord(
+                node_name="write_node",
+                decision=ReviewDecision.APPROVE,
+                comment=f"auto approve segment (phase={phase})",
+                reviewed_at=datetime.now().isoformat(),
+            ))
+            state["human_reviews"] = reviews
+            return state
+        elif phase == "assembly_review" and pending:
+            # 整体审核：标记完成
+            state["write_node_phase"] = "done"
+            state["node_status"]["write_node"] = "completed"
+            state["pending_human_review"] = None
+            reviews = state.get("human_reviews", [])
+            reviews.append(HumanReviewRecord(
+                node_name="write_node",
+                decision=ReviewDecision.APPROVE,
+                comment="auto approve assembled article",
+                reviewed_at=datetime.now().isoformat(),
+            ))
+            state["human_reviews"] = reviews
+            return state
+        else:
+            # 通用处理（其他节点）
+            return auto_approve(state)
+
+    # ── write_node 自循环路由 ──
+    def route_write_no_hitl(state: GraphState) -> str:
+        """no_hitl 模式下 write_node 后的路由。"""
+        phase = state.get("write_node_phase", "")
+        if phase in ("segment", "assembly"):
+            # 还有更多段落要写，继续自循环
+            return "auto_approve_segment"
+        elif phase == "assembly_review":
+            return "auto_approve_segment"
+        # 已完成
+        return "composition_node"
+
     workflow.add_node("source_node", source_node_wrapper)
     workflow.add_node("collect_node", collect_node_wrapper)
     workflow.add_node("analyse_node", analyse_node_wrapper)
@@ -574,18 +696,31 @@ def build_graph_no_hitl() -> StateGraph:
     workflow.add_node("legality_node", legality_node_wrapper)
     workflow.add_node("publish_node", publish_node_wrapper)
     workflow.add_node("auto_approve", auto_approve)
+    workflow.add_node("auto_approve_segment", auto_approve_segment)
 
     workflow.set_entry_point("source_node")
 
+    # source -> collect -> ... -> plot -> write (逐段循环)
     workflow.add_edge("source_node", "collect_node")
     workflow.add_edge("collect_node", "auto_approve")
     workflow.add_edge("auto_approve", "analyse_node")
     workflow.add_edge("analyse_node", "auto_approve")
     workflow.add_edge("auto_approve", "plot_node")
     workflow.add_edge("plot_node", "auto_approve")
+
+    # write_node 自循环（逐段写作直到完成）
     workflow.add_edge("auto_approve", "write_node")
-    workflow.add_edge("write_node", "auto_approve")
-    workflow.add_edge("auto_approve", "composition_node")
+    workflow.add_conditional_edges(
+        "write_node",
+        route_write_no_hitl,
+        {
+            "auto_approve_segment": "auto_approve_segment",
+            "composition_node": "composition_node",
+        },
+    )
+    workflow.add_edge("auto_approve_segment", "write_node")
+
+    # 后续流程
     workflow.add_edge("composition_node", "auto_approve")
     workflow.add_edge("auto_approve", "legality_node")
     workflow.add_edge("legality_node", "publish_node")

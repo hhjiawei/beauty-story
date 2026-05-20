@@ -74,6 +74,14 @@ def create_initial_state(input_path: str, writing_config: dict = None) -> GraphS
         writing_config=writing_config or {},
         error_message=None,
         error_node=None,
+
+        # ── 逐段写作追踪（write_node 专用，初始值） ──
+        current_segment_index=-1,       # -1 表示尚未开始
+        segment_contents=[],            # 空的段落内容列表
+        segment_golden_sentences=[],    # 空的金句列表
+        segment_approved=[],            # 空的审核状态列表
+        write_node_phase="",            # 空字符串，由 write_node 首次进入时初始化
+        total_segments=0,               # 总段落数，由 write_node 根据大纲设置
     )
 
 

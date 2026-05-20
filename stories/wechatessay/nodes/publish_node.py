@@ -20,6 +20,7 @@ from typing import Any, Dict, List
 from deepagents import create_deep_agent
 from langchain_core.tools import BaseTool
 
+from wechatessay.agents.backend import load_backend
 from wechatessay.agents.memory_manager import get_memory_manager
 from wechatessay.config import BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG, PUBLISH_CONFIG
 from wechatessay.prompts.vx_prompt import PUBLISH_NODE_SYSTEM_PROMPT
@@ -29,32 +30,10 @@ from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
 
-def _load_backend():
-    """加载 Deep Agents backend 配置。"""
-    from deepagents.backends import CompositeBackend, FilesystemBackend
-    root = Path(BACKEND_CONFIG["root_dir"])
-    return CompositeBackend(
-        default=FilesystemBackend(root_dir=root, virtual_mode=BACKEND_CONFIG["virtual_mode"]),
-        routes={
-            "/memories/": FilesystemBackend(
-                root_dir=Path(BACKEND_CONFIG["routes"]["/memories/"]["root_dir"]),
-                virtual_mode=True,
-            ),
-            "/skills/": FilesystemBackend(
-                root_dir=Path(BACKEND_CONFIG["routes"]["/skills/"]["root_dir"]),
-                virtual_mode=True,
-            ),
-            "/workspaces/": FilesystemBackend(
-                root_dir=Path(BACKEND_CONFIG["routes"]["/workspaces/"]["root_dir"]),
-                virtual_mode=True,
-            ),
-        },
-    )
-
 
 def _create_publish_agent(tools: List[BaseTool]) -> Any:
     """创建 publish_node 的 Deep Agent。"""
-    backend = _load_backend()
+    backend = load_backend()
     mm = get_memory_manager()
     memory_context = mm.build_memory_context("文章发布")
 
