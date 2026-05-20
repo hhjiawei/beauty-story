@@ -24,7 +24,6 @@ from pathlib import Path
 from wechatessay.config import MEMORY_CONFIG, MODEL_CONFIG, PUBLISH_CONFIG, RAG_CONFIG
 from wechatessay.graphs.graph import build_graph, build_graph_no_hitl
 from wechatessay.states.vx_state import GraphState
-from wechatessay.utils.json_utils import safe_json_dump
 
 
 def create_initial_state(input_path: str, writing_config: dict = None) -> GraphState:
