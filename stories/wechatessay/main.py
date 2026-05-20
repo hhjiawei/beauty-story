@@ -21,9 +21,69 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from wechatessay.config import MEMORY_CONFIG, MODEL_CONFIG, PUBLISH_CONFIG, RAG_CONFIG
+from wechatessay.config import (
+    BACKEND_CONFIG,
+    MEMORY_CONFIG,
+    MODEL_CONFIG,
+    PUBLISH_CONFIG,
+    RAG_CONFIG,
+    SOURCES_DIR,
+)
 from wechatessay.graphs.graph import build_graph, build_graph_no_hitl
 from wechatessay.states.vx_state import GraphState
+
+
+def resolve_input_path(input_path: str) -> str:
+    """
+    解析输入路径。
+
+    规则：
+    1. 如果传入的是相对路径（不含盘符/根路径），
+       自动拼接为 project_root/backends/sources/{input_path}
+    2. 如果传入的是绝对路径，原样返回
+    3. 如果 path 是目录，扫描其中所有 .txt 文件并返回第一个
+       （或直接返回目录路径由 source_node 扫描）
+
+    示例：
+        "articles.txt"        →  "{project}/backends/sources/articles.txt"
+        "./articles.txt"      →  "{project}/backends/sources/articles.txt"
+        "/abs/path/file.txt"  →  "/abs/path/file.txt"
+        "C:\\data\\file.txt"  →  "C:\\data\\file.txt"
+    """
+    # 空路径保护
+    if not input_path:
+        raise ValueError("input_path 不能为空")
+
+    # 先去掉前后空白和引号
+    raw = input_path.strip().strip('"').strip("'")
+
+    # 已经是绝对路径？（Unix /x 或 Windows C:\ 或 Windows \\server）
+    p = Path(raw)
+    if p.is_absolute():
+        return str(p)
+
+    # 相对路径 → 拼接到 backends/sources/
+    sources_root = SOURCES_DIR
+    resolved = sources_root / p
+    return str(resolved.resolve())
+
+
+def list_source_files(ext: str = ".txt") -> List[str]:
+    """
+    列出 backends/sources/ 目录下所有指定扩展名的文件。
+
+    Returns:
+        文件路径列表（相对于 sources 目录）
+    """
+    sources_root = SOURCES_DIR
+    if not sources_root.exists():
+        return []
+
+    files = sorted(
+        f.name for f in sources_root.iterdir()
+        if f.is_file() and f.suffix.lower() == ext.lower()
+    )
+    return files
 
 
 def create_initial_state(input_path: str, writing_config: dict = None) -> GraphState:
@@ -228,14 +288,134 @@ def run_workflow(
         state["error_message"] = str(e)
         return state
 
+"""
 
+---
+
+## 基本用法
+
+```bash
+# 进入项目根目录后执行
+python -m wechatessay.main [参数]
+```
+---
+
+## 参数说明
+
+| 参数 | 简写 | 默认值 | 说明 |
+|:---|:---|:---|:---|
+| `--input` | `-i` | `None` | 文章链接 txt 文件路径。只写文件名会自动定位到 `backends/sources/` 目录 |
+| `--no-hitl` | — | `False` | **跳过人工审核**，全自动跑完（HITL = Human In The Loop） |
+| `--output` | `-o` | `./output` | 结果输出目录 |
+| `--style` | — | `口语化大白话` | 写作风格，可选：`口语化大白话`、`严肃科普`、`共情引导`、`讽刺犀利` |
+| `--word-count` | — | `2000` | 目标字数 |
+
+---
+
+## 使用场景示例
+
+### 场景 1：不指定文件，自动使用 `backends/sources/` 下的第一个 txt
+```bash
+python -m wechatessay.main
+```
+> 如果 `backends/sources/` 下有多个 `.txt`，它会列出清单并**默认选第一个**。
+
+### 场景 2：指定 `backends/sources/` 目录下的某个文件
+```bash
+# 只写文件名即可，自动解析到 backends/sources/articles.txt
+python -m wechatessay.main --input articles.txt
+
+# 或者
+python -m wechatessay.main -i hot_news.txt
+```
+
+### 场景 3：指定绝对路径（任意位置的文件）
+```bash
+python -m wechatessay.main -i /home/user/data/my_links.txt
+python -m wechatessay.main -i D:\data\my_links.txt 
+```
+
+### 场景 4：全自动模式（无人值守）
+```bash
+python -m wechatessay.main -i articles.txt --no-hitl
+```
+
+### 场景 5：指定风格和字数
+```bash
+python -m wechatessay.main \
+  -i articles.txt \
+  --style "讽刺犀利" \
+  --word-count 3000 \
+  -o ./output_articles
+```
+
+---
+
+## 文件内容要求
+
+`--input` 指向的 `.txt` 文件里，**每行应该是一个文章链接**，例如：
+
+```text
+https://mp.weixin.qq.com/s/xxxxxxxxx
+https://mp.weixin.qq.com/s/yyyyyyyyy
+https://zhuanlan.zhihu.com/p/zzzzzzzzz
+```
+
+---
+
+## 输出结果
+
+运行结束后会在 `--output` 目录（默认 `./output`）生成：
+
+| 文件 | 说明 |
+|:---|:---|
+| `result_YYYYMMDD_HHMMSS.json` | 完整状态序列化（包含所有节点结果） |
+| `article_YYYYMMDD_HHMMSS.html` | 最终排版好的公众号 HTML |
+| `article_YYYYMMDD_HHMMSS.txt` | 最终文章纯文本 |
+
+---
+
+## 一个完整的生产环境命令
+
+```bash
+python -m wechatessay.main \
+  -i today_hot.txt \
+  --style "口语化大白话" \
+  --word-count 2500 \
+  --no-hitl \
+  -o ./output/$(date +%Y%m%d)
+```
+
+---
+
+## 注意事项
+
+1. **路径解析规则**：如果你给的是相对路径（如 `articles.txt`），它会自动拼接到项目根目录下的 `backends/sources/articles.txt`
+2. **人工审核**：默认开启 HITL，工作流会在需要人工确认的节点**暂停**，此时需要检查 `pending_human_review` 并注入决策才能继续
+3. **依赖检查**：确保 `.venv` 或环境里已安装 `langgraph`、`deepagents` 等项目依赖
+
+如果你是想**在代码里直接调用**而不是走命令行，也可以这样：
+
+```python
+from wechatessay.main import run_workflow
+
+final_state = run_workflow(
+    input_path="backends/sources/articles.txt",
+    no_hitl=True,
+    writing_config={"style": "口语化大白话", "word_count": 2000}
+)
+```
+
+需要我帮你把常用的命令写成 **shell/bat 脚本** 吗？
+
+"""
 def main():
     """命令行入口。"""
     parser = argparse.ArgumentParser(description="微信公众号文章 AI 创作工作流")
     parser.add_argument(
         "--input", "-i",
-        required=True,
-        help="文章链接 txt 文件路径",
+        default=None,
+        help="文章链接 txt 文件路径。相对文件名自动解析到 backends/sources/（如 'articles.txt'）",
     )
     parser.add_argument(
         "--no-hitl",
@@ -256,19 +436,40 @@ def main():
     parser.add_argument(
         "--word-count",
         type=int,
-        default=2000,
+        default=3000,
         help="目标字数",
     )
 
     args = parser.parse_args()
 
+    # ── 解析 input_path ──
+    if args.input:
+        raw_input = args.input
+    else:
+        # 未指定 --input，列出 sources 目录下的可用文件
+        available = list_source_files(".txt")
+        if not available:
+            print(f"⚠️  {SOURCES_DIR} 目录下没有找到 .txt 文件")
+            print(f"   请将文章链接列表 txt 文件放入该目录，或用 --input 指定路径")
+            return
+        print(f"📁 发现以下 txt 文件（在 {SOURCES_DIR}）：")
+        for i, f in enumerate(available, 1):
+            print(f"   {i}. {f}")
+        raw_input = available[0]
+        print(f"   默认使用: {raw_input}")
+
+    # 解析为完整路径
+    input_path = resolve_input_path(raw_input)
+    print(f"📄 输入文件: {input_path}")
+
+    # ── 执行 ──
     writing_config = {
         "style": args.style,
         "word_count": args.word_count,
     }
 
     run_workflow(
-        input_path=args.input,
+        input_path=input_path,
         no_hitl=args.no_hitl,
         output_dir=args.output,
         writing_config=writing_config,
