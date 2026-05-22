@@ -7,11 +7,6 @@ wechatessay.nodes.collect_node
 1. 基于 source_node 的分析结果，进行网络搜索补充
 2. 从知乎高赞、今日头条、个人观点等渠道收集额外信息
 3. 需要人工审核，若不满意则提出修改意见
-
-依赖：
-- Deep Agent (create_deep_agent)
-- search_zhihu, search_toutiao, search_related_topics 等搜索工具
-- ArticleSearchNode 状态模型
 """
 
 from __future__ import annotations
@@ -19,7 +14,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from deepagents import create_deep_agent
 from langchain_core.tools import BaseTool
@@ -34,23 +29,15 @@ from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
 
-def _create_collect_agent(tools: List[BaseTool]) -> Any:
-    """
-    创建 collect_node 的 Deep Agent。
 
-    配置：
-    - model: 搜索专用模型
-    - tools: 包含多个搜索工具
-    - system_prompt: 信息收集专用提示词
-    - backend: CompositeBackend
-    """
+def _create_collect_agent(tools: list[BaseTool]) -> Any:
+    """创建 collect_node 的 Deep Agent。"""
     backend = load_backend()
 
     mm = get_memory_manager()
     memory_context = mm.build_memory_context("热点调研")
 
     system_prompt = COLLECT_NODE_SYSTEM_PROMPT
-    # 把聊天记忆整合进来
     if memory_context:
         system_prompt = f"{memory_context}\n\n{system_prompt}"
 
@@ -69,36 +56,28 @@ def _create_collect_agent(tools: List[BaseTool]) -> Any:
     )
 
 
-def _execute_searches(
-    total_analysis: Dict[str, Any],
+async def _execute_searches(
+    total_analysis: dict,
     agent: Any,
 ) -> ArticleSearchNode:
     """
     执行多轮搜索，收集补充信息。
-
-    搜索策略：
-    1. 基于热点标题搜索最新进展
-    2. 搜索知乎高赞回答
-    3. 搜索今日头条观点
-    4. 搜索争议和不同观点
     """
-    hotspot_title = total_analysis.get("hotspot_title", "")
-    core_demand = total_analysis.get("core_demand", "")
-    creation_ideas = total_analysis.get("creation_ideas", [])
+    hotspot_title = total_analysis.get("hotspotTitle", "")
+    core_demand = total_analysis.get("coreDemand", "")
+    creation_ideas = total_analysis.get("creationIdeas", [])
 
-    # TODO 构建多轮搜索查询
     search_queries = [
         f"{hotspot_title} 最新进展",
-        f"{hotspot_title} 知乎 高赞文章、评论",
-        f"{hotspot_title} 今日头条 高赞观点",
+        f"{hotspot_title} 知乎 高赞",
+        f"{hotspot_title} 今日头条 观点",
         f"{hotspot_title} 争议",
         f"{hotspot_title} 网友评论",
     ]
     if creation_ideas:
-        for idea in creation_ideas[:2]:
+        for idea in creation_ideas:
             search_queries.append(f"{hotspot_title} {idea}")
 
-    # 构建消息
     search_context = json.dumps({
         "hotspot_title": hotspot_title,
         "core_demand": core_demand,
@@ -114,19 +93,17 @@ def _execute_searches(
                 f"已确定的热点信息：\n{search_context}\n\n"
                 f"请依次执行搜索查询，收集补充信息，"
                 f"最终以 JSON 格式输出 ArticleSearchNode 结构。"
+                f"结果一定要ArticleSearchNode的JSON结构，不许落盘，不许擅自加其他内容，你输出的结果必须是ArticleSearchNode的JSON结构"
             ),
         }
     ]
 
-    # 调用 Agent
-    result = agent.invoke({"messages": messages})
+    result = await agent.ainvoke({"messages": messages})
     response_content = result["messages"][-1].content if result.get("messages") else ""
 
-    # 解析 JSON
     try:
         parsed = parse_json_response(response_content)
         if isinstance(parsed, dict):
-            # 尝试多种可能的键名
             search_data = parsed.get("search_result") or parsed
             search_node = ArticleSearchNode.model_validate(search_data)
             search_node.search_queries_used = search_queries
@@ -135,7 +112,6 @@ def _execute_searches(
     except Exception as e:
         print(f"[collect_node] 解析搜索结果失败: {e}")
 
-    # 返回空结构
     return ArticleSearchNode(
         cause_process_result="",
         topic_angle="",
@@ -150,13 +126,8 @@ def _execute_searches(
 async def collect_node_async(state: GraphState) -> GraphState:
     """
     collect_node 异步执行入口。
-
-    流程：
-    1. 获取 total_article_results
-    2. 构建搜索查询
-    3. 调用 Deep Agent 执行多轮搜索
-    4. 整合搜索结果
-    5. 设置人工审核标记
+    核心修复：使用 await agent.ainvoke() 而非 agent.invoke()，
+    以支持 MCP 异步工具。
     """
     total_analysis = state.get("total_article_results")
     if not total_analysis:
@@ -167,15 +138,15 @@ async def collect_node_async(state: GraphState) -> GraphState:
     print(f"[collect_node] 开始收集信息: {total_analysis.hotspot_title}")
 
     # 1. 准备工具并创建 Agent
-    base_tools = get_base_tools()
+    base_tools =await get_base_tools()
     mcp_tools = await get_total_tools()
     total_tools = list(base_tools) + list(mcp_tools)
 
     agent = _create_collect_agent(total_tools)
 
-    # 2. 执行搜索
-    search_result = _execute_searches(
-        total_analysis.model_dump(by_alias=True),
+    # 2. 执行搜索（await ainvoke）
+    search_result = await _execute_searches(
+        total_analysis.model_dump(by_alias=True), # by_alias=True 表示：序列化（dump）时，字段名使用 Field(alias=...) 中定义的别名，而不是 Python 类的属性名。
         agent,
     )
 
@@ -206,6 +177,6 @@ async def collect_node_async(state: GraphState) -> GraphState:
 
 
 def collect_node(state: GraphState) -> GraphState:
-    """collect_node 同步入口。"""
+    """collect_node 同步入口包装。"""
     import asyncio
     return asyncio.run(collect_node_async(state))

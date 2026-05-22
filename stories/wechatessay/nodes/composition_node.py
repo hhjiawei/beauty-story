@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from deepagents import create_deep_agent
 from langchain_core.tools import BaseTool
@@ -30,7 +30,8 @@ from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
 
-def _create_composition_agent(tools: List[BaseTool]) -> Any:
+
+def _create_composition_agent(tools: list[BaseTool]) -> Any:
     """创建 composition_node 的 Deep Agent。"""
     backend = load_backend()
     mm = get_memory_manager()
@@ -55,8 +56,8 @@ def _create_composition_agent(tools: List[BaseTool]) -> Any:
     )
 
 
-def _compose_article(
-    article: Dict[str, Any],
+async def _compose_article(
+    article: dict,
     agent: Any,
 ) -> CompositionNode:
     """对文章进行排版。"""
@@ -73,7 +74,7 @@ def _compose_article(
         }
     ]
 
-    result = agent.invoke({"messages": messages})
+    result = await agent.ainvoke({"messages": messages})
     response_content = result["messages"][-1].content if result.get("messages") else ""
 
     try:
@@ -84,7 +85,6 @@ def _compose_article(
     except Exception as e:
         print(f"[composition_node] 解析排版结果失败: {e}")
 
-    # 返回原始文章作为 fallback
     original = ArticleOutputNode.model_validate(article)
     return CompositionNode(
         formatted_article=original,
@@ -95,7 +95,10 @@ def _compose_article(
 
 
 async def composition_node_async(state: GraphState) -> GraphState:
-    """composition_node 异步执行入口。"""
+    """
+    composition_node 异步执行入口。
+    核心修复：使用 await agent.ainvoke() 而非 agent.invoke()。
+    """
     article = state.get("article_output")
 
     if not article:
@@ -105,13 +108,13 @@ async def composition_node_async(state: GraphState) -> GraphState:
 
     print(f"[composition_node] 开始排版")
 
-    base_tools = get_base_tools()
+    base_tools = await get_base_tools()
     mcp_tools = await get_total_tools()
     total_tools = list(base_tools) + list(mcp_tools)
 
     agent = _create_composition_agent(total_tools)
 
-    composition = _compose_article(article.model_dump(by_alias=True), agent)
+    composition = await _compose_article(article.model_dump(by_alias=True), agent)
 
     state["composition_result"] = composition
     state["current_node"] = "composition_node"
@@ -134,6 +137,6 @@ async def composition_node_async(state: GraphState) -> GraphState:
 
 
 def composition_node(state: GraphState) -> GraphState:
-    """composition_node 同步入口。"""
+    """composition_node 同步入口包装。"""
     import asyncio
     return asyncio.run(composition_node_async(state))

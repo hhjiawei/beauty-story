@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from deepagents import create_deep_agent
 from langchain_core.tools import BaseTool
@@ -30,8 +30,7 @@ from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
 
-
-def _create_plot_agent(tools: List[BaseTool]) -> Any:
+def _create_plot_agent(tools: list[BaseTool]) -> Any:
     """创建 plot_node 的 Deep Agent。"""
     backend = load_backend()
     mm = get_memory_manager()
@@ -56,9 +55,9 @@ def _create_plot_agent(tools: List[BaseTool]) -> Any:
     )
 
 
-def _generate_plot(
-    blueprint: Dict[str, Any],
-    search_result: Dict[str, Any],
+async def _generate_plot(
+    blueprint: dict,
+    search_result: dict,
     agent: Any,
 ) -> ArticlePlotNode:
     """生成文章大纲。"""
@@ -79,7 +78,7 @@ def _generate_plot(
         }
     ]
 
-    result = agent.invoke({"messages": messages})
+    result = await agent.ainvoke({"messages": messages})
     response_content = result["messages"][-1].content if result.get("messages") else ""
 
     try:
@@ -91,15 +90,20 @@ def _generate_plot(
         print(f"[plot_node] 解析大纲失败: {e}")
 
     return ArticlePlotNode(
-        writing_context={"articleTitle": "", "coreIdea": "", "targetAudience": "",
-                         "globalStyle": {"tone": "", "languageRequirement": ""}},
+        writing_context={
+            "articleTitle": "", "coreIdea": "", "targetAudience": "",
+            "globalStyle": {"tone": "", "languageRequirement": ""},
+        },
         content_segments=[],
         global_checklist=[],
     )
 
 
 async def plot_node_async(state: GraphState) -> GraphState:
-    """plot_node 异步执行入口。"""
+    """
+    plot_node 异步执行入口。
+    核心修复：使用 await agent.ainvoke() 而非 agent.invoke()。
+    """
     blueprint = state.get("blueprint_result")
     search_result = state.get("search_result")
 
@@ -110,13 +114,13 @@ async def plot_node_async(state: GraphState) -> GraphState:
 
     print(f"[plot_node] 开始生成大纲")
 
-    base_tools = get_base_tools()
+    base_tools = await get_base_tools()
     mcp_tools = await get_total_tools()
     total_tools = list(base_tools) + list(mcp_tools)
 
     agent = _create_plot_agent(total_tools)
 
-    plot_result = _generate_plot(
+    plot_result = await _generate_plot(
         blueprint.model_dump(by_alias=True),
         search_result.model_dump(by_alias=True) if search_result else {},
         agent,
@@ -143,6 +147,6 @@ async def plot_node_async(state: GraphState) -> GraphState:
 
 
 def plot_node(state: GraphState) -> GraphState:
-    """plot_node 同步入口。"""
+    """plot_node 同步入口包装。"""
     import asyncio
     return asyncio.run(plot_node_async(state))

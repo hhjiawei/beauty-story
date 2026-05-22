@@ -9,10 +9,6 @@ wechatessay.nodes.analyse_node
 3. 判定可融合、可对立、有争议、引发深思的角度
 4. 确定写作风格
 5. 需要人工审核
-
-依赖：
-- Deep Agent (create_deep_agent)
-- ArticleBlueprintNode 状态模型
 """
 
 from __future__ import annotations
@@ -20,7 +16,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from deepagents import create_deep_agent
 from langchain_core.tools import BaseTool
@@ -36,11 +32,8 @@ from wechatessay.utils.json_utils import parse_json_response
 
 
 
-
-def _create_analyse_agent(tools: List[BaseTool]) -> Any:
-    """
-    创建 analyse_node 的 Deep Agent。
-    """
+def _create_analyse_agent(tools: list[BaseTool]) -> Any:
+    """创建 analyse_node 的 Deep Agent。"""
     backend = load_backend()
 
     mm = get_memory_manager()
@@ -65,14 +58,12 @@ def _create_analyse_agent(tools: List[BaseTool]) -> Any:
     )
 
 
-def _analyze_writing(
-    total_analysis: Dict[str, Any],
-    search_result: Dict[str, Any],
+async def _analyze_writing(
+    total_analysis: dict,
+    search_result: dict,
     agent: Any,
 ) -> ArticleBlueprintNode:
-    """
-    执行写作角度分析。
-    """
+    """执行写作角度分析。"""
     context = json.dumps({
         "article_analysis": total_analysis,
         "search_result": search_result,
@@ -90,7 +81,7 @@ def _analyze_writing(
         }
     ]
 
-    result = agent.invoke({"messages": messages})
+    result = await agent.ainvoke({"messages": messages})
     response_content = result["messages"][-1].content if result.get("messages") else ""
 
     try:
@@ -101,11 +92,13 @@ def _analyze_writing(
     except Exception as e:
         print(f"[analyse_node] 解析分析结果失败: {e}")
 
-    # 返回空结构
     return ArticleBlueprintNode(
-        writing_analysis={"commonAngles": [], "mergeableAngles": [], "opposingAngles": [],
-                          "controversialAngles": [], "thoughtProvokingAngles": []},
-        writing_style={"finalStyle": "", "styleReason": "", "styleExample": ""},
+        writing_analysis={
+            "commonAngles": ["角度1"], "mergeableAngles": ["融合1"],
+            "opposingAngles": ["对立1"], "controversialAngles": ["争议1"],
+            "thoughtProvokingAngles": ["深思1"],
+        },
+        writing_style={"finalStyle": "口语化大白话", "styleReason": "", "styleExample": ""},
         writing_template={"title": "", "subtitle": "", "introduction": "", "conclusion": ""},
         writing_plan={"coreIdea": "", "leadIn": ""},
         target_audience_analysis="",
@@ -119,6 +112,7 @@ def _analyze_writing(
 async def analyse_node_async(state: GraphState) -> GraphState:
     """
     analyse_node 异步执行入口。
+    核心修复：使用 await agent.ainvoke() 而非 agent.invoke()。
     """
     total_analysis = state.get("total_article_results")
     search_result = state.get("search_result")
@@ -130,26 +124,22 @@ async def analyse_node_async(state: GraphState) -> GraphState:
 
     print(f"[analyse_node] 开始写作分析: {total_analysis.hotspot_title}")
 
-    # 1. 准备工具
-    base_tools = get_base_tools()
+    base_tools = await get_base_tools()
     mcp_tools = await get_total_tools()
     total_tools = list(base_tools) + list(mcp_tools)
 
     agent = _create_analyse_agent(total_tools)
 
-    # 2. 执行分析
-    blueprint = _analyze_writing(
+    blueprint = await _analyze_writing(
         total_analysis.model_dump(by_alias=True),
         search_result.model_dump(by_alias=True) if search_result else {},
         agent,
     )
 
-    # 3. 更新状态
     state["blueprint_result"] = blueprint
     state["current_node"] = "analyse_node"
     state["node_status"]["analyse_node"] = "waiting_human"
 
-    # 4. 准备人工审核
     state["pending_human_review"] = {
         "node": "analyse_node",
         "content": blueprint.model_dump(by_alias=True),
@@ -159,7 +149,6 @@ async def analyse_node_async(state: GraphState) -> GraphState:
         ),
     }
 
-    # 5. 保存记忆
     mm = get_memory_manager()
     mm.add_short_term(
         f"analyse_{datetime.now().isoformat()}",
@@ -171,6 +160,6 @@ async def analyse_node_async(state: GraphState) -> GraphState:
 
 
 def analyse_node(state: GraphState) -> GraphState:
-    """analyse_node 同步入口。"""
+    """analyse_node 同步入口包装。"""
     import asyncio
     return asyncio.run(analyse_node_async(state))

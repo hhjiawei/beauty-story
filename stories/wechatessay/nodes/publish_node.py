@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from deepagents import create_deep_agent
 from langchain_core.tools import BaseTool
@@ -30,8 +30,7 @@ from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
 
-
-def _create_publish_agent(tools: List[BaseTool]) -> Any:
+def _create_publish_agent(tools: list[BaseTool]) -> Any:
     """创建 publish_node 的 Deep Agent。"""
     backend = load_backend()
     mm = get_memory_manager()
@@ -56,9 +55,9 @@ def _create_publish_agent(tools: List[BaseTool]) -> Any:
     )
 
 
-def _prepare_publish(
-    composition: Dict[str, Any],
-    legality: Dict[str, Any],
+async def _prepare_publish(
+    composition: dict,
+    legality: dict,
     agent: Any,
 ) -> PublishNode:
     """准备发布。"""
@@ -80,7 +79,7 @@ def _prepare_publish(
         }
     ]
 
-    result = agent.invoke({"messages": messages})
+    result = await agent.ainvoke({"messages": messages})
     response_content = result["messages"][-1].content if result.get("messages") else ""
 
     try:
@@ -91,7 +90,6 @@ def _prepare_publish(
     except Exception as e:
         print(f"[publish_node] 解析发布结果失败: {e}")
 
-    # fallback: 生成基本 HTML
     article_text = composition.get("formatted_article", {}).get("fullText", "")
     html = f"""
     <html>
@@ -104,11 +102,7 @@ def _prepare_publish(
     """
 
     return PublishNode(
-        publish_config={
-            "platform": "wechat",
-            "tags": [],
-            "isOriginal": True,
-        },
+        publish_config={"platform": "wechat", "tags": [], "isOriginal": True},
         publish_status="draft",
         final_article_html=html,
         publish_log=[f"[{datetime.now().isoformat()}] 文章进入发布队列"],
@@ -116,7 +110,10 @@ def _prepare_publish(
 
 
 async def publish_node_async(state: GraphState) -> GraphState:
-    """publish_node 异步执行入口。"""
+    """
+    publish_node 异步执行入口。
+    核心修复：使用 await agent.ainvoke() 而非 agent.invoke()。
+    """
     composition = state.get("composition_result")
     legality = state.get("legality_result")
 
@@ -127,13 +124,13 @@ async def publish_node_async(state: GraphState) -> GraphState:
 
     print(f"[publish_node] 开始准备发布")
 
-    base_tools = get_base_tools()
+    base_tools = await get_base_tools()
     mcp_tools = await get_total_tools()
     total_tools = list(base_tools) + list(mcp_tools)
 
     agent = _create_publish_agent(total_tools)
 
-    publish = _prepare_publish(
+    publish = await _prepare_publish(
         composition.model_dump(by_alias=True),
         legality.model_dump(by_alias=True) if legality else {},
         agent,
@@ -155,6 +152,6 @@ async def publish_node_async(state: GraphState) -> GraphState:
 
 
 def publish_node(state: GraphState) -> GraphState:
-    """publish_node 同步入口。"""
+    """publish_node 同步入口包装。"""
     import asyncio
     return asyncio.run(publish_node_async(state))

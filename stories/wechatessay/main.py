@@ -332,7 +332,6 @@ python -m wechatessay.main -i hot_news.txt
 ### 场景 3：指定绝对路径（任意位置的文件）
 ```bash
 python -m wechatessay.main -i /home/user/data/my_links.txt
-python -m wechatessay.main -i D:\data\my_links.txt 
 ```
 
 ### 场景 4：全自动模式（无人值守）

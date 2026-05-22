@@ -277,7 +277,7 @@ def _build_segment_prompt(
     return system_prompt, user_content
 
 
-def _write_single_segment(
+async def _write_single_segment(
         state: GraphState,
         segment_index: int,
         agent: Any,
@@ -298,7 +298,7 @@ def _write_single_segment(
             "content": f"【修改要求】\n{revision}\n\n请根据以上修改意见重新写第 {segment_index + 1} 段。",
         })
 
-    result = agent.invoke({"messages": messages})
+    result = await agent.ainvoke({"messages": messages})
     response_content = result["messages"][-1].content if result.get("messages") else ""
 
     # 解析 JSON
@@ -324,7 +324,7 @@ def _write_single_segment(
     }
 
 
-def _assemble_full_article(state: GraphState, agent: Any) -> ArticleOutputNode:
+async def _assemble_full_article(state: GraphState, agent: Any) -> ArticleOutputNode:
     """所有段落写完后，组装为 ArticleOutputNode。"""
     plot = state["plot_result"]
     segment_contents = state.get("segment_contents", [])
@@ -366,7 +366,7 @@ def _assemble_full_article(state: GraphState, agent: Any) -> ArticleOutputNode:
         }
     ]
 
-    result = agent.invoke({"messages": messages})
+    result = await agent.ainvoke({"messages": messages})
     response_content = result["messages"][-1].content if result.get("messages") else ""
 
     try:
@@ -408,19 +408,16 @@ def _assemble_full_article(state: GraphState, agent: Any) -> ArticleOutputNode:
 # ═══════════════════════════════════════════════
 # 核心入口函数
 # ═══════════════════════════════════════════════
-
+import asyncio
+"""如果 write_node 本身是在一个已经运行的事件循环中被调用（例如 Jupyter Notebook、某些 Web 框架、或 LangGraph 的异步执行模式），
+asyncio.run() 会抛出 RuntimeError: asyncio.run() cannot be called from a running event loop。
+建议： 如果该节点可能在异步上下文中被调用，同步入口应改用："""
 def write_node(state: GraphState) -> GraphState:
-    """
-    write_node 入口（同步）。
-
-    逐段写作的核心状态机：
-
-    phase="segment"  → 写当前段 → HITL
-    phase="assembly" → 组装全文 → HITL（整体审核）
-    phase="done"     → 完成，进入下一节点
-    """
-    import asyncio
-    return asyncio.run(write_node_async(state))
+    try:
+        loop = asyncio.get_running_loop()
+        # 已在事件循环中，需要特殊处理（如使用 nest_asyncio 或重构为纯异步节点）
+    except RuntimeError:
+        return asyncio.run(write_node_async(state))
 
 
 async def write_node_async(state: GraphState) -> GraphState:
@@ -469,13 +466,13 @@ async def write_node_async(state: GraphState) -> GraphState:
         print(f"[write_node] 正在写第 {current_idx + 1}/{total} 段...")
 
         # 准备工具 + Agent
-        base_tools = get_base_tools()
+        base_tools = await get_base_tools()
         mcp_tools = await get_total_tools()
         total_tools = list(base_tools) + list(mcp_tools)
         agent = _create_segment_writer_agent(total_tools)
 
         # 写当前段
-        segment_result = _write_single_segment(state, current_idx, agent)
+        segment_result = await _write_single_segment(state, current_idx, agent)
         content = segment_result.get("content", "")
         golden = segment_result.get("goldenSentences", [])
 
@@ -533,7 +530,7 @@ async def write_node_async(state: GraphState) -> GraphState:
         total_tools = list(base_tools) + list(mcp_tools)
         agent = _create_assembler_agent(total_tools)
 
-        article = _assemble_full_article(state, agent)
+        article = await _assemble_full_article(state, agent)
 
         state["article_output"] = article
         state["write_node_phase"] = "assembly_review"

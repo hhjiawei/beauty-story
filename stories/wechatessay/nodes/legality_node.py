@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from deepagents import create_deep_agent
 from langchain_core.tools import BaseTool
@@ -37,8 +37,7 @@ from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
 
-
-def _create_legality_agent(tools: List[BaseTool]) -> Any:
+def _create_legality_agent(tools: list[BaseTool]) -> Any:
     """创建 legality_node 的 Deep Agent。"""
     backend = load_backend()
     mm = get_memory_manager()
@@ -63,8 +62,8 @@ def _create_legality_agent(tools: List[BaseTool]) -> Any:
     )
 
 
-def _check_article(
-    article: Dict[str, Any],
+async def _check_article(
+    article: dict,
     target_style: str,
     agent: Any,
 ) -> LegalityCheckResult:
@@ -89,7 +88,7 @@ def _check_article(
         }
     ]
 
-    result = agent.invoke({"messages": messages})
+    result = await agent.ainvoke({"messages": messages})
     response_content = result["messages"][-1].content if result.get("messages") else ""
 
     try:
@@ -110,7 +109,10 @@ def _check_article(
 
 
 async def legality_node_async(state: GraphState) -> GraphState:
-    """legality_node 异步执行入口。"""
+    """
+    legality_node 异步执行入口。
+    核心修复：使用 await agent.ainvoke() 而非 agent.invoke()。
+    """
     composition = state.get("composition_result")
 
     if not composition:
@@ -120,7 +122,7 @@ async def legality_node_async(state: GraphState) -> GraphState:
 
     print(f"[legality_node] 开始合规检查")
 
-    base_tools = get_base_tools()
+    base_tools = await get_base_tools()
     mcp_tools = await get_total_tools()
     total_tools = list(base_tools) + list(mcp_tools)
 
@@ -129,7 +131,7 @@ async def legality_node_async(state: GraphState) -> GraphState:
     blueprint = state.get("blueprint_result")
     target_style = blueprint.writing_style.final_style if blueprint else "口语化大白话"
 
-    legality = _check_article(
+    legality = await _check_article(
         composition.model_dump(by_alias=True),
         target_style,
         agent,
@@ -138,7 +140,6 @@ async def legality_node_async(state: GraphState) -> GraphState:
     state["legality_result"] = legality
     state["current_node"] = "legality_node"
 
-    # 判断是否通过
     if legality.is_passed and legality.ai_flavor_score <= LEGALITY_CONFIG["max_ai_score"]:
         state["node_status"]["legality_node"] = "completed"
         print(f"[legality_node] 通过检查: 得分={legality.overall_score}")
@@ -164,6 +165,6 @@ async def legality_node_async(state: GraphState) -> GraphState:
 
 
 def legality_node(state: GraphState) -> GraphState:
-    """legality_node 同步入口。"""
+    """legality_node 同步入口包装。"""
     import asyncio
     return asyncio.run(legality_node_async(state))
