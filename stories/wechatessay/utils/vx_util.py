@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List
 import logging
 
-from wechatessay_old.utils.vx_web_util import web_crawler_search
 
 import asyncio
 import os
@@ -11,6 +10,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 import re
 
+from wechatessay.utils.vx_web_util import web_crawler_search
 
 logger = logging.getLogger(__name__)
 

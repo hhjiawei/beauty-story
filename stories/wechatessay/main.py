@@ -15,6 +15,10 @@ wechatessay.main
 
 from __future__ import annotations
 
+from typing import List
+
+import nest_asyncio
+
 import argparse
 import json
 import os
@@ -32,6 +36,14 @@ from wechatessay.config import (
 from wechatessay.graphs.graph import build_graph, build_graph_no_hitl
 from wechatessay.states.vx_state import GraphState
 
+# ═══════════════════════════════════════════════
+# 【关键】允许 asyncio.run() 嵌套调用
+# ═══════════════════════════════════════════════
+# LangGraph 内部会创建事件循环，节点包装器也使用 asyncio.run()，
+# 加上 scan_article_files 内部还有 asyncio.run() —— 形成多层嵌套。
+# nest_asyncio 补丁必须在任何 asyncio 操作之前应用。
+# ═══════════════════════════════════════════════
+nest_asyncio.apply()
 
 def resolve_input_path(input_path: str) -> str:
     """
