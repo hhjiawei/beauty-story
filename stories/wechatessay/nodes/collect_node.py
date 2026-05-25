@@ -80,9 +80,9 @@ async def _execute_searches(
 
     search_context = json.dumps({
         "hotspot_title": hotspot_title,
-        "core_demand": core_demand,
-        "creation_ideas": creation_ideas,
-        "search_queries": search_queries,
+        # "core_demand": core_demand,
+        # "creation_ideas": creation_ideas,
+        # "search_queries": search_queries,
     }, ensure_ascii=False, indent=2)
 
     messages = [
@@ -93,7 +93,7 @@ async def _execute_searches(
                 f"已确定的热点信息：\n{search_context}\n\n"
                 f"请依次执行搜索查询，收集补充信息，"
                 f"最终以 JSON 格式输出 ArticleSearchNode 结构。"
-                f"结果一定要ArticleSearchNode的JSON结构，不许落盘，不许擅自加其他内容，你输出的结果必须是ArticleSearchNode的JSON结构"
+                f"结果一定要ArticleSearchNode的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticleSearchNode的JSON结构"
             ),
         }
     ]
@@ -153,14 +153,9 @@ async def collect_node_async(state: GraphState) -> GraphState:
     # 3. 更新状态
     state["search_result"] = search_result
     state["current_node"] = "collect_node"
-    state["node_status"]["collect_node"] = "waiting_human"
+    state["node_status"]["collect_node"] = "completed"  # [TEST] 自动通过
 
     # 4. 准备人工审核内容
-    state["pending_human_review"] = {
-        "node": "collect_node",
-        "content": search_result.model_dump(by_alias=True),
-        "instruction": "请检查搜索结果是否充分，是否覆盖了需要的角度。如需补充搜索，请提供搜索方向。",
-    }
 
     # 5. 保存到短期记忆
     mm = get_memory_manager()
@@ -172,7 +167,7 @@ async def collect_node_async(state: GraphState) -> GraphState:
         },
     )
 
-    print(f"[collect_node] 完成: 收集到 {len(search_result.search_sources)} 条来源")
+    print(f"[collect_node] 完成: 收集到 {len(search_result.search_sources)} 条来源 [TEST] 自动通过")
     return state
 
 

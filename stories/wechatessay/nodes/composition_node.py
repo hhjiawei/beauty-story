@@ -118,13 +118,8 @@ async def composition_node_async(state: GraphState) -> GraphState:
 
     state["composition_result"] = composition
     state["current_node"] = "composition_node"
-    state["node_status"]["composition_node"] = "waiting_human"
+    state["node_status"]["composition_node"] = "completed"  # [TEST] 自动通过
 
-    state["pending_human_review"] = {
-        "node": "composition_node",
-        "content": composition.model_dump(by_alias=True),
-        "instruction": "请检查排版视觉效果，移动端阅读体验。",
-    }
 
     mm = get_memory_manager()
     mm.add_short_term(

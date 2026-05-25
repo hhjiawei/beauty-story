@@ -128,13 +128,8 @@ async def plot_node_async(state: GraphState) -> GraphState:
 
     state["plot_result"] = plot_result
     state["current_node"] = "plot_node"
-    state["node_status"]["plot_node"] = "waiting_human"
+    state["node_status"]["plot_node"] = "completed"  # [TEST] 自动通过
 
-    state["pending_human_review"] = {
-        "node": "plot_node",
-        "content": plot_result.model_dump(by_alias=True),
-        "instruction": "请检查大纲结构是否合理，段落逻辑是否清晰，金句位置是否恰当。",
-    }
 
     mm = get_memory_manager()
     mm.add_short_term(

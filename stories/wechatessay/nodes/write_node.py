@@ -486,39 +486,18 @@ async def write_node_async(state: GraphState) -> GraphState:
         # 获取当前段大纲信息用于审核提示
         seg = segments[current_idx]
 
-        # 设置段级 HITL
-        state["pending_human_review"] = {
-            "node": "write_node",
-            "scope": "segment",  # 标记为段级审核（区别于节点级）
-            "segment_index": current_idx,
-            "segment_type": seg.segment_type,
-            "total_segments": total,
-            "content": {
-                "segment_number": current_idx + 1,
-                "segment_type": seg.segment_type,
-                "section_title": seg.section_title,
-                "core_logic": seg.core_logic,
-                "content": content,
-                "word_count": segment_result.get("wordCount", len(content)),
-                "golden_sentences": golden,
-                "sources_cited": segment_result.get("sourcesCited", []),
-                "transition_preview": segment_result.get("transitionPreview", ""),
-            },
-            "instruction": (
-                f"第 {current_idx + 1}/{total} 段写作完成。\n"
-                f"【本段要求】{seg.core_logic} | 情绪:{seg.emotional_objective} | "
-                f"字数:{seg.word_count_range.min}-{seg.word_count_range.max}\n"
-                f"请检查：1)内容是否符合大纲要求 2)与上段衔接是否自然 "
-                f"3)是否为下段做了过渡 4)引用素材是否恰当 5)是否有AI感\n"
-                f"决策：approve=通过继续 | revise=修改当前段(请附意见) | "
-                f"back=回退到上一段"
-            ),
-        }
-
-        # 清理修改意见（已消费）
+        # [TEST] 段级自动推进：自动 approve 并进入下一段
+        approved = state.get("segment_approved", [])
+        if current_idx < len(approved):
+            approved[current_idx] = True
+        state["segment_approved"] = approved
+        state["current_segment_index"] = current_idx + 1
         state["revision_notes"] = None
 
-        print(f"[write_node] 第 {current_idx + 1} 段完成（{len(content)}字），等待人工审核")
+        print(f"[write_node] 第 {current_idx + 1}/{total} 段完成（{len(content)}字） [TEST] 自动通过")
+
+        # 如果还有段没写完，继续写（通过在 graph 中自循环回 write_node）
+        # 如果写完了，进入 assembly（current_idx + 1 >= total 时下次进入会判断）
         return state
 
     # ── Phase: 组装全文 ──
@@ -533,33 +512,20 @@ async def write_node_async(state: GraphState) -> GraphState:
         article = await _assemble_full_article(state, agent)
 
         state["article_output"] = article
-        state["write_node_phase"] = "assembly_review"
+        state["write_node_phase"] = "assembly_review"  # [TEST] 直接跳到 done 阶段
         state["current_node"] = "write_node"
-        state["node_status"]["write_node"] = "waiting_human"
+        state["node_status"]["write_node"] = "completed"  # [TEST] 自动通过
 
-        # 设置整体 HITL
-        state["pending_human_review"] = {
-            "node": "write_node",
-            "scope": "node",  # 节点级审核（整体文章）
-            "content": article.model_dump(by_alias=True),
-            "instruction": (
-                "全文已组装完成。请进行整体审核：\n"
-                "1) 标题是否吸引人 2) 全文节奏是否流畅 3) 段落衔接是否自然\n"
-                "4) 金句分布是否合理 5) 整体是否有AI感 6) 转发语是否合适\n"
-                "决策：approve=通过，进入排版 | revise=修改某段(请指定段落和意见) | "
-                "retry=重新组装"
-            ),
-        }
-
-        print(f"[write_node] 全文组装完成（{article.metadata.get('totalWordCount', 0)}字），等待整体审核")
+        # [TEST] 跳过整体 HITL，下次进入直接走 assembly_review → done
+        print(f"[write_node] 全文组装完成（{article.metadata.get('totalWordCount', 0)}字） [TEST] 自动通过")
         return state
 
     # ── Phase: 整体审核通过 ──
     elif phase == "assembly_review":
-        # 用户已通过整体审核
+        # [TEST] 整体自动通过
         state["write_node_phase"] = "done"
         state["node_status"]["write_node"] = "completed"
-        print("[write_node] 整体审核通过，完成！")
+        print("[write_node] 整体审核 [TEST] 自动通过，完成！")
         return state
 
     return state

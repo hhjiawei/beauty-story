@@ -56,9 +56,9 @@ def _create_publish_agent(tools: list[BaseTool]) -> Any:
 
 
 async def _prepare_publish(
-    composition: dict,
-    legality: dict,
-    agent: Any,
+        composition: dict,
+        legality: dict,
+        agent: Any,
 ) -> PublishNode:
     """准备发布。"""
     context = json.dumps({

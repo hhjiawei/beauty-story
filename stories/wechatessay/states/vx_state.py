@@ -1072,6 +1072,28 @@ class ArticleOutputNode(BaseModel):
     )
 
 
+
+
+
+# 新增
+class SegmentWriteResult(BaseModel):
+    """逐段写作的单段输出"""
+    model_config = ConfigDict(populate_by_name=True)
+    segmentIndex: int = Field(..., alias="segmentIndex")
+    content: str = Field(..., alias="content")
+    goldenSentences: list[dict] = Field(default_factory=list, alias="goldenSentences")
+    wordCount: int = Field(0, alias="wordCount")
+    sourcesCited: list[str] = Field(default_factory=list, alias="sourcesCited")
+    transitionPreview: str = Field("", alias="transitionPreview")
+
+
+
+
+
+
+
+
+
 # ═══════════════════════════════════════════════
 # 节点6 产物：排版
 # ═══════════════════════════════════════════════

@@ -138,16 +138,8 @@ async def analyse_node_async(state: GraphState) -> GraphState:
 
     state["blueprint_result"] = blueprint
     state["current_node"] = "analyse_node"
-    state["node_status"]["analyse_node"] = "waiting_human"
+    state["node_status"]["analyse_node"] = "completed"  # [TEST] 自动通过
 
-    state["pending_human_review"] = {
-        "node": "analyse_node",
-        "content": blueprint.model_dump(by_alias=True),
-        "instruction": (
-            "请检查写作角度分析是否全面，风格定位是否准确。"
-            "如需调整，请提供具体修改方向。"
-        ),
-    }
 
     mm = get_memory_manager()
     mm.add_short_term(
