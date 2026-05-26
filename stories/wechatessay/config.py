@@ -174,7 +174,7 @@ PUBLISH_CONFIG = {
 
 
 
-LOG_LEVEL = logging.DEBUG  # 开发用 DEBUG，生产用 INFO
+LOG_LEVEL = logging.INFO  # 开发用 DEBUG，生产用 INFO
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d — %(message)s"
 
 def setup_logging():
