@@ -246,7 +246,7 @@ def _build_segment_prompt(
             prev_content = f"""
 【前一段已写正文】（请承接这段的结尾，丝滑过渡）
 ```
-{prev_text[:500]}
+{prev_text}
 ```
 """
 
@@ -364,6 +364,7 @@ async def _assemble_full_article(state: GraphState, agent: Any) -> ArticleOutput
                 f"所有段落已审核通过，请组装为完整文章。\n\n"
                 f"{context}\n\n"
                 f"请按 ASSEMBLE_ARTICLE_SYSTEM_PROMPT 的格式输出 JSON。"
+                f"结果一定要ArticleOutputNode的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticleOutputNode的JSON结构"
             ),
         }
     ]
@@ -506,7 +507,7 @@ async def write_node_async(state: GraphState) -> GraphState:
     elif phase in ("assembly", "segment") and current_idx >= total:
         print(f"[write_node] 所有 {total} 段已审核通过，组装全文...")
 
-        base_tools = get_base_tools()
+        base_tools = await get_base_tools()
         mcp_tools = await get_total_tools()
         total_tools = list(base_tools) + list(mcp_tools)
         agent = _create_assembler_agent(total_tools)

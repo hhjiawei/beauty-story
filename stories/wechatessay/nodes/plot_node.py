@@ -76,6 +76,7 @@ async def _generate_plot(
                 f"{context}\n\n"
                 f"请严格按 JSON 格式输出 ArticlePlotNode 结构，"
                 f"包含完整的段落级写作指令。"
+                f"结果一定要ArticlePlotNode的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticlePlotNode的JSON结构"
             ),
         }
     ]

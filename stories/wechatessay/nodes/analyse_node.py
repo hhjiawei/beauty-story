@@ -78,6 +78,7 @@ async def _analyze_writing(
                 f"进行全面的写作策略分析。\n\n"
                 f"{context}\n\n"
                 f"请以 JSON 格式输出 ArticleBlueprintNode 结构。"
+                f"结果一定要ArticleBlueprintNode的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticleBlueprintNode的JSON结构"
             ),
         }
     ]

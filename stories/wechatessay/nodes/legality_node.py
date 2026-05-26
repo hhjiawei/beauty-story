@@ -86,6 +86,7 @@ async def _check_article(
                 f"{context}\n\n"
                 f"请以 JSON 格式输出 LegalityCheckResult 结构，"
                 f"包含所有检查维度和修改建议。"
+                f"结果一定要LegalityCheckResult的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有LegalityCheckResult的JSON结构"
             ),
         }
     ]

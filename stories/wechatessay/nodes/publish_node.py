@@ -77,6 +77,7 @@ async def _prepare_publish(
                 f"{context}\n\n"
                 f"请以 JSON 格式输出 PublishNode 结构，"
                 f"包含完整的 HTML、发布配置和日志。"
+                f"结果一定要PublishNode的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有PublishNode的JSON结构"
             ),
         }
     ]
