@@ -31,7 +31,7 @@ from wechatessay.config import (
     MODEL_CONFIG,
     PUBLISH_CONFIG,
     RAG_CONFIG,
-    SOURCES_DIR,
+    SOURCES_DIR, setup_logging,
 )
 from wechatessay.graphs.graph import build_graph, build_graph_no_hitl
 from wechatessay.states.vx_state import GraphState
@@ -421,6 +421,9 @@ final_state = run_workflow(
 
 """
 def main():
+
+    setup_logging()
+
     """命令行入口。"""
     parser = argparse.ArgumentParser(description="微信公众号文章 AI 创作工作流")
     parser.add_argument(

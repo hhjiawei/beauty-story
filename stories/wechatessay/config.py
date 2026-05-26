@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 from dotenv import find_dotenv
 from langchain_openai import ChatOpenAI
+import logging
+import sys
 
 # ── 项目根目录 ──
 _ENV_PATH = find_dotenv()
@@ -168,3 +170,20 @@ PUBLISH_CONFIG = {
     "wechat_app_secret": "",
     "default_author": "AI 写作助手",
 }
+
+
+
+
+LOG_LEVEL = logging.DEBUG  # 开发用 DEBUG，生产用 INFO
+LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d — %(message)s"
+
+def setup_logging():
+    """配置全局日志"""
+    logging.basicConfig(
+        level=LOG_LEVEL,
+        format=LOG_FORMAT,
+        handlers=[
+            logging.StreamHandler(sys.stdout),  # 控制台输出
+            logging.FileHandler("wechatessay.log", encoding="utf-8"),  # 文件记录
+        ],
+    )

@@ -35,7 +35,8 @@ from wechatessay.utils.json_utils import parse_json_response
 from wechatessay.utils.vx_util import scan_article_files, read_article
 
 
-
+import logging
+logger = logging.getLogger(__name__)
 
 def _create_source_agent(tools: list[BaseTool]) -> Any:
     """创建 source_node 的 Deep Agent。"""

@@ -87,6 +87,8 @@ from wechatessay.tools.base_tools.base_tool import get_base_tools
 from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
+import logging
+logger = logging.getLogger(__name__)
 
 def _create_segment_writer_agent(tools: List[BaseTool]) -> Any:
     """创建逐段写作的 Deep Agent。"""
