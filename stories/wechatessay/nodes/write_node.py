@@ -94,7 +94,7 @@ def _create_segment_writer_agent(tools: List[BaseTool]) -> Any:
     """创建逐段写作的 Deep Agent。"""
     backend = load_backend()
     mm = get_memory_manager()
-    memory_context = mm.build_memory_context("逐段写作", top_k=3)
+    memory_context = mm.build_memory_context("逐段写作")
 
     system_prompt = (
         "你是一名逐段精修式公众号写手。每次只写一段，"
@@ -363,7 +363,7 @@ async def _assemble_full_article(state: GraphState, agent: Any) -> ArticleOutput
             "content": (
                 f"所有段落已审核通过，请组装为完整文章。\n\n"
                 f"{context}\n\n"
-                f"请按 ASSEMBLE_ARTICLE_SYSTEM_PROMPT 的格式输出 JSON。"
+                f"请按 ArticleOutputNode 的格式输出 JSON。"
                 f"结果一定要ArticleOutputNode的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticleOutputNode的JSON结构"
             ),
         }
@@ -484,7 +484,7 @@ async def write_node_async(state: GraphState) -> GraphState:
         state["segment_contents"] = segment_contents
         state["segment_golden_sentences"][current_idx] = golden
         state["current_node"] = "write_node"
-        state["node_status"]["write_node"] = "waiting_human"
+        state["node_status"]["write_node"] = "completed"
 
         # 获取当前段大纲信息用于审核提示
         seg = segments[current_idx]

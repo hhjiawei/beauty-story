@@ -184,6 +184,6 @@ def setup_logging():
         format=LOG_FORMAT,
         handlers=[
             logging.StreamHandler(sys.stdout),  # 控制台输出
-            logging.FileHandler("wechatessay.log", encoding="utf-8"),  # 文件记录
+            # logging.FileHandler("wechatessay.log", encoding="utf-8"),  # 文件记录
         ],
     )

@@ -49,7 +49,7 @@ def _create_collect_agent(tools: list[BaseTool]) -> Any:
 
     return create_deep_agent(
         model=MODEL_CONFIG.get("search_model", MODEL_CONFIG["default_model"]),
-        tools=tools,
+        # tools=tools,
         system_prompt=system_prompt,
         backend=backend,
         memory=memory_files,
@@ -90,11 +90,12 @@ async def _execute_searches(
         {
             "role": "user",
             "content": (
-                f"基于以下热点分析结果，执行网络调研并补充信息。\n\n"
+                # f"基于以下热点分析结果，执行网络调研并补充信息。\n\n"
                 f"已确定的热点信息：\n{search_context}\n\n"
-                f"请依次执行搜索查询，收集补充信息，"
+                # f"请依次执行搜索查询，收集补充信息，"
                 f"最终以 JSON 格式输出 ArticleSearchNode 结构。"
                 f"结果一定要ArticleSearchNode的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticleSearchNode的JSON结构"
+                f"目前在测试阶段，无需调用搜索功能，快速将结果封装成ArticleSearchNode的JSON结构，内容随便生成即可，要求快速返回内容"
             ),
         }
     ]
