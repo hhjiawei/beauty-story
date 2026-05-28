@@ -1072,28 +1072,6 @@ class ArticleOutputNode(BaseModel):
     )
 
 
-
-
-
-# 新增
-class SegmentWriteResult(BaseModel):
-    """逐段写作的单段输出"""
-    model_config = ConfigDict(populate_by_name=True)
-    segmentIndex: int = Field(..., alias="segmentIndex")
-    content: str = Field(..., alias="content")
-    goldenSentences: list[dict] = Field(default_factory=list, alias="goldenSentences")
-    wordCount: int = Field(0, alias="wordCount")
-    sourcesCited: list[str] = Field(default_factory=list, alias="sourcesCited")
-    transitionPreview: str = Field("", alias="transitionPreview")
-
-
-
-
-
-
-
-
-
 # ═══════════════════════════════════════════════
 # 节点6 产物：排版
 # ═══════════════════════════════════════════════
@@ -1367,6 +1345,89 @@ class HumanReviewRecord(BaseModel):
 
 
 # ═══════════════════════════════════════════════
+# 评审节点产物
+# ═══════════════════════════════════════════════
+
+class ReviewerOpinion(BaseModel):
+    """单个评审员的评审意见"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    reviewer_name: str = Field(
+        ...,
+        alias="reviewerName",
+        description="评审员名称",
+    )
+    identity: str = Field(
+        ...,
+        alias="identity",
+        description="评审员身份描述",
+    )
+    passed: bool = Field(
+        ...,
+        alias="passed",
+        description="是否通过评审",
+    )
+    overall_score: int = Field(
+        ...,
+        alias="overallScore",
+        description="综合评分 0-100",
+        ge=0,
+        le=100,
+    )
+    strengths: List[str] = Field(
+        default_factory=list,
+        alias="strengths",
+        description="文章优点",
+    )
+    issues: List[str] = Field(
+        default_factory=list,
+        alias="issues",
+        description="发现的问题列表（每项包含位置+问题+建议）",
+    )
+    revision_suggestions: str = Field(
+        ...,
+        alias="revisionSuggestions",
+        description="具体修改建议（供 write_node 参考）",
+    )
+
+
+class ReviewResult(BaseModel):
+    """评审节点汇总结果"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    all_passed: bool = Field(
+        ...,
+        alias="allPassed",
+        description="所有评审员是否都通过",
+    )
+    pass_rate: float = Field(
+        ...,
+        alias="passRate",
+        description="通过率 0.0-1.0",
+    )
+    overall_score: int = Field(
+        ...,
+        alias="overallScore",
+        description="加权平均得分 0-100",
+    )
+    opinions: List[ReviewerOpinion] = Field(
+        default_factory=list,
+        alias="opinions",
+        description="各评审员详细意见",
+    )
+    consolidated_feedback: str = Field(
+        ...,
+        alias="consolidatedFeedback",
+        description="汇总的修改意见（用于 revision_notes）",
+    )
+    revision_round: int = Field(
+        0,
+        alias="revisionRound",
+        description="当前第几轮修改（0=初始）",
+    )
+
+
+# ═══════════════════════════════════════════════
 # 总 Graph 状态
 # ═══════════════════════════════════════════════
 
@@ -1421,17 +1482,15 @@ class GraphState(TypedDict):
 
     error_node: Optional[str]                         # 出错节点
 
-    # ── 逐段写作控制（write_node 专用） ──
-    # 这些字段仅在 write_node 逐段写作期间使用
+    # ── 评审节点状态（review_node 专用） ──
+    review_result: Optional[ReviewResult]             # 评审结果
 
-    current_segment_index: int                        # 当前正在写的段落索引（0-based），-1 表示未开始
+    revision_count: int                               # 已修改轮次（防无限循环）
 
-    segment_contents: List[str]                       # 已完成的段落正文列表（按索引顺序，空字符串表示尚未写）
-
-    segment_golden_sentences: List[Dict[str, Any]]    # 每段的金句标注列表
-
-    segment_approved: List[bool]                      # 每段是否已通过人工审核
-
-    write_node_phase: str                             # write_node 当前阶段："segment"=逐段写作中, "assembly"=组装整体文章, "done"=完成
-
-    total_segments: int                               # 大纲总段落数
+    # ── 保留字段（兼容旧版本，不再使用） ──
+    write_node_phase: str                             # 废弃：原逐段写作阶段控制
+    current_segment_index: int                        # 废弃：原逐段索引
+    segment_contents: List[str]                       # 废弃：原段落内容列表
+    segment_golden_sentences: List[Dict[str, Any]]    # 废弃：原金句列表
+    segment_approved: List[bool]                      # 废弃：原审核标记
+    total_segments: int                               # 废弃：原总段数

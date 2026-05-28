@@ -107,10 +107,33 @@ MEMORY_CONFIG = {
 RAG_CONFIG = {
     # 向量数据库路径（SQLite）
     "vector_db_path": (MEMORY_DIR / "vector_db.sqlite").as_posix(),
-    # 嵌入模型（通过 Ollama 或远程 API）
+
+    # ── Embedding 后端配置 ──
+    # 可选: "ollama" | "openai" | "remote" | "mock"
+    "embedding_backend": "ollama",
+    # 嵌入模型名称（根据后端不同含义不同）
     "embedding_model": "nomic-embed-text",
-    # 向量维度
+    # 向量维度（需与模型输出维度一致）
+    # nomic-embed-text: 768, text-embedding-3-small: 1536, text-embedding-3-large: 3072
     "vector_dimension": 768,
+
+    # ── Ollama 后端配置 ──
+    "ollama_base_url": "http://localhost:11434",
+
+    # ── OpenAI 后端配置 ──
+    # API Key 优先从环境变量 OPENAI_API_KEY 读取
+    "openai_api_key": "",
+    "openai_embedding_model": "text-embedding-3-small",
+
+    # ── 通用远程后端配置 ──
+    "remote_embedding_config": {
+        "url": "https://your-embedding-api.example.com/embed",
+        "headers": {"Authorization": "Bearer YOUR_TOKEN"},
+        # 响应中 embedding 字段的路径，支持嵌套如 "data.embedding"
+        "response_field_path": "embedding",
+    },
+
+    # ── 检索参数 ──
     # 检索 top-k
     "retrieve_top_k": 5,
     # 分块大小
@@ -187,3 +210,78 @@ def setup_logging():
             # logging.FileHandler("wechatessay.log", encoding="utf-8"),  # 文件记录
         ],
     )
+
+# ── 多模型评审员配置 ──
+# 每个评审员有独立的模型、身份、评审侧重点
+# write_node 生成文章后，review_node 会遍历所有评审员进行评审
+# 评审未通过时，汇总意见返回 write_node 修改（最多 max_revision_rounds 轮）
+REVIEWERS_CONFIG = {
+    # 最大修改轮次（防无限循环）
+    "max_revision_rounds": 3,
+
+    # 通过阈值：所有评审员都必须 passed 才算通过（strict）
+    # 或多数通过即可（majority）
+    "pass_mode": "strict",  # "strict" | "majority"
+
+    # 评审员列表
+    "reviewers": [
+        {
+            "name": "语言精修师",
+            "model": "google_genai:gemini-2.5-flash",
+            "identity": "你是一位资深文字编辑，专注语言质量的把控。",
+            "focus": [
+                "语言是否流畅自然，有无语病或拗口表达",
+                "标点符号使用是否规范",
+                "用词是否精准，有无更好的替代表达",
+                "段落节奏是否合理，长短句搭配是否得当",
+                "是否有 AI 味表达（'首先/其次/综上所述'等模板化语言）",
+            ],
+            "score_weight": 1.0,
+        },
+        {
+            "name": "传播策略师",
+            "model": "google_genai:gemini-2.5-flash",
+            "identity": "你是一位公众号运营专家，深谙传播规律和读者心理。",
+            "focus": [
+                "标题是否有吸引力，能否激发点击欲望",
+                "开头是否有钩子，能否留住读者",
+                "情绪曲线是否合理，能否带动读者共鸣",
+                "金句是否有传播力，是否适合截图分享",
+                "结尾是否有转发驱动力",
+                "互动设计是否到位",
+            ],
+            "score_weight": 1.0,
+        },
+        {
+            "name": "逻辑架构师",
+            "model": "google_genai:gemini-2.5-flash",
+            "identity": "你是一位逻辑严密的评论主编，专注文章结构和论证质量。",
+            "focus": [
+                "论证逻辑是否清晰，有无逻辑漏洞",
+                "观点是否鲜明，立场是否一致",
+                "事实引用是否准确，数据来源是否可靠",
+                "结构是否合理，过渡是否自然",
+                "是否有冗余或离题内容",
+                "段落之间的衔接是否流畅",
+            ],
+            "score_weight": 1.0,
+        },
+        {
+            "name": "合规审查员",
+            "model": "google_genai:gemini-2.5-flash",
+            "identity": "你是一位内容合规专家，确保文章安全可发布。",
+            "focus": [
+                "是否有敏感词或敏感表述",
+                "是否涉及政治、法律风险",
+                "对争议事件的处理是否中立客观",
+                "是否有可能引发舆情的表述",
+                "是否符合平台发布规范",
+            ],
+            "score_weight": 1.2,  # 合规权重更高，不通过则整体不通过
+        },
+    ],
+}
+
+
+
+
