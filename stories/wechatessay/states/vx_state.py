@@ -1349,7 +1349,7 @@ class HumanReviewRecord(BaseModel):
 # ═══════════════════════════════════════════════
 
 class ReviewerOpinion(BaseModel):
-    """单个评审员的评审意见"""
+    """单个评审员的评审意见 + 修改后的版本"""
     model_config = ConfigDict(populate_by_name=True)
 
     reviewer_name: str = Field(
@@ -1361,6 +1361,11 @@ class ReviewerOpinion(BaseModel):
         ...,
         alias="identity",
         description="评审员身份描述",
+    )
+    model_used: str = Field(
+        ...,
+        alias="modelUsed",
+        description="使用的模型标识",
     )
     passed: bool = Field(
         ...,
@@ -1387,12 +1392,17 @@ class ReviewerOpinion(BaseModel):
     revision_suggestions: str = Field(
         ...,
         alias="revisionSuggestions",
-        description="具体修改建议（供 write_node 参考）",
+        description="具体的修改建议",
+    )
+    revised_article: Optional[ArticleOutputNode] = Field(
+        None,
+        alias="revisedArticle",
+        description="该评审员修改后的文章版本（含评审视角的优化）",
     )
 
 
 class ReviewResult(BaseModel):
-    """评审节点汇总结果"""
+    """评审节点汇总结果（含多模型择优后的最终版本）"""
     model_config = ConfigDict(populate_by_name=True)
 
     all_passed: bool = Field(
@@ -1413,17 +1423,27 @@ class ReviewResult(BaseModel):
     opinions: List[ReviewerOpinion] = Field(
         default_factory=list,
         alias="opinions",
-        description="各评审员详细意见",
+        description="各评审员详细意见 + 各自修改后的版本",
     )
     consolidated_feedback: str = Field(
         ...,
         alias="consolidatedFeedback",
-        description="汇总的修改意见（用于 revision_notes）",
+        description="汇总的修改意见",
     )
     revision_round: int = Field(
         0,
         alias="revisionRound",
         description="当前第几轮修改（0=初始）",
+    )
+    best_version_from: str = Field(
+        "",
+        alias="bestVersionFrom",
+        description="最终择优采用的版本来自哪位评审员",
+    )
+    selection_reason: str = Field(
+        "",
+        alias="selectionReason",
+        description="选择该版本的理由",
     )
 
 

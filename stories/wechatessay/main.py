@@ -33,7 +33,7 @@ from wechatessay.config import (
     RAG_CONFIG,
     SOURCES_DIR, setup_logging,
 )
-from wechatessay.graphs.graph import build_graph, build_graph_no_hitl
+from wechatessay.graphs.graph import build_graph
 from wechatessay.states.vx_state import GraphState
 
 # ═══════════════════════════════════════════════
@@ -273,10 +273,7 @@ def run_workflow(
     state = create_initial_state(input_path, writing_config)
 
     # 2. 构建图
-    if no_hitl:
-        graph = build_graph_no_hitl()
-    else:
-        graph = build_graph()
+    graph = build_graph()
 
     # 3. 执行工作流
     try:

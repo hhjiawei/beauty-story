@@ -227,7 +227,7 @@ REVIEWERS_CONFIG = {
     "reviewers": [
         {
             "name": "语言精修师",
-            "model": "google_genai:gemini-2.5-flash",
+            "model": "deepseek:deepseek-v4-flash",
             "identity": "你是一位资深文字编辑，专注语言质量的把控。",
             "focus": [
                 "语言是否流畅自然，有无语病或拗口表达",
@@ -240,7 +240,7 @@ REVIEWERS_CONFIG = {
         },
         {
             "name": "传播策略师",
-            "model": "google_genai:gemini-2.5-flash",
+            "model": "deepseek:deepseek-v4-flash",
             "identity": "你是一位公众号运营专家，深谙传播规律和读者心理。",
             "focus": [
                 "标题是否有吸引力，能否激发点击欲望",
@@ -254,7 +254,7 @@ REVIEWERS_CONFIG = {
         },
         {
             "name": "逻辑架构师",
-            "model": "google_genai:gemini-2.5-flash",
+            "model": "deepseek:deepseek-v4-flash",
             "identity": "你是一位逻辑严密的评论主编，专注文章结构和论证质量。",
             "focus": [
                 "论证逻辑是否清晰，有无逻辑漏洞",
@@ -268,7 +268,7 @@ REVIEWERS_CONFIG = {
         },
         {
             "name": "合规审查员",
-            "model": "google_genai:gemini-2.5-flash",
+            "model": "deepseek:deepseek-v4-flash",
             "identity": "你是一位内容合规专家，确保文章安全可发布。",
             "focus": [
                 "是否有敏感词或敏感表述",

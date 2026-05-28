@@ -64,7 +64,7 @@ def _create_writer_agent(tools: List[BaseTool]) -> Any:
 
     return create_deep_agent(
         model=MODEL_CONFIG.get("writing_model", MODEL_CONFIG["default_model"]),
-        tools=tools,
+        # tools=tools,
         system_prompt=system_prompt,
         backend=backend,
         memory=memory_files,
