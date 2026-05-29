@@ -1345,39 +1345,72 @@ class HumanReviewRecord(BaseModel):
 
 
 # ═══════════════════════════════════════════════
-# 评审节点产物
+# write_node 写作历史记录
 # ═══════════════════════════════════════════════
 
-class ReviewerOpinion(BaseModel):
-    """单个评审员的评审意见 + 修改后的版本"""
+class WritingRecord(BaseModel):
+    """单次写作记录（每轮 write_node 产生一条）"""
     model_config = ConfigDict(populate_by_name=True)
 
-    reviewer_name: str = Field(
+    iteration: int = Field(
         ...,
-        alias="reviewerName",
-        description="评审员名称",
-    )
-    identity: str = Field(
-        ...,
-        alias="identity",
-        description="评审员身份描述",
+        alias="iteration",
+        description="第几轮写作（从0开始，0=首次，1=第1次修改，...）",
     )
     model_used: str = Field(
         ...,
         alias="modelUsed",
-        description="使用的模型标识",
+        description="本轮使用的模型标识",
     )
-    passed: bool = Field(
+    self_score: int = Field(
         ...,
-        alias="passed",
-        description="是否通过评审",
+        alias="selfScore",
+        description="模型自评分数 0-100",
+    )
+    word_count: int = Field(
+        0,
+        alias="wordCount",
+        description="文章字数",
+    )
+    title: str = Field(
+        "",
+        alias="title",
+        description="文章标题",
+    )
+    has_review_feedback: bool = Field(
+        False,
+        alias="hasReviewFeedback",
+        description="是否基于评审反馈修改",
+    )
+
+
+# ═══════════════════════════════════════════════
+# review_node 评审记录
+# ═══════════════════════════════════════════════
+
+class ReviewRecord(BaseModel):
+    """单次评审记录（每轮 review_node 产生一条）"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    iteration: int = Field(
+        ...,
+        alias="iteration",
+        description="对应第几轮写作",
+    )
+    model_used: str = Field(
+        ...,
+        alias="modelUsed",
+        description="评审使用的模型标识",
     )
     overall_score: int = Field(
         ...,
         alias="overallScore",
         description="综合评分 0-100",
-        ge=0,
-        le=100,
+    )
+    passed: bool = Field(
+        ...,
+        alias="passed",
+        description="是否通过评审",
     )
     strengths: List[str] = Field(
         default_factory=list,
@@ -1387,63 +1420,53 @@ class ReviewerOpinion(BaseModel):
     issues: List[str] = Field(
         default_factory=list,
         alias="issues",
-        description="发现的问题列表（每项包含位置+问题+建议）",
+        description="发现的问题",
     )
     revision_suggestions: str = Field(
-        ...,
+        "",
         alias="revisionSuggestions",
-        description="具体的修改建议",
-    )
-    revised_article: Optional[ArticleOutputNode] = Field(
-        None,
-        alias="revisedArticle",
-        description="该评审员修改后的文章版本（含评审视角的优化）",
+        description="修改建议（如需修改则写入此字段）",
     )
 
 
 class ReviewResult(BaseModel):
-    """评审节点汇总结果（含多模型择优后的最终版本）"""
+    """评审节点汇总结果"""
     model_config = ConfigDict(populate_by_name=True)
 
-    all_passed: bool = Field(
+    iteration: int = Field(
         ...,
-        alias="allPassed",
-        description="所有评审员是否都通过",
+        alias="iteration",
+        description="对应第几轮写作",
     )
-    pass_rate: float = Field(
+    model_used: str = Field(
         ...,
-        alias="passRate",
-        description="通过率 0.0-1.0",
+        alias="modelUsed",
+        description="评审使用的模型",
     )
     overall_score: int = Field(
         ...,
         alias="overallScore",
-        description="加权平均得分 0-100",
+        description="综合评分 0-100",
     )
-    opinions: List[ReviewerOpinion] = Field(
-        default_factory=list,
-        alias="opinions",
-        description="各评审员详细意见 + 各自修改后的版本",
-    )
-    consolidated_feedback: str = Field(
+    passed: bool = Field(
         ...,
-        alias="consolidatedFeedback",
-        description="汇总的修改意见",
+        alias="passed",
+        description="是否通过评审",
     )
-    revision_round: int = Field(
-        0,
-        alias="revisionRound",
-        description="当前第几轮修改（0=初始）",
+    strengths: List[str] = Field(
+        default_factory=list,
+        alias="strengths",
+        description="文章优点",
     )
-    best_version_from: str = Field(
-        "",
-        alias="bestVersionFrom",
-        description="最终择优采用的版本来自哪位评审员",
+    issues: List[str] = Field(
+        default_factory=list,
+        alias="issues",
+        description="发现的问题",
     )
-    selection_reason: str = Field(
-        "",
-        alias="selectionReason",
-        description="选择该版本的理由",
+    revision_suggestions: str = Field(
+        ...,
+        alias="revisionSuggestions",
+        description="具体修改建议",
     )
 
 
@@ -1502,10 +1525,18 @@ class GraphState(TypedDict):
 
     error_node: Optional[str]                         # 出错节点
 
-    # ── 评审节点状态（review_node 专用） ──
-    review_result: Optional[ReviewResult]             # 评审结果
+    # ── write_node / review_node 循环控制 ──
+    review_result: Optional[ReviewResult]             # 最后一次评审结果
+
+    review_feedback: Optional[str]                    # 评审意见（传给 write_node 指导修改）
+
+    needs_revision: bool                              # 评审是否要求修改
 
     revision_count: int                               # 已修改轮次（防无限循环）
+
+    writing_history: List[WritingRecord]              # 写作历史（每轮一条）
+
+    review_history: List[ReviewRecord]                # 评审历史（每轮一条）
 
     # ── 保留字段（兼容旧版本，不再使用） ──
     write_node_phase: str                             # 废弃：原逐段写作阶段控制

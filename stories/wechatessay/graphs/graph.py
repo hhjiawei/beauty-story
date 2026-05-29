@@ -1,18 +1,19 @@
 """
 wechatessay.graphs.graph
 
-LangGraph 图定义（含多模型评审择优）。
+LangGraph 图定义（含 write→review 循环）。
 
 职责：
 1. 定义 9 个节点（source/collect/analyse/plot/write/review/composition/legality/publish）
-2. 定义节点间的路由逻辑（全自动推进）
-3. write → review：review 内完成多模型评审+择优+替换文章
-4. 异常时流程终止
+2. write → review 循环：评审未通过时回到 write_node 重写
+3. 异常时流程终止
 
 节点流向：
-    source_node → collect_node → analyse_node → plot_node
-        → write_node → review_node（多模型评审择优，替换文章）
-        → composition_node → legality_node → publish_node → END
+    source → collect → analyse → plot
+        → write（多模型并行写作择优）
+        → review（纯评审）
+            ↓ needs_revision=true → write（带评审意见重写）
+            ↓ needs_revision=false → composition → legality → publish → END
 """
 
 from __future__ import annotations
@@ -38,10 +39,6 @@ from wechatessay.states.vx_state import GraphState
 def _wrap_node(node_func, node_name: str):
     """通用节点包装器：异常捕获 + 状态标记。"""
     def wrapper(state: GraphState) -> GraphState:
-        revision = state.get("revision_notes")
-        if revision:
-            state["revision_notes"] = None
-
         try:
             result = node_func(state)
             if isinstance(result, dict):
@@ -112,16 +109,17 @@ def route_after_write(state: GraphState) -> str:
 
 def route_after_review(state: GraphState) -> str:
     """
-    review_node 路由 — 评审择优后直接排版。
+    【核心】review_node 路由 — write→review 循环控制。
 
-    review_node 内部已完成：多模型评审 → 择优 → 替换 article_output。
-    因此 review 后直接进 composition，不再需要回到 write_node。
-
-    - 正常 → composition_node
+    - needs_revision=false → composition_node（通过）
+    - needs_revision=true  → write_node（带评审意见重写）
     - 出错 → END
     """
     if _check_error(state):
         return END
+
+    if state.get("needs_revision"):
+        return "write_node"
     return "composition_node"
 
 
@@ -145,10 +143,7 @@ def route_after_legality(state: GraphState) -> str:
 
 def build_graph() -> StateGraph:
     """
-    构建全自动 LangGraph 工作流（含多模型自动评审）。
-
-    所有节点自动推进，无需人工审阅。
-    write → review 循环实现根据评审意见自动修改。
+    构建 LangGraph 工作流（含 write→review 循环）。
     """
     workflow = StateGraph(GraphState)
 
@@ -167,66 +162,46 @@ def build_graph() -> StateGraph:
     workflow.set_entry_point("source_node")
 
     # ── 定义条件边 ──
-    # source → collect
     workflow.add_conditional_edges(
-        "source_node",
-        route_after_source,
+        "source_node", route_after_source,
         {"collect_node": "collect_node", END: END},
     )
-
-    # collect → analyse
     workflow.add_conditional_edges(
-        "collect_node",
-        route_after_collect,
+        "collect_node", route_after_collect,
         {"analyse_node": "analyse_node", END: END},
     )
-
-    # analyse → plot
     workflow.add_conditional_edges(
-        "analyse_node",
-        route_after_analyse,
+        "analyse_node", route_after_analyse,
         {"plot_node": "plot_node", END: END},
     )
-
-    # plot → write
     workflow.add_conditional_edges(
-        "plot_node",
-        route_after_plot,
+        "plot_node", route_after_plot,
         {"write_node": "write_node", END: END},
     )
-
-    # write → review
     workflow.add_conditional_edges(
-        "write_node",
-        route_after_write,
+        "write_node", route_after_write,
         {"review_node": "review_node", END: END},
     )
 
-    # review → composition（review 内部已完成择优替换）
+    # 【核心】review → write(需修改) / composition(通过)
     workflow.add_conditional_edges(
-        "review_node",
-        route_after_review,
+        "review_node", route_after_review,
         {
-            "composition_node": "composition_node",
+            "write_node": "write_node",           # 评审未通过，回去重写
+            "composition_node": "composition_node",  # 评审通过，进入排版
             END: END,
         },
     )
 
-    # composition → legality
     workflow.add_conditional_edges(
-        "composition_node",
-        route_after_composition,
+        "composition_node", route_after_composition,
         {"legality_node": "legality_node", END: END},
     )
-
-    # legality → publish
     workflow.add_conditional_edges(
-        "legality_node",
-        route_after_legality,
+        "legality_node", route_after_legality,
         {"publish_node": "publish_node", END: END},
     )
 
-    # publish → END
     workflow.add_edge("publish_node", END)
 
     return workflow.compile()

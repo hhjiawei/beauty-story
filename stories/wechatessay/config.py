@@ -14,36 +14,19 @@ import sys
 _ENV_PATH = find_dotenv()
 ROOT = Path(__file__).parent
 
-# ── 子目录 ──
-MEMORY_DIR = ROOT / "backends" / "memories"
-SKILLS_DIR = ROOT / "backends" / "skills"
-SOURCES_DIR = ROOT / "backends" / "sources"
-WORKSPACES_DIR = ROOT / "backends" / "workspaces"
+LOG_LEVEL = logging.INFO  # 开发用 DEBUG，生产用 INFO
+LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d — %(message)s"
 
-# ── 确保目录存在 ──
-for _d in [MEMORY_DIR, SKILLS_DIR, SOURCES_DIR, WORKSPACES_DIR]:
-    _d.mkdir(parents=True, exist_ok=True)
-
-# ── DeepAgents Backend 配置 ──
-BACKEND_CONFIG = {
-    "root_dir": ROOT.as_posix(),
-    "virtual_mode": True,
-    "routes": {
-        "/memories/": {
-            "root_dir": MEMORY_DIR.as_posix(),
-            "virtual_mode": True,
-        },
-        "/skills/": {
-            "root_dir": SKILLS_DIR.as_posix(),
-            "virtual_mode": True,
-        },
-        "/workspaces/": {
-            "root_dir": WORKSPACES_DIR.as_posix(),
-            "virtual_mode": True,
-        },
-    },
-}
-
+def setup_logging():
+    """配置全局日志"""
+    logging.basicConfig(
+        level=LOG_LEVEL,
+        format=LOG_FORMAT,
+        handlers=[
+            logging.StreamHandler(sys.stdout),  # 控制台输出
+            # logging.FileHandler("wechatessay.log", encoding="utf-8"),  # 文件记录
+        ],
+    )
 
 # 配置 API
 # OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
@@ -80,24 +63,115 @@ MODEL_CONFIG = {
     "review_model": model,
 }
 
+
+# ── 子目录 ──
+MEMORY_DIR = ROOT / "backends" / "memories"
+SKILLS_DIR = ROOT / "backends" / "skills"
+SOURCES_DIR = ROOT / "backends" / "sources"
+WORKSPACES_DIR = ROOT / "backends" / "workspaces"
+
+# ── 确保目录存在 ──
+for _d in [MEMORY_DIR, SKILLS_DIR, SOURCES_DIR, WORKSPACES_DIR]:
+    _d.mkdir(parents=True, exist_ok=True)
+
+# ── DeepAgents Backend 配置 ──
+BACKEND_CONFIG = {
+    "root_dir": ROOT.as_posix(),
+    "virtual_mode": True,
+    "routes": {
+        "/memories/": {
+            "root_dir": MEMORY_DIR.as_posix(),
+            "virtual_mode": True,
+        },
+        "/skills/": {
+            "root_dir": SKILLS_DIR.as_posix(),
+            "virtual_mode": True,
+        },
+        "/workspaces/": {
+            "root_dir": WORKSPACES_DIR.as_posix(),
+            "virtual_mode": True,
+        },
+    },
+}
+
+# ── 多模型写作配置 ──
+# write_node 使用同一份写作 prompt，并行调用多个模型独立写作，择优输出。
+# 每个模型独立生成完整文章，write_node 选评分最高的版本。
+WRITER_CONFIG = {
+    # 写作模型列表：每个模型独立写作，最后择优
+    # 格式：provider:model_id
+    "models": [
+        "deepseek:deepseek-v4-flash",
+        # "kimi:kimi-k2",
+        # "qwen:qwen3.5-397B-A17B",
+    ],
+}
+
+# ── 多模型评审配置 ──
+# review_node 使用同一套评审提示词，轮询不同模型进行评审。
+# 只评审不提修改（修改交给 write_node），输出评审意见和 passed 判断。
+REVIEW_CONFIG = {
+    # 评审模型：每次评审用一个模型（可轮询）
+    "models": [
+        "deepseek:deepseek-v4-flash",
+    ],
+
+    # 通过分数阈值（overallScore >= 此值 且 无重大问题 → passed）
+    "pass_score_threshold": 85,
+}
+
+# ── write→review 循环控制 ──
+# write_node 写作 → review_node 评审 → 如需修改 → 回到 write_node
+# 达到最大轮次后强制通过，无论评审是否满意
+MAX_REVISION_ROUNDS = 3
+
 # ── Memory 配置 ──
 MEMORY_CONFIG = {
+    # ── 短期记忆 ──
     # 短期记忆 FIFO 容量（消息条数）
     "short_term_capacity": 50,
+
+    # ── 长期记忆 ──
     # 长期记忆文件路径
     "long_term_file": MEMORY_DIR / "long_term_memory.json",
-    # BM25 权重
+
+    # ── 混合检索权重 ──
+    # BM25 关键词匹配权重
     "bm25_weight": 0.4,
     # 语义相似度权重
     "semantic_weight": 0.4,
-    # 代码块类型加权（此处用于文章类型识别）
+    # 类型加权权重
     "type_weight": 0.2,
-    # 双命中奖励
+    # 双命中奖励（BM25 和语义同时命中时的额外加分）
     "dual_hit_bonus": 0.1,
+
+    # ── 类型权重映射（不同类型记忆的权重系数） ──
+    "type_weights": {
+        "user_preference": 2.0,     # 用户偏好 — 最高优先级
+        "project_fact": 1.5,        # 项目事实 — 高优先级
+        "style_guide": 1.3,         # 风格指南 — 较高优先级
+        "writing_rule": 1.2,        # 写作规则
+        "publish_record": 0.8,      # 发布记录
+        "general": 1.0,             # 一般记忆 — 默认
+    },
+
+    # ── 注入控制 ──
     # 注入系统提示词的记忆条数上限
     "max_injected_memories": 5,
-    # 记忆相似度阈值
+    # 记忆相似度阈值（低于此值的记忆不返回）
     "memory_threshold": 0.6,
+
+    # ── 遗忘衰减 ──
+    # 时间衰减半衰期（天数）：30 天后权重衰减到约 50%
+    "decay_half_life_days": 30,
+    # 衰减惩罚权重系数（0~1，控制衰减的影响力）
+    "decay_weight": 0.3,
+    # 访问频率奖励系数
+    "access_bonus_coefficient": 0.05,
+    # 主动遗忘：超过此天数的记忆可能被清理
+    "forget_max_age_days": 180,
+    # 主动遗忘：访问次数低于此值的过期记忆将被清理
+    "forget_min_access": 2,
 }
 
 # ── RAG 配置 ──
@@ -190,95 +264,3 @@ PUBLISH_CONFIG = {
     "wechat_app_secret": "",
     "default_author": "AI 写作助手",
 }
-
-
-
-
-LOG_LEVEL = logging.INFO  # 开发用 DEBUG，生产用 INFO
-LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d — %(message)s"
-
-def setup_logging():
-    """配置全局日志"""
-    logging.basicConfig(
-        level=LOG_LEVEL,
-        format=LOG_FORMAT,
-        handlers=[
-            logging.StreamHandler(sys.stdout),  # 控制台输出
-            # logging.FileHandler("wechatessay.log", encoding="utf-8"),  # 文件记录
-        ],
-    )
-
-# ── 多模型评审员配置 ──
-# 每个评审员有独立的模型、身份、评审侧重点
-# write_node 生成文章后，review_node 会遍历所有评审员进行评审
-# 评审未通过时，汇总意见返回 write_node 修改（最多 max_revision_rounds 轮）
-REVIEWERS_CONFIG = {
-    # 最大修改轮次（防无限循环）
-    "max_revision_rounds": 3,
-
-    # 通过阈值：所有评审员都必须 passed 才算通过（strict）
-    # 或多数通过即可（majority）
-    "pass_mode": "strict",  # "strict" | "majority"
-
-    # 评审员列表
-    "reviewers": [
-        {
-            "name": "语言精修师",
-            "model": "deepseek:deepseek-v4-flash",
-            "identity": "你是一位资深文字编辑，专注语言质量的把控。",
-            "focus": [
-                "语言是否流畅自然，有无语病或拗口表达",
-                "标点符号使用是否规范",
-                "用词是否精准，有无更好的替代表达",
-                "段落节奏是否合理，长短句搭配是否得当",
-                "是否有 AI 味表达（'首先/其次/综上所述'等模板化语言）",
-            ],
-            "score_weight": 1.0,
-        },
-        {
-            "name": "传播策略师",
-            "model": "deepseek:deepseek-v4-flash",
-            "identity": "你是一位公众号运营专家，深谙传播规律和读者心理。",
-            "focus": [
-                "标题是否有吸引力，能否激发点击欲望",
-                "开头是否有钩子，能否留住读者",
-                "情绪曲线是否合理，能否带动读者共鸣",
-                "金句是否有传播力，是否适合截图分享",
-                "结尾是否有转发驱动力",
-                "互动设计是否到位",
-            ],
-            "score_weight": 1.0,
-        },
-        {
-            "name": "逻辑架构师",
-            "model": "deepseek:deepseek-v4-flash",
-            "identity": "你是一位逻辑严密的评论主编，专注文章结构和论证质量。",
-            "focus": [
-                "论证逻辑是否清晰，有无逻辑漏洞",
-                "观点是否鲜明，立场是否一致",
-                "事实引用是否准确，数据来源是否可靠",
-                "结构是否合理，过渡是否自然",
-                "是否有冗余或离题内容",
-                "段落之间的衔接是否流畅",
-            ],
-            "score_weight": 1.0,
-        },
-        {
-            "name": "合规审查员",
-            "model": "deepseek:deepseek-v4-flash",
-            "identity": "你是一位内容合规专家，确保文章安全可发布。",
-            "focus": [
-                "是否有敏感词或敏感表述",
-                "是否涉及政治、法律风险",
-                "对争议事件的处理是否中立客观",
-                "是否有可能引发舆情的表述",
-                "是否符合平台发布规范",
-            ],
-            "score_weight": 1.2,  # 合规权重更高，不通过则整体不通过
-        },
-    ],
-}
-
-
-
-
