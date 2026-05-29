@@ -12,10 +12,7 @@ import sys
 
 # ── 项目根目录 ──
 _ENV_PATH = find_dotenv()
-if _ENV_PATH:
-    ROOT = Path(_ENV_PATH).parent
-else:
-    ROOT = Path(__file__).parent
+ROOT = Path(__file__).parent
 
 # ── 子目录 ──
 MEMORY_DIR = ROOT / "backends" / "memories"
