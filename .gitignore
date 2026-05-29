@@ -135,7 +135,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+stories/wechatessay/.env
 .envrc
 .venv
 env/

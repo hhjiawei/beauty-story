@@ -36,6 +36,9 @@ from wechatessay.config import (
 from wechatessay.graphs.graph import build_graph
 from wechatessay.states.vx_state import GraphState
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # ═══════════════════════════════════════════════
 # 【关键】允许 asyncio.run() 嵌套调用
 # ═══════════════════════════════════════════════
