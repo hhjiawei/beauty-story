@@ -66,7 +66,7 @@ def _create_review_agent(model: str) -> Any:
 
 def _build_review_task(article: ArticleOutputNode) -> str:
     """【简化】构建评审任务（仅文章，无修改要求）。"""
-    article_text = article.fullText or ""
+    article_text = article.full_text or ""
     title = article.parts[0].title_alternatives[0] if article.parts else "未命名"
     meta = article.metadata or {}
 

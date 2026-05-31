@@ -143,13 +143,14 @@ def _build_write_task(state: GraphState) -> str:
             f"{review_feedback}\n\n"
             f"请输出修改后的完整文章 JSON（ArticleOutputNode 结构），"
             f"不要只输出修改部分，要输出完整文章。"
-            f"结果一定要 ArticleOutputNode 的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticleOutputNode的JSON结构"
+            f"结果一定要 ArticleOutputNode 的结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticleOutputNode的JSON结构"
         )
 
     parts.append(
         "\n\n请按 ArticleOutputNode 的 JSON 结构输出完整文章，"
         "并在 JSON 中额外加入字段 selfScore（0-100 自评分数）。"
         "不要输出任何其他描述文字。"
+        f"结果不许落盘,不许写入其他文件，后续节点需要使用生成的结构，结果必须包含在内"
     )
 
     return "".join(parts)

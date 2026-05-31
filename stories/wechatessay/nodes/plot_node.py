@@ -106,8 +106,8 @@ async def _generate_plot(
                 f"基于以下写作蓝图和搜索结果，设计详细的公众号文章大纲。\n\n"
                 f"{context}\n\n"
                 f"请严格按 JSON 格式输出 ArticlePlotNode 结构，"
-                f"结果一定要 ArticlePlotNode 的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticlePlotNode的JSON结构"
-                f"只要产生ArticlePlotNode 的JSON结构后立即结束，后续不许产生任何message 不许产生toolMessage 和其他aiMessage"
+                f"结果一定要 ArticlePlotNode 的JSON结构，不许落盘，不许保存到文件夹，不许擅自加描述、总结等其他内容，你输出的结果只有ArticlePlotNode的JSON结构"
+                f"只要产生ArticlePlotNode 的JSON结构必须在最后一个AIMessage中，后续不许产生任何message 不许产生toolMessage 和其他aiMessage"
             ),
         }
     ]
