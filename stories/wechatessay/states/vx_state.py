@@ -1499,7 +1499,13 @@ class GraphState(TypedDict):
 
     composition_result: Optional[CompositionNode]     # 排版结果
 
-    legality_result: Optional[LegalityCheckResult]    # 合规检查结果
+    legality_result: Optional[LegalityCheckResult]    # 合规检查结果（含 corrected_article 修改后的文章）
+
+    needs_legality_fix: bool                          # 校验是否要求继续修改
+
+    legality_iteration: int                           # 当前校验轮次（0=首次，1=第1次修改...）
+
+    legality_fix_history: List[Dict[str, Any]]        # 每次修改记录（位置+原文+修改后+原因）
 
     publish_result: Optional[PublishNode]             # 发布结果
 
