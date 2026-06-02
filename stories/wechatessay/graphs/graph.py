@@ -1,19 +1,22 @@
 """
 wechatessay.graphs.graph
 
-LangGraph 图定义（含 write→review 循环）。
+LangGraph 图定义（含 write→review 循环 + legality 自循环）。
 
 职责：
-1. 定义 9 个节点（source/collect/analyse/plot/write/review/composition/legality/publish）
+1. 定义 9 个节点（source/collect/analyse/plot/write/review/legality/composition/publish）
 2. write → review 循环：评审未通过时回到 write_node 重写
-3. 异常时流程终止
+3. legality → legality 自循环：校验未通过时回到 legality_node 再修改（最多3轮）
+4. 异常时流程终止
 
 节点流向：
     source → collect → analyse → plot
-        → write（多模型并行写作择优）
+        → write（模型串行轮换写作）
         → review（纯评审）
             ↓ needs_revision=true → write（带评审意见重写）
-            ↓ needs_revision=false → composition → legality → publish → END
+            ↓ needs_revision=false → legality（合规检查+小规模修改）
+                ↓ needs_legality_fix=true（未满3轮）→ legality（继续修改）
+                ↓ needs_legality_fix=false → composition（排版）→ publish → END
 """
 
 from __future__ import annotations
@@ -111,7 +114,7 @@ def route_after_review(state: GraphState) -> str:
     """
     【核心】review_node 路由 — write→review 循环控制。
 
-    - needs_revision=false → composition_node（通过）
+    - needs_revision=false → legality_node（先校验后排版）
     - needs_revision=true  → write_node（带评审意见重写）
     - 出错 → END
     """
@@ -120,18 +123,27 @@ def route_after_review(state: GraphState) -> str:
 
     if state.get("needs_revision"):
         return "write_node"
-    return "composition_node"
-
-
-def route_after_composition(state: GraphState) -> str:
-    """composition_node → legality_node / END"""
-    if _check_error(state):
-        return END
     return "legality_node"
 
 
 def route_after_legality(state: GraphState) -> str:
-    """legality_node → publish_node / END"""
+    """
+    【核心】legality_node 路由 — 合规检查自循环控制。
+
+    - needs_legality_fix=true 且未满3轮 → legality_node（继续修改）
+    - needs_legality_fix=false 或满3轮 → composition_node（排版）
+    - 出错 → END
+    """
+    if _check_error(state):
+        return END
+
+    if state.get("needs_legality_fix") and state.get("legality_iteration", 0) < 3:
+        return "legality_node"
+    return "composition_node"
+
+
+def route_after_composition(state: GraphState) -> str:
+    """composition_node → publish_node / END"""
     if _check_error(state):
         return END
     return "publish_node"
@@ -183,22 +195,28 @@ def build_graph() -> StateGraph:
         {"review_node": "review_node", END: END},
     )
 
-    # 【核心】review → write(需修改) / composition(通过)
+    # 【核心】review → write(需修改) / legality(通过)
     workflow.add_conditional_edges(
         "review_node", route_after_review,
         {
             "write_node": "write_node",           # 评审未通过，回去重写
-            "composition_node": "composition_node",  # 评审通过，进入排版
+            "legality_node": "legality_node",      # 评审通过，进入合规校验
+            END: END,
+        },
+    )
+
+    # 【核心】legality 自循环：未通过且未满3轮 → 回到 legality_node 继续修改
+    workflow.add_conditional_edges(
+        "legality_node", route_after_legality,
+        {
+            "legality_node": "legality_node",      # 未通过，继续修改（自循环）
+            "composition_node": "composition_node",  # 通过，进入排版
             END: END,
         },
     )
 
     workflow.add_conditional_edges(
         "composition_node", route_after_composition,
-        {"legality_node": "legality_node", END: END},
-    )
-    workflow.add_conditional_edges(
-        "legality_node", route_after_legality,
         {"publish_node": "publish_node", END: END},
     )
 

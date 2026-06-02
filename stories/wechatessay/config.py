@@ -2,67 +2,106 @@
 wechatessay 项目全局配置
 
 集中管理所有路径、模型参数、MCP 配置、Memory 配置等。
+所有模型通过 langchain_openai.ChatOpenAI 直接实例化（OpenAI 兼容接口）。
 """
+
 import os
+import logging
+import sys
 from pathlib import Path
 from dotenv import find_dotenv
 from langchain_openai import ChatOpenAI
-import logging
-import sys
 
 # ── 项目根目录 ──
 _ENV_PATH = find_dotenv()
-ROOT = Path(__file__).parent
+if _ENV_PATH:
+    ROOT = Path(_ENV_PATH).parent
+else:
+    ROOT = Path(__file__).parent
 
-LOG_LEVEL = logging.INFO  # 开发用 DEBUG，生产用 INFO
+# ── 日志配置 ──
+LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d — %(message)s"
 
+
 def setup_logging():
-    """配置全局日志"""
     logging.basicConfig(
         level=LOG_LEVEL,
         format=LOG_FORMAT,
-        handlers=[
-            logging.StreamHandler(sys.stdout),  # 控制台输出
-            # logging.FileHandler("wechatessay.log", encoding="utf-8"),  # 文件记录
-        ],
+        handlers=[logging.StreamHandler(sys.stdout)],
     )
 
-# 配置 API
-# OPENAI_API_KEY = "468d6aba-3c9e-407f-ad91-d5f904662742"
-# OPENAI_API_BASE = "https://ark.cn-beijing.volces.com/api/v3"
-# MODEL_NAME = "doubao-seed-2-0-pro-260215"
 
-# deepseek-reasoner
-OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
-OPENAI_API_BASE = "https://api.deepseek.com"
-MODEL_NAME = "deepseek-reasoner"
+# ═══════════════════════════════════════════════
+# 模型实例定义（OpenAI 兼容接口）
+# ═══════════════════════════════════════════════
+#
+# 所有模型统一使用 ChatOpenAI 包装（OpenAI 兼容格式）。
+# 如需新增模型：直接添加 ChatOpenAI 实例，然后在 WRITER_CONFIG / REVIEW_CONFIG 中引用。
 
-
-# # qwen  sk-5fd1dda940aa46d282873be7e02fcd82
-# OPENAI_API_KEY = "sk-5fd1dda940aa46d282873be7e02fcd82"
-# OPENAI_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-# MODEL_NAME = "qwen3.6-plus"
-
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-os.environ["OPENAI_API_BASE"] = OPENAI_API_BASE
-
-model = ChatOpenAI(
-    model=MODEL_NAME,
-    temperature=1.5,
+# ── DeepSeek ──
+deepseek_model = ChatOpenAI(
+    model="deepseek-v4-flash",
+    base_url="https://api.deepseek.com",
+    api_key="sk-c619888c986041ba9646db331483d4c6",
+    temperature=1.0,
 )
 
+# ── 豆包 / 火山方舟 ──
+doubao_model = ChatOpenAI(
+    model="doubao-seed-2-0-pro-260215",
+    base_url="https://ark.cn-beijing.volces.com/api/v3",
+    api_key="468d6aba-3c9e-407f-ad91-d5f904662742",
+    temperature=1.0,
+    max_tokens=8192,  # 显式设置，输出不再截断
 
-# ── 模型配置 ──
-MODEL_CONFIG = {
-    # 使用 provider:model 格式，便于切换
-    "default_model": model,
-    "analysis_model": model,
-    "search_model": model,
-    "writing_model": model,
-    "review_model": model,
+)
+
+# ── Qwen（如需启用，取消注释） ──
+# qwen_model = ChatOpenAI(
+#     model="qwen3.6-plus",
+#     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+#     api_key="sk-...",
+#     temperature=1.0,
+# )
+
+
+# ═══════════════════════════════════════════════
+# 模型选择配置
+# ═══════════════════════════════════════════════
+
+# 所有可用模型名称 → 实例的映射
+# 代码中通过名称（如 "deepseek"、"doubao"）引用模型
+MODEL_REGISTRY = {
+    "deepseek": deepseek_model,
+    "doubao": doubao_model,
+    # "qwen": qwen_model,
 }
 
+# 各节点默认使用的模型（写名称，从 MODEL_REGISTRY 解析）
+MODEL_CONFIG = {
+    "default_model": "deepseek",
+    "analysis_model": "deepseek",
+    "search_model": "deepseek",
+    "writing_model": "deepseek",
+    "review_model": "doubao",
+}
+
+# write_node 可用写作模型（列表，串行轮询）
+WRITER_CONFIG = {
+    "models": ["deepseek", "doubao"],
+}
+
+# review_node 可用评审模型（列表，随机选≠写作模型的）
+REVIEW_CONFIG = {
+    "models": ["deepseek", "doubao"],
+    "pass_score_threshold": 85,
+}
+
+
+# ═══════════════════════════════════════════════
+# 其他配置（保持不变）
+# ═══════════════════════════════════════════════
 
 # ── 子目录 ──
 MEMORY_DIR = ROOT / "backends" / "memories"
@@ -70,166 +109,78 @@ SKILLS_DIR = ROOT / "backends" / "skills"
 SOURCES_DIR = ROOT / "backends" / "sources"
 WORKSPACES_DIR = ROOT / "backends" / "workspaces"
 
-# ── 确保目录存在 ──
 for _d in [MEMORY_DIR, SKILLS_DIR, SOURCES_DIR, WORKSPACES_DIR]:
     _d.mkdir(parents=True, exist_ok=True)
 
-# ── DeepAgents Backend 配置 ──
+# ── DeepAgents Backend ──
 BACKEND_CONFIG = {
     "root_dir": ROOT.as_posix(),
     "virtual_mode": True,
     "routes": {
-        "/memories/": {
-            "root_dir": MEMORY_DIR.as_posix(),
-            "virtual_mode": True,
-        },
-        "/skills/": {
-            "root_dir": SKILLS_DIR.as_posix(),
-            "virtual_mode": True,
-        },
-        "/workspaces/": {
-            "root_dir": WORKSPACES_DIR.as_posix(),
-            "virtual_mode": True,
-        },
+        "/memories/": {"root_dir": MEMORY_DIR.as_posix(), "virtual_mode": True},
+        "/skills/": {"root_dir": SKILLS_DIR.as_posix(), "virtual_mode": True},
+        "/workspaces/": {"root_dir": WORKSPACES_DIR.as_posix(), "virtual_mode": True},
     },
 }
 
-# ── 多模型写作配置 ──
-# write_node 使用同一份写作 prompt，并行调用多个模型独立写作，择优输出。
-# 每个模型独立生成完整文章，write_node 选评分最高的版本。
-WRITER_CONFIG = {
-    # 写作模型列表：每个模型独立写作，最后择优
-    # 格式：provider:model_id
-    "models": [
-        "deepseek:deepseek-v4-flash",
-        # "kimi:kimi-k2",
-        # "qwen:qwen3.5-397B-A17B",
-    ],
-}
-
-# ── 多模型评审配置 ──
-# review_node 使用同一套评审提示词，轮询不同模型进行评审。
-# 只评审不提修改（修改交给 write_node），输出评审意见和 passed 判断。
-REVIEW_CONFIG = {
-    # 评审模型：每次评审用一个模型（可轮询）
-    "models": [
-        "deepseek:deepseek-v4-flash",
-    ],
-
-    # 通过分数阈值（overallScore >= 此值 且 无重大问题 → passed）
-    "pass_score_threshold": 85,
-}
-
 # ── write→review 循环控制 ──
-# write_node 写作 → review_node 评审 → 如需修改 → 回到 write_node
-# 达到最大轮次后强制通过，无论评审是否满意
 MAX_REVISION_ROUNDS = 3
 
 # ── Memory 配置 ──
 MEMORY_CONFIG = {
-    # ── 短期记忆 ──
-    # 短期记忆 FIFO 容量（消息条数）
     "short_term_capacity": 50,
-
-    # ── 长期记忆 ──
-    # 长期记忆文件路径
     "long_term_file": MEMORY_DIR / "long_term_memory.json",
-
-    # ── 混合检索权重 ──
-    # BM25 关键词匹配权重
     "bm25_weight": 0.4,
-    # 语义相似度权重
     "semantic_weight": 0.4,
-    # 类型加权权重
     "type_weight": 0.2,
-    # 双命中奖励（BM25 和语义同时命中时的额外加分）
     "dual_hit_bonus": 0.1,
-
-    # ── 类型权重映射（不同类型记忆的权重系数） ──
     "type_weights": {
-        "user_preference": 2.0,     # 用户偏好 — 最高优先级
-        "project_fact": 1.5,        # 项目事实 — 高优先级
-        "style_guide": 1.3,         # 风格指南 — 较高优先级
-        "writing_rule": 1.2,        # 写作规则
-        "publish_record": 0.8,      # 发布记录
-        "general": 1.0,             # 一般记忆 — 默认
+        "user_preference": 2.0,
+        "project_fact": 1.5,
+        "style_guide": 1.3,
+        "writing_rule": 1.2,
+        "publish_record": 0.8,
+        "general": 1.0,
     },
-
-    # ── 注入控制 ──
-    # 注入系统提示词的记忆条数上限
     "max_injected_memories": 5,
-    # 记忆相似度阈值（低于此值的记忆不返回）
     "memory_threshold": 0.6,
-
-    # ── 遗忘衰减 ──
-    # 时间衰减半衰期（天数）：30 天后权重衰减到约 50%
     "decay_half_life_days": 30,
-    # 衰减惩罚权重系数（0~1，控制衰减的影响力）
     "decay_weight": 0.3,
-    # 访问频率奖励系数
     "access_bonus_coefficient": 0.05,
-    # 主动遗忘：超过此天数的记忆可能被清理
     "forget_max_age_days": 180,
-    # 主动遗忘：访问次数低于此值的过期记忆将被清理
     "forget_min_access": 2,
 }
 
 # ── RAG 配置 ──
 RAG_CONFIG = {
-    # 向量数据库路径（SQLite）
     "vector_db_path": (MEMORY_DIR / "vector_db.sqlite").as_posix(),
-
-    # ── Embedding 后端配置 ──
-    # 可选: "ollama" | "openai" | "remote" | "mock"
     "embedding_backend": "ollama",
-    # 嵌入模型名称（根据后端不同含义不同）
     "embedding_model": "nomic-embed-text",
-    # 向量维度（需与模型输出维度一致）
-    # nomic-embed-text: 768, text-embedding-3-small: 1536, text-embedding-3-large: 3072
     "vector_dimension": 768,
-
-    # ── Ollama 后端配置 ──
     "ollama_base_url": "http://localhost:11434",
-
-    # ── OpenAI 后端配置 ──
-    # API Key 优先从环境变量 OPENAI_API_KEY 读取
     "openai_api_key": "",
     "openai_embedding_model": "text-embedding-3-small",
-
-    # ── 通用远程后端配置 ──
     "remote_embedding_config": {
         "url": "https://your-embedding-api.example.com/embed",
         "headers": {"Authorization": "Bearer YOUR_TOKEN"},
-        # 响应中 embedding 字段的路径，支持嵌套如 "data.embedding"
         "response_field_path": "embedding",
     },
-
-    # ── 检索参数 ──
-    # 检索 top-k
     "retrieve_top_k": 5,
-    # 分块大小
     "chunk_size": 500,
-    # 分块重叠
     "chunk_overlap": 50,
 }
 
-# ── MCP 配置文件路径 ──
+# ── MCP 配置 ──
 MCP_CONFIG_PATH = ROOT / "tools" / "mcp_tools" / "mcp_config.json"
 
-# ── 人机协同配置 ──
+# ── HITL 配置 ──
 HITL_CONFIG = {
-    # 是否需要人工确认
     "require_human_approval": True,
-    # 最多重试次数
     "max_retry": 3,
-    # 节点需要人工确认的工具
-    "interrupt_tools": {
-        "write_file": True,
-        "edit_file": True,
-    },
+    "interrupt_tools": {"write_file": True, "edit_file": True},
 }
 
-# ── 文章写作默认参数 ──
+# ── 写作默认参数 ──
 WRITING_DEFAULTS = {
     "default_word_count": 2000,
     "min_word_count": 800,
@@ -238,29 +189,48 @@ WRITING_DEFAULTS = {
     "target_platform": "微信公众号",
 }
 
-# ── 合规检查配置 ──
+# ── 合规检查 ──
 LEGALITY_CONFIG = {
-    # 敏感词列表（可自行扩展）
-    "sensitive_keywords": [
-        "政治", "色情", "暴力", "赌博", "毒品",
-        "翻墙", "VPN", "非法", "违法",
-    ],
-    # AI 感检测关键词
+    "sensitive_keywords": ["政治", "色情", "暴力", "赌博", "毒品", "翻墙", "VPN", "非法", "违法"],
     "ai_markers": [
         "首先", "其次", "再次", "最后", "综上所述",
         "值得注意的是", "总而言之", "简而言之",
         "让我们", "不难发现", "显而易见",
         "在当今社会", "随着科技的发展",
-        "这是一个", "我们需要",
     ],
-    # 最大 AI 感得分
     "max_ai_score": 0.3,
 }
 
 # ── 发布配置 ──
 PUBLISH_CONFIG = {
-    # 微信公众号相关配置占位
     "wechat_app_id": "",
     "wechat_app_secret": "",
     "default_author": "AI 写作助手",
 }
+
+
+# ═══════════════════════════════════════════════
+# 模型解析工具函数
+# ═══════════════════════════════════════════════
+
+def get_model_instance(name: str) -> ChatOpenAI:
+    """
+    根据模型名称从 MODEL_REGISTRY 获取 ChatOpenAI 实例。
+
+    用法：
+        model = get_model_instance("deepseek")
+        model = get_model_instance(MODEL_CONFIG["writing_model"])
+
+    所有节点统一使用此函数，不再直接写 provider:model_id。
+    """
+    if name not in MODEL_REGISTRY:
+        raise KeyError(
+            f"模型 '{name}' 未在 MODEL_REGISTRY 中注册。"
+            f"可用模型: {list(MODEL_REGISTRY.keys())}"
+        )
+    return MODEL_REGISTRY[name]
+
+
+# 启动时打印模型注册状态
+for _name, _inst in MODEL_REGISTRY.items():
+    print(f"[config] 模型 '{_name}' ({_inst.model}) — 已就绪")

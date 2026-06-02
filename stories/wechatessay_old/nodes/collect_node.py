@@ -14,7 +14,7 @@ import os
 from wechatessay_old.utils.vx_util import parse_json_response
 
 # deepseek-reasoner
-OPENAI_API_KEY = "sk-0638b83c1e6a47eca1aeade34c493f6a"
+OPENAI_API_KEY = "sk-c619888c986041ba9646db331483d4c6"
 OPENAI_API_BASE = "https://api.deepseek.com"
 MODEL_NAME = "deepseek-reasoner"
 

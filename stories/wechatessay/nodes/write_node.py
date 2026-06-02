@@ -1,53 +1,32 @@
 """
 wechatessay.nodes.write_node
 
-节点5: write_node — 多模型并行全文写作节点
+节点5: write_node — 串行全文写作节点
 
-【核心设计】
-    使用同一份写作 prompt (FULL_WRITE_SYSTEM_PROMPT)，
-    并行调用多个独立 Deep Agent（各用不同模型），
-    各自独立完成全文写作并自评分数，
-    最后选择评分最高的版本输出。
+【串行流程】
+    第0轮: 随机选模型A → get_model_instance(A) → ChatOpenAI实例 → 写作
+        → review_node(模型B≠A评审) → 需修改
+    第1轮: 用模型B(上轮评审) → get_model_instance(B) → 写作
+        → review_node(模型C≠B评审) → 通过
 
-    plot → write_node
-        ├→ Agent-deepseek → 文章A + 自评分数
-        ├→ Agent-kimi     → 文章B + 自评分数
-        └→ Agent-qwen     → 文章C + 自评分数
-        └→ 择优（选最高分）→ article_output
-
-    如果带有 review_feedback（来自 review_node 的修改意见）：
-    → 在 user message 中注入评审意见，要求针对性修改
-
-职责：
-1. 读取 plot_result / blueprint_result / search_result
-2. 为每个模型创建独立 Deep Agent（同一份 FULL_WRITE_SYSTEM_PROMPT）
-3. 并行调用所有 Agent，各自写作 + 自评
-4. 选评分最高的版本保存
-5. 记录写作历史到 writing_history
-
-依赖：
-- Deep Agent (create_deep_agent)
-- FULL_WRITE_SYSTEM_PROMPT
-- WRITER_CONFIG
+【模型引用】代码中只传模型名称（如 "deepseek"），
+实际实例通过 get_model_instance(name) 从 MODEL_REGISTRY 获取。
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import random
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from deepagents import create_deep_agent
-from langchain_core.tools import BaseTool
 
 from wechatessay.agents.backend import load_backend
-from wechatessay.agents.memory_manager import get_memory_manager
 from wechatessay.config import (
-    MEMORY_CONFIG,
-    MODEL_CONFIG,
     WRITER_CONFIG,
+    get_model_instance,
 )
 from wechatessay.prompts.vx_prompt import FULL_WRITE_SYSTEM_PROMPT
 from wechatessay.states.vx_state import (
@@ -55,15 +34,39 @@ from wechatessay.states.vx_state import (
     GraphState,
     WritingRecord,
 )
-from wechatessay.tools.base_tools.base_tool import get_base_tools
-from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
 logger = logging.getLogger(__name__)
 
 
+def _select_writer_model(state: GraphState) -> str:
+    """
+    选择本轮写作模型名称。
+    - 首次（iteration=0）：从 WRITER_CONFIG 随机选
+    - 修改轮次：使用上轮 reviewer_model 名称
+    """
+    iteration = state.get("iteration", 0)
+    model_names = WRITER_CONFIG.get("models", [])
+
+    if not model_names:
+        raise ValueError("WRITER_CONFIG['models'] 为空")
+
+    if iteration == 0:
+        name = random.choice(model_names)
+        logger.info(f"[write_node] 首次写作，随机选择: {name}")
+    else:
+        name = state.get("reviewer_model", "")
+        if not name:
+            name = random.choice(model_names)
+            logger.info(f"[write_node] 第{iteration}轮，reviewer_model 为空，随机选: {name}")
+        else:
+            logger.info(f"[write_node] 第{iteration}轮，使用上轮评审模型: {name}")
+
+    return name
+
+
 def _format_context(state: GraphState) -> str:
-    """【保留】组装写作所需的完整上下文（大纲+蓝图+素材）。"""
+    """组装写作上下文（大纲+蓝图+素材）。"""
     plot = state["plot_result"]
     blueprint = state.get("blueprint_result")
     search = state.get("search_result")
@@ -129,186 +132,143 @@ def _format_context(state: GraphState) -> str:
 
 
 def _build_write_task(state: GraphState) -> str:
-    """【修改】构建写作任务（上下文 + 可选评审反馈）。"""
+    """构建写作任务。评审意见放最前面。"""
     context = _format_context(state)
     review_feedback = state.get("review_feedback")
-    revision_count = state.get("revision_count", 0)
+    iteration = state.get("iteration", 0)
 
-    parts = ["基于以下信息，一次性生成完整的公众号文章全文。\n\n", context]
+    parts = []
 
-    if review_feedback:
+    if review_feedback and iteration > 0:
         parts.append(
-            f"\n\n【第{revision_count}轮修改要求】\n"
-            f"以下是评审反馈，请针对这些问题进行修改，保留原有优点：\n"
+            f"【重要：第{iteration}轮修改要求】\n"
+            f"你正在根据评审意见修改文章。以下是评审专家的详细修改意见，"
+            f"你必须严格根据这些意见修改，写得好的部分保留不动。\n\n"
             f"{review_feedback}\n\n"
-            f"请输出修改后的完整文章 JSON（ArticleOutputNode 结构），"
-            f"不要只输出修改部分，要输出完整文章。"
-            f"结果一定要 ArticleOutputNode 的结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticleOutputNode的JSON结构"
+            f"══════════════════════════════════════\n"
+            f"以上修改意见优先级最高。请输出修改后的完整文章。\n\n"
         )
+        logger.info(f"[write_node] 已注入评审意见（{len(review_feedback)}字）")
+    else:
+        parts.append("【首次写作】请一次性生成完整的公众号文章全文。\n\n")
+
+    parts.append(context)
 
     parts.append(
-        "\n\n请按 ArticleOutputNode 的 JSON 结构输出完整文章，"
-        "并在 JSON 中额外加入字段 selfScore（0-100 自评分数）。"
+        "\n\n请按 ArticleOutputNode 的 JSON 结构输出完整文章。"
         "不要输出任何其他描述文字。"
-        f"结果不许落盘,不许写入其他文件，后续节点需要使用生成的结构，结果必须包含在内"
+        "结果不许落盘,不许写入其他文件，后续节点需要使用生成的结构，结果必须包含在内"
+        "结果不允许是除了内容外的任何东西，例如交付摘要之类的"
     )
 
     return "".join(parts)
 
 
-async def _write_with_model(
-    model: str,
-    task_content: str,
-    iteration: int,
-) -> tuple[Optional[ArticleOutputNode], Optional[WritingRecord]]:
-    """
-    【新增】用单个模型写作。
-
-    返回: (文章, 写作记录) 或 (None, None)
-    """
-    logger.info(f"[write_node] 启动写作 Agent: {model}")
-
-    try:
-        backend = load_backend()
-        agent = create_deep_agent(
-            model=model,
-            tools=[],
-            system_prompt=FULL_WRITE_SYSTEM_PROMPT,
-            backend=backend,
-            name=f"writer_{model.replace(':', '_')}",
-        )
-
-        result = await agent.ainvoke({
-            "messages": [{"role": "user", "content": task_content}]
-        })
-        response_content = result["messages"][-1].content if result.get("messages") else ""
-
-        if not response_content:
-            logger.warning(f"[write_node] {model} 返回空响应")
-            return None, None
-
-        parsed = parse_json_response(response_content)
-        if not isinstance(parsed, dict):
-            logger.warning(f"[write_node] {model} 返回的不是 JSON")
-            return None, None
-
-        # 解析文章
-        article = None
-        try:
-            article = ArticleOutputNode.model_validate(parsed)
-        except Exception as e:
-            # 尝试去掉 selfScore 后再解析
-            parsed_copy = {k: v for k, v in parsed.items() if k != "selfScore"}
-            try:
-                article = ArticleOutputNode.model_validate(parsed_copy)
-            except Exception:
-                logger.warning(f"[write_node] {model} 文章格式错误: {e}")
-                return None, None
-
-        self_score = parsed.get("selfScore", 0)
-        if not isinstance(self_score, int):
-            self_score = 0
-
-        word_count = article.metadata.get("totalWordCount", 0) if article.metadata else 0
-        title = article.parts[0].title_alternatives[0] if article.parts else ""
-
-        record = WritingRecord(
-            iteration=iteration,
-            modelUsed=model,
-            selfScore=self_score,
-            wordCount=word_count,
-            title=title,
-            hasReviewFeedback=False,
-        )
-
-        logger.info(f"[write_node] {model} 完成: {self_score}分, {word_count}字")
-        return article, record
-
-    except Exception as e:
-        logger.error(f"[write_node] {model} 写作失败: {e}")
-        return None, None
-
-
 def write_node(state: GraphState) -> GraphState:
-    """【修改】同步入口包装。"""
+    """同步入口包装。"""
     import asyncio
     return asyncio.run(write_node_async(state))
 
 
 async def write_node_async(state: GraphState) -> GraphState:
-    """
-    【重写】多模型并行全文写作 + 择优。
-
-    流程：
-    1. 读取状态（plot + blueprint + search + 可选 review_feedback）
-    2. 为每个模型创建独立 Agent，并行写作
-    3. 收集所有版本 + 自评分数
-    4. 选评分最高的版本
-    5. 保存到 state + 记录写作历史
-    """
+    """单模型串行全文写作。"""
     plot = state.get("plot_result")
     if not plot:
         state["error_message"] = "缺少 plot_result"
         state["error_node"] = "write_node"
         return state
 
-    models = WRITER_CONFIG.get("models", [])
-    if not models:
-        logger.error("[write_node] WRITER_CONFIG['models'] 为空")
-        state["error_message"] = "未配置写作模型"
+    # 选择写作模型名称
+    model_name = _select_writer_model(state)
+    iteration = state.get("iteration", 0)
+
+    # 通过名称获取 ChatOpenAI 实例
+    try:
+        model_instance = get_model_instance(model_name)
+    except KeyError as e:
+        logger.error(f"[write_node] 模型解析失败: {e}")
+        state["error_message"] = str(e)
         state["error_node"] = "write_node"
         return state
 
-    iteration = state.get("revision_count", 0)
-    has_feedback = bool(state.get("review_feedback"))
+    logger.info(f"[write_node] ===== 第{iteration}轮写作开始，模型: {model_name} =====")
+    state["writer_model"] = model_name
 
-    if iteration == 0:
-        logger.info(f"[write_node] 首次写作: {plot.writing_context.article_title}")
-    else:
-        logger.info(f"[write_node] 第{iteration}轮修改（基于评审反馈）")
+    # 创建 Agent（直接传 ChatOpenAI 实例）
+    try:
+        backend = load_backend()
+        agent = create_deep_agent(
+            model=model_instance,
+            tools=[],
+            system_prompt=FULL_WRITE_SYSTEM_PROMPT,
+            backend=backend,
+            name=f"writer_{model_name}_r{iteration}",
+        )
+    except Exception as e:
+        logger.error(f"[write_node] 创建 Agent 失败: {e}")
+        state["error_message"] = f"创建写作 Agent 失败: {e}"
+        state["error_node"] = "write_node"
+        return state
 
-    # 构建写作任务
+    # 调用写作
     task_content = _build_write_task(state)
-
-    # 【核心】并行调用所有模型
-    tasks = [_write_with_model(m, task_content, iteration) for m in models]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    # 收集成功的结果
-    candidates: list[tuple[ArticleOutputNode, WritingRecord]] = []
-    for result in results:
-        if isinstance(result, Exception):
-            continue
-        article, record = result
-        if article and record:
-            candidates.append((article, record))
-
-    if not candidates:
-        logger.error("[write_node] 所有模型写作均失败")
-        state["error_message"] = "所有写作模型均失败"
+    try:
+        result = await agent.ainvoke({"messages": [{"role": "user", "content": task_content}]})
+        response_content = result["messages"][-1].content if result.get("messages") else ""
+    except Exception as e:
+        logger.error(f"[write_node] 第{iteration}轮调用失败: {e}")
+        state["error_message"] = f"写作失败: {e}"
         state["error_node"] = "write_node"
         return state
 
-    # 【核心】择优：选 selfScore 最高的版本
-    best_article, best_record = max(candidates, key=lambda x: x[1].self_score)
+    # 解析文章
+    article = None
+    try:
+        parsed = parse_json_response(response_content)
+        if isinstance(parsed, dict) and "parts" in parsed:
+            article = ArticleOutputNode.model_validate(parsed)
+    except Exception as e:
+        logger.warning(f"[write_node] 解析失败: {e}")
 
-    # 更新 record 标记是否有评审反馈
-    best_record.has_review_feedback = has_feedback
+    if not article:
+        article = ArticleOutputNode(
+            parts=[{
+                "partIndex": 1,
+                "titleAlternatives": ["生成失败"],
+                "content": response_content if response_content else "（失败）",
+                "goldenSentences": [],
+                "shareTexts": [],
+                "readingTime": "1分钟",
+                "rhythm": "失败",
+            }],
+            full_text=response_content or "",
+            metadata={
+                "totalWordCount": len(response_content) if response_content else 0,
+                "readingTime": "1分钟",
+                "generatedAt": datetime.now().isoformat(),
+            },
+        )
 
-    # 保存写作历史
+    # 保存
+    state["article_output"] = article
+    state["current_node"] = "write_node"
+
+    word_count = article.metadata.get("totalWordCount", 0) if article.metadata else 0
+    title = article.parts[0].title_alternatives[0] if article.parts else ""
+    has_feedback = bool(state.get("review_feedback")) and iteration > 0
+
+    record = WritingRecord(
+        iteration=iteration,
+        modelUsed=model_name,
+        selfScore=0,
+        wordCount=word_count,
+        title=title,
+        hasReviewFeedback=has_feedback,
+    )
     writing_history = state.get("writing_history", [])
-    writing_history.append(best_record.model_dump(by_alias=True))
+    writing_history.append(record.model_dump(by_alias=True))
     state["writing_history"] = writing_history
 
-    # 保存最优版本
-    state["article_output"] = best_article
-    state["current_node"] = "write_node"
-    state["node_status"]["write_node"] = "completed"
-
-    logger.info(
-        f"[write_node] 择优完成！共{candidates}个版本，"
-        f"选择 [{best_record.model_used}] 的版本 "
-        f"（自评{best_record.self_score}分，{best_record.word_count}字）"
-    )
+    logger.info(f"[write_node] 第{iteration}轮完成: {model_name}, {word_count}字")
 
     return state

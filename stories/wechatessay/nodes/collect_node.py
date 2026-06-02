@@ -21,15 +21,14 @@ from langchain_core.tools import BaseTool
 
 from wechatessay.agents.backend import load_backend
 from wechatessay.agents.memory_manager import get_memory_manager
-from wechatessay.config import BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG
+from wechatessay.config import get_model_instance, BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG
 from wechatessay.prompts.vx_prompt import COLLECT_NODE_SYSTEM_PROMPT
 from wechatessay.states.vx_state import ArticleSearchNode, GraphState
 from wechatessay.tools.base_tools.base_tool import get_base_tools
 from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
-import logging
-logger = logging.getLogger(__name__)
+
 
 def _create_collect_agent(tools: list[BaseTool]) -> Any:
     """创建 collect_node 的 Deep Agent。"""
@@ -48,8 +47,8 @@ def _create_collect_agent(tools: list[BaseTool]) -> Any:
         memory_files.append(str(mem_file))
 
     return create_deep_agent(
-        model=MODEL_CONFIG.get("search_model", MODEL_CONFIG["default_model"]),
-        # tools=tools,
+        model=get_model_instance(MODEL_CONFIG.get("search_model")),
+        tools=tools,
         system_prompt=system_prompt,
         backend=backend,
         memory=memory_files,
@@ -90,9 +89,9 @@ async def _execute_searches(
         {
             "role": "user",
             "content": (
-                # f"基于以下热点分析结果，执行网络调研并补充信息。\n\n"
+                f"基于以下热点分析结果，执行网络调研并补充信息。\n\n"
                 f"已确定的热点信息：\n{search_context}\n\n"
-                # f"请依次执行搜索查询，收集补充信息，"
+                f"请依次执行搜索查询，收集补充信息，"
                 f"最终以 JSON 格式输出 ArticleSearchNode 结构。"
                 f"结果一定要ArticleSearchNode的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有ArticleSearchNode的JSON结构"
                 f"目前在测试阶段，无需调用搜索功能，快速将结果封装成ArticleSearchNode的JSON结构，内容随便生成即可，要求快速返回内容"

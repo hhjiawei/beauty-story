@@ -1,35 +1,22 @@
 """
 wechatessay.nodes.review_node
 
-节点5-Review: review_node — 纯评审节点
+节点5-Review: review_node — 串行评审节点
 
-【核心设计】
-    对 write_node 产出的文章进行评审，只提意见不修改全文。
+【串行流程】每次用一个模型评审，评审模型≠写作模型：
 
-    review_node 读取 article_output → 调用评审 Agent → 输出评审意见
-        ↓ passed=true（无需修改）    → needs_revision=false → 进入 composition
-        ↓ passed=false（需要修改）   → needs_revision=true  → review_feedback=意见
-                                        ↓
-                                   回到 write_node（带评审意见重写）
+    write(模型A) → review(模型B≠A评审) → 需修改
+    write(模型B) → review(模型C≠B评审) → 通过 → composition
 
-    达到 MAX_REVISION_ROUNDS 后强制通过。
-
-职责：
-1. 读取 article_output
-2. 调用评审 Agent（单一模型，只做评审）
-3. 如果 passed → 标记通过，进入 composition
-4. 如果未通过 → 记录评审意见，回到 write_node
-5. 每次评审结果保存到 review_history
-
-依赖：
-- Deep Agent (create_deep_agent)
-- REVIEW_CONFIG
-- MAX_REVISION_ROUNDS
+【模型引用】代码中只传模型名称，
+实际实例通过 get_model_instance(name) 从 MODEL_REGISTRY 获取。
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import random
 from typing import Any, Optional
 
 from deepagents import create_deep_agent
@@ -37,10 +24,10 @@ from deepagents import create_deep_agent
 from wechatessay.agents.backend import load_backend
 from wechatessay.config import (
     MAX_REVISION_ROUNDS,
-    MODEL_CONFIG,
     REVIEW_CONFIG,
+    get_model_instance,
 )
-from wechatessay.prompts.vx_prompt import REVIEW_AND_REVISE_SYSTEM_PROMPT
+from wechatessay.prompts.vx_prompt import REVIEW_SYSTEM_PROMPT
 from wechatessay.states.vx_state import (
     ArticleOutputNode,
     GraphState,
@@ -52,37 +39,51 @@ from wechatessay.utils.json_utils import parse_json_response
 logger = logging.getLogger(__name__)
 
 
-def _create_review_agent(model: str) -> Any:
-    """【简化】创建纯评审 Agent。"""
-    backend = load_backend()
-    return create_deep_agent(
-        model=model,
-        tools=[],
-        system_prompt=REVIEW_AND_REVISE_SYSTEM_PROMPT,
-        backend=backend,
-        name="article_reviewer",
-    )
+def _select_reviewer_model(state: GraphState) -> str:
+    """
+    选择评审模型名称。必须与 writer_model 不同。
+    """
+    writer_model = state.get("writer_model", "")
+    model_names = REVIEW_CONFIG.get("models", [])
+
+    if not model_names:
+        raise ValueError("REVIEW_CONFIG['models'] 为空")
+
+    candidates = [m for m in model_names if m != writer_model]
+
+    if not candidates:
+        from wechatessay.config import WRITER_CONFIG
+        writer_models = WRITER_CONFIG.get("models", [])
+        candidates = [m for m in writer_models if m != writer_model]
+
+    if not candidates:
+        raise ValueError(f"没有可用评审模型（都与 '{writer_model}' 相同）")
+
+    return random.choice(candidates)
 
 
-def _build_review_task(article: ArticleOutputNode) -> str:
-    """【简化】构建评审任务（仅文章，无修改要求）。"""
+def _build_review_task(article: ArticleOutputNode, writer_model: str) -> str:
+    """构建评审任务。"""
     article_text = article.full_text or ""
     title = article.parts[0].title_alternatives[0] if article.parts else "未命名"
     meta = article.metadata or {}
 
-    return f"""请对以下公众号文章进行评审。
+    return f"""请对以下公众号文章进行严格评审。
 
-【文章标题】{title}
-【字数】{meta.get("totalWordCount", 0)}字
+【文章信息】
+- 标题：{title}
+- 字数：{meta.get('totalWordCount', 0)}字
+- 写作模型：{writer_model}
 
 【全文内容】
 {article_text}
 
-请严格按照 system prompt 中的要求：
-1. 从语言、传播、逻辑、合规四个维度全面评审
-2. 给出 overallScore 和 passed 判断
-3. 如未通过，给出具体的 revisionSuggestions（修改建议）
-4. 只输出 JSON，不要任何其他文字
+注意：
+1 不要输出任何其他描述文字。
+2 结果不许落盘,不许写入其他文件，后续节点需要使用生成的结构，结果必须包含在内
+3 结果不允许是除了内容外的任何东西，例如交付摘要之类的，禁止将结果落盘到 xx.json文件等行为，内容必须放在最后一个AIMessage中
+
+
 """
 
 
@@ -91,7 +92,7 @@ def _parse_review_response(
     iteration: int,
     model: str,
 ) -> Optional[ReviewResult]:
-    """【简化】解析评审响应，返回 ReviewResult。"""
+    """解析评审响应。"""
     if not response_content:
         return None
 
@@ -110,7 +111,7 @@ def _parse_review_response(
             revisionSuggestions=parsed.get("revisionSuggestions", ""),
         )
     except Exception as e:
-        logger.warning(f"[review_node] 解析评审结果失败: {e}")
+        logger.warning(f"[review_node] 解析失败: {e}")
         return None
 
 
@@ -121,94 +122,101 @@ def review_node(state: GraphState) -> GraphState:
 
 
 async def review_node_async(state: GraphState) -> GraphState:
-    """
-    【重写】纯评审主逻辑。
-
-    流程：
-    1. 读取 article_output
-    2. 调用评审 Agent
-    3. 解析评审结果
-    4. 如果通过 → needs_revision=false → 进入 composition
-    5. 如果未通过 → needs_revision=true → review_feedback=修改意见 → 回到 write_node
-    6. 达到 MAX_REVISION_ROUNDS 后强制通过
-    """
+    """串行评审主逻辑。"""
     article = state.get("article_output")
     if not article:
         state["error_message"] = "缺少 article_output"
         state["error_node"] = "review_node"
         return state
 
-    iteration = state.get("revision_count", 0)
+    iteration = state.get("iteration", 0)
+    writer_model = state.get("writer_model", "")
 
-    # 检查是否已达最大轮次
     if iteration >= MAX_REVISION_ROUNDS:
-        logger.warning(f"[review_node] 已达最大修改轮次({MAX_REVISION_ROUNDS})，强制通过")
+        logger.warning(f"[review_node] 已达最大轮次({MAX_REVISION_ROUNDS})，强制通过")
         state["needs_revision"] = False
         state["review_feedback"] = None
         state["current_node"] = "review_node"
         return state
 
-    # 选择评审模型
-    models = REVIEW_CONFIG.get("models", [])
-    model = models[iteration % len(models)] if models else MODEL_CONFIG.get("default_model")
+    # 选择评审模型名称
+    model_name = _select_reviewer_model(state)
+    state["reviewer_model"] = model_name
+
+    # 获取 ChatOpenAI 实例
+    try:
+        model_instance = get_model_instance(model_name)
+    except KeyError as e:
+        logger.error(f"[review_node] 模型解析失败: {e}")
+        state["error_message"] = str(e)
+        state["error_node"] = "review_node"
+        return state
 
     logger.info(
-        f"[review_node] 第{iteration}轮评审开始，模型：{model}，"
-        f"文章：{article.parts[0].title_alternatives[0] if article.parts else '未命名'}"
+        f"[review_node] ===== 第{iteration}轮评审开始 ===== "
+        f"写作: {writer_model} → 评审: {model_name}"
     )
 
     # 调用评审 Agent
     try:
-        agent = _create_review_agent(model)
-        task_content = _build_review_task(article)
+        backend = load_backend()
+        agent = create_deep_agent(
+            model=model_instance,
+            tools=[],
+            system_prompt=REVIEW_SYSTEM_PROMPT,
+            backend=backend,
+            name=f"reviewer_{model_name}_r{iteration}",
+        )
+        task_content = _build_review_task(article, writer_model)
         result = await agent.ainvoke({"messages": [{"role": "user", "content": task_content}]})
         response_content = result["messages"][-1].content if result.get("messages") else ""
     except Exception as e:
-        logger.error(f"[review_node] 评审 Agent 调用失败: {e}")
-        # 出错时保守处理：认为需要修改
+        logger.error(f"[review_node] 调用失败: {e}")
         state["needs_revision"] = True
-        state["review_feedback"] = f"评审过程出错: {str(e)}，请检查并重写。"
-        state["revision_count"] = iteration + 1
+        state["review_feedback"] = f"评审出错: {str(e)[:200]}"
         state["current_node"] = "review_node"
         return state
 
-    # 解析评审结果
-    review_result = _parse_review_response(response_content, iteration, model)
+    # 解析
+    review_result = _parse_review_response(response_content, iteration, model_name)
 
     if not review_result:
-        logger.warning("[review_node] 评审结果解析失败，保守处理为需修改")
+        logger.warning("[review_node] 评审结果解析失败")
         state["needs_revision"] = True
-        state["review_feedback"] = "评审结果解析失败，请检查文章格式并重写。"
-        state["revision_count"] = iteration + 1
+        state["review_feedback"] = "评审结果解析失败，请检查格式并重写。"
         state["current_node"] = "review_node"
         return state
 
-    # 保存评审结果
     state["review_result"] = review_result
 
-    # 保存评审历史
+    # 保存历史
+    record = ReviewRecord(
+        iteration=iteration,
+        modelUsed=model_name,
+        overallScore=review_result.overall_score,
+        passed=review_result.passed,
+        strengths=review_result.strengths,
+        issues=review_result.issues,
+        revisionSuggestions=review_result.revision_suggestions,
+    )
     review_history = state.get("review_history", [])
-    review_history.append(review_result.model_dump(by_alias=True))
+    review_history.append(record.model_dump(by_alias=True))
     state["review_history"] = review_history
 
-    # 判断是否通过
+    # 判断
     pass_threshold = REVIEW_CONFIG.get("pass_score_threshold", 85)
 
     if review_result.passed and review_result.overall_score >= pass_threshold:
-        # 通过
         state["needs_revision"] = False
         state["review_feedback"] = None
-        logger.info(
-            f"[review_node] 评审通过！{review_result.overall_score}分 → 进入排版"
-        )
+        logger.info(f"[review_node] 第{iteration}轮通过！{model_name}: {review_result.overall_score}分")
     else:
-        # 未通过，准备修改
         state["needs_revision"] = True
         state["review_feedback"] = review_result.revision_suggestions
-        state["revision_count"] = iteration + 1
+        state["iteration"] = iteration + 1
         logger.info(
-            f"[review_node] 评审未通过（{review_result.overall_score}分），"
-            f"准备第{iteration + 1}轮修改"
+            f"[review_node] 第{iteration}轮未通过（{review_result.overall_score}分），"
+            f"下轮用 {model_name} 写作"
         )
 
     state["current_node"] = "review_node"

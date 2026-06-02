@@ -1525,18 +1525,26 @@ class GraphState(TypedDict):
 
     error_node: Optional[str]                         # 出错节点
 
-    # ── write_node / review_node 循环控制 ──
-    review_result: Optional[ReviewResult]             # 最后一次评审结果
+    # ── write_node / review_node 串行循环控制 ──
+    # 流程：write(模型A) → review(模型B≠A) → write(模型B) → review(模型C≠B) → ...
+
+    iteration: int                                    # 当前轮次（0=首次写作，1=第1次修改，...）
+
+    writer_model: str                                 # 本轮写作使用的模型
+
+    reviewer_model: str                               # 本轮评审使用的模型（下轮写作用）
 
     review_feedback: Optional[str]                    # 评审意见（传给 write_node 指导修改）
 
     needs_revision: bool                              # 评审是否要求修改
 
-    revision_count: int                               # 已修改轮次（防无限循环）
+    review_result: Optional[ReviewResult]             # 最后一次评审结果
 
     writing_history: List[WritingRecord]              # 写作历史（每轮一条）
 
     review_history: List[ReviewRecord]                # 评审历史（每轮一条）
+
+    revision_count: int                               # 【保留兼容】
 
     # ── 保留字段（兼容旧版本，不再使用） ──
     write_node_phase: str                             # 废弃：原逐段写作阶段控制

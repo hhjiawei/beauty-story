@@ -22,15 +22,13 @@ from langchain_core.tools import BaseTool
 
 from wechatessay.agents.backend import load_backend
 from wechatessay.agents.memory_manager import get_memory_manager
-from wechatessay.config import BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG, PUBLISH_CONFIG
+from wechatessay.config import get_model_instance, BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG, PUBLISH_CONFIG
 from wechatessay.prompts.vx_prompt import PUBLISH_NODE_SYSTEM_PROMPT
 from wechatessay.states.vx_state import CompositionNode, GraphState, PublishNode
 from wechatessay.tools.base_tools.base_tool import get_base_tools
 from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
-import logging
-logger = logging.getLogger(__name__)
 
 def _create_publish_agent(tools: list[BaseTool]) -> Any:
     """创建 publish_node 的 Deep Agent。"""
@@ -48,7 +46,7 @@ def _create_publish_agent(tools: list[BaseTool]) -> Any:
         memory_files.append(str(mem_file))
 
     return create_deep_agent(
-        model=MODEL_CONFIG.get("review_model", MODEL_CONFIG["default_model"]),
+        model=get_model_instance(MODEL_CONFIG.get("review_model")),
         tools=tools,
         system_prompt=system_prompt,
         backend=backend,
@@ -58,9 +56,9 @@ def _create_publish_agent(tools: list[BaseTool]) -> Any:
 
 
 async def _prepare_publish(
-        composition: dict,
-        legality: dict,
-        agent: Any,
+    composition: dict,
+    legality: dict,
+    agent: Any,
 ) -> PublishNode:
     """准备发布。"""
     context = json.dumps({

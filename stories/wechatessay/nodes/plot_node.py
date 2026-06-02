@@ -22,15 +22,13 @@ from langchain_core.tools import BaseTool
 
 from wechatessay.agents.backend import load_backend
 from wechatessay.agents.memory_manager import get_memory_manager
-from wechatessay.config import BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG
+from wechatessay.config import get_model_instance, BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG
 from wechatessay.prompts.vx_prompt import PLOT_NODE_SYSTEM_PROMPT
 from wechatessay.states.vx_state import ArticlePlotNode, GraphState
 from wechatessay.tools.base_tools.base_tool import get_base_tools
 from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
-import logging
-logger = logging.getLogger(__name__)
 
 def _create_plot_agent(tools: list[BaseTool]) -> Any:
     """创建 plot_node 的 Deep Agent。"""
@@ -48,7 +46,7 @@ def _create_plot_agent(tools: list[BaseTool]) -> Any:
         memory_files.append(str(mem_file))
 
     return create_deep_agent(
-        model=MODEL_CONFIG.get("writing_model", MODEL_CONFIG["default_model"]),
+        model=get_model_instance(MODEL_CONFIG.get("writing_model")),
         tools=tools,
         system_prompt=system_prompt,
         backend=backend,
@@ -85,9 +83,6 @@ def _fill_segment_defaults(data: dict) -> dict:
     return data
 
 
-
-
-
 async def _generate_plot(
     blueprint: dict,
     search_result: dict,
@@ -118,8 +113,8 @@ async def _generate_plot(
     try:
         parsed = parse_json_response(response_content)
         if isinstance(parsed, dict):
-            # plot_data = parsed.get("plot_result") or parsed
-            plot_data = _fill_segment_defaults(parsed)
+            plot_data = parsed.get("plot_result") or parsed
+            plot_data = _fill_segment_defaults(plot_data)  # 填充缺失字段
             return ArticlePlotNode.model_validate(plot_data)
     except Exception as e:
         print(f"[plot_node] 解析大纲失败: {e}")
