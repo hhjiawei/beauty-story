@@ -66,7 +66,7 @@ def _create_legality_agent() -> Any:
 
 def _build_check_task(article: ArticleOutputNode) -> str:
     """构建检查任务。"""
-    article_text = article.fullText or ""
+    article_text = article.full_text or ""
     title = article.parts[0].title_alternatives[0] if article.parts else "未命名"
     meta = article.metadata or {}
 
