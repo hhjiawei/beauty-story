@@ -85,6 +85,7 @@ def _build_check_task(article: ArticleOutputNode) -> str:
 4. 每处修改标注 location + originalText + suggestion
 5. **无论是否通过，都必须输出 correctedArticle**（完整的 ArticleOutputNode）
 6. 只输出 JSON，不要其他文字
+7. 结果不许落盘，不许擅自加描述、总结等其他内容，运行后的最终输出内容必须在最后的AIMessage中，后续节点调用做准备
 """
 
 

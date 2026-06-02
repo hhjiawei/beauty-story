@@ -71,6 +71,7 @@ async def _compose_article(
                 f"{context}\n\n"
                 f"请以 JSON 格式输出 CompositionNode 结构。"
                 f"结果一定要CompositionNode的JSON结构，不许落盘，不许擅自加描述、总结等其他内容，你输出的结果只有CompositionNode的JSON结构"
+                f"结果不许落盘，不许擅自加描述、总结等其他内容，运行后的最终输出内容必须在最后的AIMessage中，后续节点调用做准备"
             ),
         }
     ]

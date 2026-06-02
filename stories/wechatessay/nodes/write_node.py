@@ -140,6 +140,11 @@ def _build_write_task(state: GraphState) -> str:
     parts = []
 
     if review_feedback and iteration > 0:
+
+        article = state.get("article_output", "")
+
+        full_text = article.full_text
+
         parts.append(
             f"【重要：第{iteration}轮修改要求】\n"
             f"你正在根据评审意见修改文章。以下是评审专家的详细修改意见，"
@@ -147,6 +152,7 @@ def _build_write_task(state: GraphState) -> str:
             f"{review_feedback}\n\n"
             f"══════════════════════════════════════\n"
             f"以上修改意见优先级最高。请输出修改后的完整文章。\n\n"
+            f"要修改的内容为: {full_text}\n\n"
         )
         logger.info(f"[write_node] 已注入评审意见（{len(review_feedback)}字）")
     else:
@@ -159,6 +165,8 @@ def _build_write_task(state: GraphState) -> str:
         "不要输出任何其他描述文字。"
         "结果不许落盘,不许写入其他文件，后续节点需要使用生成的结构，结果必须包含在内"
         "结果不允许是除了内容外的任何东西，例如交付摘要之类的"
+        "结果一定要 ArticleOutputNode 的JSON结构，不许落盘，不许保存到文件夹，不许擅自加描述、总结等其他内容，你输出的结果只有 ArticleOutputNode 的JSON结构"
+        "只要产生 ArticleOutputNode 的JSON结构必须在最后一个AIMessage中，后续不许产生任何message 不许产生toolMessage 和其他aiMessage"
     )
 
     return "".join(parts)
@@ -210,7 +218,7 @@ async def write_node_async(state: GraphState) -> GraphState:
         state["error_node"] = "write_node"
         return state
 
-    # 调用写作
+    # 调用写作   评审后得写作 是根据大纲+评审结果 重新根据大纲写
     task_content = _build_write_task(state)
     try:
         result = await agent.ainvoke({"messages": [{"role": "user", "content": task_content}]})
