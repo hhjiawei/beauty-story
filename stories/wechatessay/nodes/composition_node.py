@@ -61,7 +61,7 @@ async def _compose_article(
     agent: Any,
 ) -> CompositionNode:
     """对文章进行排版。"""
-    context = json.dumps({"article": article}, ensure_ascii=False, indent=2)
+    context = article.get("fullText")
 
     messages = [
         {

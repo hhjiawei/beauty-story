@@ -896,8 +896,9 @@ LEGALITY_REVIEW_PROMPT = """
 # 输出格式
 请只输出JSON，不要其他文字：
 
+正确的输出格式示例：
 {
-  "isPassed": false,
+  "isPassed": true,
   "overallScore": 85,
   "typoIssues": [
     {
@@ -915,16 +916,11 @@ LEGALITY_REVIEW_PROMPT = """
   "aiFlavorScore": 0.2,
   "readabilityScore": 0.85,
   "correctionSuggestions": ["修改说明"],
-  "correctedArticle": {
-    "parts": [{"partIndex": 1, "titleAlternatives": ["标题"], "content": "修改后正文", "goldenSentences": [], "shareTexts": [], "readingTime": "5分钟", "rhythm": "节奏"}],
-    "fullText": "修改后完整全文",
-    "metadata": {"totalWordCount": 0, "readingTime": "5分钟", "generatedAt": "ISO时间"},
-    "seoInfo": {"keywordDensity": {}, "description": "摘要", "tags": []}
-  }
+  "correctedFullText": "修改后的完整文章全文放在这里..."
 }
 
 # 修改规则
-1. **isPassed=false 时必须输出 correctedArticle**（完整的 ArticleOutputNode）
+1. **必须输出 correctedArticle**（完整的 ArticleOutputNode）
 2. **correctedArticle 必须在原文基础上只改问题部分**
 3. 每处修改要在对应 issue 中标注 location + originalText + suggestion
 4. AI感得分>0.3 或 敏感内容 → isPassed=false

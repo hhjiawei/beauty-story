@@ -53,7 +53,7 @@ doubao_model = ChatOpenAI(
     base_url="https://ark.cn-beijing.volces.com/api/v3",
     api_key="468d6aba-3c9e-407f-ad91-d5f904662742",
     temperature=1.0,
-    max_tokens=8192,  # 显式设置，输出不再截断
+    max_tokens=18192,  # 显式设置，输出不再截断
 
 )
 

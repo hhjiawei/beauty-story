@@ -167,6 +167,7 @@ def _build_write_task(state: GraphState) -> str:
         "结果不允许是除了内容外的任何东西，例如交付摘要之类的"
         "结果一定要 ArticleOutputNode 的JSON结构，不许落盘，不许保存到文件夹，不许擅自加描述、总结等其他内容，你输出的结果只有 ArticleOutputNode 的JSON结构"
         "只要产生 ArticleOutputNode 的JSON结构必须在最后一个AIMessage中，后续不许产生任何message 不许产生toolMessage 和其他aiMessage"
+        "任务完成后，确认下是否产生用户想要的实际内容，而不是概括的内容"
     )
 
     return "".join(parts)
