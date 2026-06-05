@@ -51,7 +51,7 @@ def _create_collect_agent(tools: list[BaseTool]) -> Any:
         tools=tools,
         system_prompt=system_prompt,
         backend=backend,
-        memory=memory_files,
+        memory=["/memories/thought.md"],
         name="info_collector",
     )
 

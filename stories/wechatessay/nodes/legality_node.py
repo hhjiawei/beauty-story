@@ -58,6 +58,7 @@ def _create_legality_agent() -> Any:
         tools=[],
         system_prompt=LEGALITY_REVIEW_PROMPT,
         backend=backend,
+        memory=["/memories/thought.md", "/memories/selfCheck.md"],
         name="legality_checker",
     )
 

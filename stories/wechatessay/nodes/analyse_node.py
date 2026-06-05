@@ -53,7 +53,7 @@ def _create_analyse_agent(tools: list[BaseTool]) -> Any:
         tools=tools,
         system_prompt=system_prompt,
         backend=backend,
-        memory=memory_files,
+        memory=["/memories/thought.md", "/memories/style.md"],
         name="writing_analyzer",
     )
 

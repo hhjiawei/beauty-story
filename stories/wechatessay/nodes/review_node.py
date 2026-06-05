@@ -165,6 +165,7 @@ async def review_node_async(state: GraphState) -> GraphState:
             tools=[],
             system_prompt=REVIEW_SYSTEM_PROMPT,
             backend=backend,
+            memory=["/memories/thought.md", "/memories/selfCheck.md"],
             name=f"reviewer_{model_name}_r{iteration}",
         )
         task_content = _build_review_task(article, writer_model)
@@ -204,7 +205,7 @@ async def review_node_async(state: GraphState) -> GraphState:
     state["review_history"] = review_history
 
     # 判断
-    pass_threshold = REVIEW_CONFIG.get("pass_score_threshold", 85)
+    pass_threshold = REVIEW_CONFIG.get("pass_score_threshold", 80)
 
     if review_result.passed and review_result.overall_score >= pass_threshold:
         state["needs_revision"] = False

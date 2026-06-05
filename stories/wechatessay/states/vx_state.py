@@ -1133,6 +1133,132 @@ class CompositionNode(BaseModel):
 
 
 # ═══════════════════════════════════════════════
+# 节点6.5 产物：配图计划与结果
+# ═══════════════════════════════════════════════
+
+class BodyImagePlan(BaseModel):
+    """正文插图计划"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    position: str = Field(
+        ...,
+        alias="position",
+        description="插入位置（如：第2段之后、H2标题下方）",
+    )
+    description: str = Field(
+        ...,
+        alias="description",
+        description="图片内容描述（用于AI生成图片的prompt）",
+    )
+    ratio: str = Field(
+        "16:9",
+        alias="ratio",
+        description="图片比例（16:9/4:3/1:1）",
+    )
+    style: str = Field(
+        "",
+        alias="style",
+        description="风格描述（如：极简专业、编辑杂志、温暖叙事）",
+    )
+
+
+class ImagePlan(BaseModel):
+    """
+    配图计划
+
+    由 Agent 分析文章内容后输出，确定需要配图的位置和描述。
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    cover_image: Optional[str] = Field(
+        None,
+        alias="coverImage",
+        description="封面图描述（null表示不需要封面图）",
+    )
+    cover_style: str = Field(
+        "",
+        alias="coverStyle",
+        description="封面图风格",
+    )
+    body_images: List[BodyImagePlan] = Field(
+        default_factory=list,
+        alias="bodyImages",
+        description="正文插图计划列表",
+    )
+    total_count: int = Field(
+        0,
+        alias="totalCount",
+        description="预计总配图数",
+    )
+    style_summary: str = Field(
+        "",
+        alias="styleSummary",
+        description="统一风格说明",
+    )
+
+
+class GeneratedImage(BaseModel):
+    """已生成的图片记录"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    position: str = Field(
+        ...,
+        alias="position",
+        description="插入位置",
+    )
+    image_path: str = Field(
+        ...,
+        alias="imagePath",
+        description="生成的图片文件路径",
+    )
+    description: str = Field(
+        ...,
+        alias="description",
+        description="图片描述",
+    )
+    ratio: str = Field(
+        ...,
+        alias="ratio",
+        description="图片比例",
+    )
+
+
+class ImageOutputNode(BaseModel):
+    """
+    配图节点产物
+
+    包含生成的图片列表、带图片标记的文章文本。
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    cover_image_path: Optional[str] = Field(
+        None,
+        alias="coverImagePath",
+        description="封面图路径",
+    )
+    body_images: List[GeneratedImage] = Field(
+        default_factory=list,
+        alias="bodyImages",
+        description="正文插图列表",
+    )
+    total_generated: int = Field(
+        0,
+        alias="totalGenerated",
+        description="实际生成图片数",
+    )
+    article_with_images: str = Field(
+        "",
+        alias="articleWithImages",
+        description="带图片标记的文章文本（图片以 <img src='path'> 形式插入）",
+    )
+    image_plan: Optional[ImagePlan] = Field(
+        None,
+        alias="imagePlan",
+        description="原始配图计划",
+    )
+
+
+# ═══════════════════════════════════════════════
 # 节点7 产物：合规检查
 # ═══════════════════════════════════════════════
 
@@ -1271,37 +1397,55 @@ class PublishConfig(BaseModel):
 
 class PublishNode(BaseModel):
     """
-    发布节点产物
+    发布节点产物（基于 wenyan-mcp 发布到微信公众号草稿箱）
 
-    包含发布配置、发布状态、以及发布后的数据追踪。
+    包含发布配置、wenyan-mcp 返回的 mediaId、Markdown 原文、
+    发布状态及操作日志。
     """
     model_config = ConfigDict(populate_by_name=True)
 
-    publish_config: PublishConfig = Field(
-        ...,
-        alias="publishConfig",
-        description="发布配置",
+    # ── wenyan-mcp 发布参数 ──
+    theme_id: str = Field(
+        "default",
+        alias="themeId",
+        description="使用的 wenyan-mcp 主题ID（default/orangeheart/rainbow/lapis/pie/maize/purple/phycat）",
+    )
+    app_id: str = Field(
+        "",
+        alias="appId",
+        description="微信公众号 AppID（多号发布时使用）",
+    )
+
+    # ── 文章内容 ──
+    markdown_content: str = Field(
+        "",
+        alias="markdownContent",
+        description="提交给 wenyan-mcp 的完整 Markdown 文本（含 frontmatter）",
+    )
+    cover_image_path: Optional[str] = Field(
+        None,
+        alias="coverImagePath",
+        description="封面图本地路径",
+    )
+
+    # ── wenyan-mcp 返回结果 ──
+    media_id: str = Field(
+        "",
+        alias="mediaId",
+        description="wenyan-mcp 返回的微信公众号媒体ID（media_id）",
     )
     publish_status: str = Field(
-        ...,
+        "draft",
         alias="publishStatus",
-        description="发布状态（pending/published/failed/draft）",
+        description="发布状态（draft/published/failed/skipped）",
     )
-    final_article_html: str = Field(
-        ...,
-        alias="finalArticleHtml",
-        description="最终 HTML 格式文章（可直接粘贴到公众号编辑器）",
+    publish_message: str = Field(
+        "",
+        alias="publishMessage",
+        description="wenyan-mcp 返回的消息或错误信息",
     )
-    preview_link: Optional[str] = Field(
-        None,
-        alias="previewLink",
-        description="预览链接",
-    )
-    published_url: Optional[str] = Field(
-        None,
-        alias="publishedUrl",
-        description="发布后的文章链接",
-    )
+
+    # ── 追踪信息 ──
     publish_log: List[str] = Field(
         default_factory=list,
         alias="publishLog",
@@ -1498,6 +1642,8 @@ class GraphState(TypedDict):
     article_output: Optional[ArticleOutputNode]       # 写作内容
 
     composition_result: Optional[CompositionNode]     # 排版结果
+
+    image_result: Optional[ImageOutputNode]           # 配图结果（含图片路径和带图片标记的文章）
 
     legality_result: Optional[LegalityCheckResult]    # 合规检查结果（含 corrected_article 修改后的文章）
 

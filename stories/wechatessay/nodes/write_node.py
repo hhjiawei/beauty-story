@@ -212,6 +212,7 @@ async def write_node_async(state: GraphState) -> GraphState:
             system_prompt=FULL_WRITE_SYSTEM_PROMPT,
             backend=backend,
             name=f"writer_{model_name}_r{iteration}",
+            memory=["/memories/thought.md", "/memories/style.md", "/memories/process.md"]
         )
     except Exception as e:
         logger.error(f"[write_node] 创建 Agent 失败: {e}")

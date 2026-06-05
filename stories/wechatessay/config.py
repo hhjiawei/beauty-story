@@ -78,6 +78,14 @@ MODEL_REGISTRY = {
     # "qwen": qwen_model,
 }
 
+
+IMAGE_KEY = {
+    "OPENAI_API_KEY": "468d6aba-3c9e-407f-ad91-d5f904662742",
+}
+
+
+
+
 # 各节点默认使用的模型（写名称，从 MODEL_REGISTRY 解析）
 MODEL_CONFIG = {
     "default_model": "deepseek",
@@ -130,6 +138,7 @@ MAX_REVISION_ROUNDS = 3
 MEMORY_CONFIG = {
     "short_term_capacity": 50,
     "long_term_file": MEMORY_DIR / "long_term_memory.json",
+    "thought_file": MEMORY_DIR / "thought.md",
     "bm25_weight": 0.4,
     "semantic_weight": 0.4,
     "type_weight": 0.2,
@@ -201,11 +210,10 @@ LEGALITY_CONFIG = {
     "max_ai_score": 0.3,
 }
 
-# ── 发布配置 ──
 PUBLISH_CONFIG = {
-    "wechat_app_id": "",
-    "wechat_app_secret": "",
-    "default_author": "AI 写作助手",
+    "theme_id": "default",  # wenyan-mcp 主题
+    "wechat_app_id": "",    # 多号发布时指定
+    "default_author": "AI写作助手",
 }
 
 

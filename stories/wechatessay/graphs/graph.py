@@ -4,7 +4,7 @@ wechatessay.graphs.graph
 LangGraph 图定义（含 write→review 循环 + legality 自循环）。
 
 职责：
-1. 定义 9 个节点（source/collect/analyse/plot/write/review/legality/composition/publish）
+1. 定义 10 个节点（source/collect/analyse/plot/write/review/legality/composition/image/publish）
 2. write → review 循环：评审未通过时回到 write_node 重写
 3. legality → legality 自循环：校验未通过时回到 legality_node 再修改（最多3轮）
 4. 异常时流程终止
@@ -16,7 +16,7 @@ LangGraph 图定义（含 write→review 循环 + legality 自循环）。
             ↓ needs_revision=true → write（带评审意见重写）
             ↓ needs_revision=false → legality（合规检查+小规模修改）
                 ↓ needs_legality_fix=true（未满3轮）→ legality（继续修改）
-                ↓ needs_legality_fix=false → composition（排版）→ publish → END
+                ↓ needs_legality_fix=false → composition（排版）→ image（配图）→ publish → END
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ from langgraph.graph import END, StateGraph
 from wechatessay.nodes.analyse_node import analyse_node
 from wechatessay.nodes.collect_node import collect_node
 from wechatessay.nodes.composition_node import composition_node
+from wechatessay.nodes.image_node import image_node
 from wechatessay.nodes.legality_node import legality_node
 from wechatessay.nodes.plot_node import plot_node
 from wechatessay.nodes.publish_node import publish_node
@@ -62,6 +63,7 @@ plot_node_wrapper = _wrap_node(plot_node, "plot_node")
 write_node_wrapper = _wrap_node(write_node, "write_node")
 review_node_wrapper = _wrap_node(review_node, "review_node")
 composition_node_wrapper = _wrap_node(composition_node, "composition_node")
+image_node_wrapper = _wrap_node(image_node, "image_node")
 legality_node_wrapper = _wrap_node(legality_node, "legality_node")
 publish_node_wrapper = _wrap_node(publish_node, "publish_node")
 
@@ -143,7 +145,14 @@ def route_after_legality(state: GraphState) -> str:
 
 
 def route_after_composition(state: GraphState) -> str:
-    """composition_node → publish_node / END"""
+    """composition_node → image_node / END"""
+    if _check_error(state):
+        return END
+    return "image_node"
+
+
+def route_after_image(state: GraphState) -> str:
+    """image_node → publish_node / END"""
     if _check_error(state):
         return END
     return "publish_node"
@@ -167,6 +176,7 @@ def build_graph() -> StateGraph:
     workflow.add_node("write_node", write_node_wrapper)
     workflow.add_node("review_node", review_node_wrapper)
     workflow.add_node("composition_node", composition_node_wrapper)
+    workflow.add_node("image_node", image_node_wrapper)
     workflow.add_node("legality_node", legality_node_wrapper)
     workflow.add_node("publish_node", publish_node_wrapper)
 
@@ -217,6 +227,11 @@ def build_graph() -> StateGraph:
 
     workflow.add_conditional_edges(
         "composition_node", route_after_composition,
+        {"image_node": "image_node", END: END},
+    )
+
+    workflow.add_conditional_edges(
+        "image_node", route_after_image,
         {"publish_node": "publish_node", END: END},
     )
 

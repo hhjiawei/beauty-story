@@ -48,7 +48,7 @@ def _create_source_agent(tools: list[BaseTool]) -> Any:
     if memory_context:
         system_prompt = f"{memory_context}\n\n{system_prompt}"
 
-    memory_files = []
+    memory_files = [Path(MEMORY_CONFIG["thought_file"])]
     mem_file = Path(MEMORY_CONFIG["long_term_file"])
     if mem_file.exists():
         memory_files.append(str(mem_file))
@@ -58,7 +58,7 @@ def _create_source_agent(tools: list[BaseTool]) -> Any:
         tools=tools,
         system_prompt=system_prompt,
         backend=backend,
-        memory=memory_files,
+        memory=["/memories/thought.md"],
         name="source_analyzer",
     )
 
@@ -79,6 +79,9 @@ async def _analyze_articles(articles: list[str], agent: Any) -> list[PerArticleA
                     f"提取所有结构化信息并以 JSON 格式输出。\n\n"
                     f"文章内容：\n{article_content[:8000]}\n\n"
                     f"请只输出 JSON，不要输出其他内容。"
+                    f"结果一定要 PerArticleAnalyseNode 的JSON结构，不许落盘，不许保存到文件夹，不许擅自加描述、总结等其他内容，你输出的结果只有 PerArticleAnalyseNode 的JSON结构"
+                    f"只要产生 PerArticleAnalyseNode 的JSON结构必须在最后一个AIMessage中，后续不许产生任何message 不许产生toolMessage 和其他aiMessage"
+                    f"任务完成后，确认下是否产生用户想要的实际内容，而不是概括的内容"
                 ),
             }
         ]

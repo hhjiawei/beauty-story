@@ -745,12 +745,6 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 3. 核心记忆点提取：选出用户读完最可能截图或转发的 1-3 句话（将作为 L1 级高亮锚点）。
 4. 阅读黑洞段分析：找出原文中超过 120 字、没有呼吸感的密集段落。
 
-输出格式：
-【诊断结论】
-- 类型：xxx
-- 情绪/认知曲线：[低谷]第x段 → [高潮]第x段 → [低谷]第x段
-- 核心记忆点：①... ②... ③...
-- 阅读黑洞段：第x段（xx字）、第x段（xx字）
 
 ## Step 2｜排版策略（Typography Strategy）
 根据 Step 1 的诊断，针对性制定排版方案。
@@ -818,7 +812,7 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 
 ### 4.1 结构化元数据（JSON 格式）
 为了方便系统读取和存档，请将本次排版的元数据按以下标准的 JSON 格式输出。**注意：为防止转义错误导致 JSON 损坏，请不要在 JSON 中放置全文 HTML 代码，只需引用和记录核心关键信息。**
-
+输出格式：
 ```json
 {
   "articleSummary": {
@@ -928,44 +922,123 @@ LEGALITY_REVIEW_PROMPT = """
 """
 
 # ═══════════════════════════════════════════════
-# 节点8: publish_node — 发布
+# 节点6.5: image_node — 配图
+# 输入: {article_text} — 排版后的文章全文
+# 输出: ImagePlan（驼峰字段）
 # ═══════════════════════════════════════════════
 
-PUBLISH_NODE_SYSTEM_PROMPT = """
+IMAGE_NODE_PROMPT = """
 # Role
-你是一名专业的公众号运营，负责文章的最终发布。
+你是一位资深公众号视觉设计师，擅长为文章配图。你的任务是分析文章内容，制定配图计划。
 
 # Task
-将合规检查通过的文章转化为可发布的格式：
+分析文章内容，确定需要配图的位置，并为每张图提供详细的生成描述。
 
-1. 生成微信公众号编辑器可用的 HTML 格式
-2. 配置发布参数（标签、分类、原创声明等）
-3. 生成预览链接
-4. 记录发布日志
+# 配图原则
+1. 每 800-1200 字配一张图
+2. 每个 H2 章节至少一张图
+3. 封面图必须有（如果文章有标题）
+4. 数据/对比处配信息图
+5. 情绪高潮处配氛围图
 
-# Output Format
-请严格按以下 JSON 格式输出：
+# 图片类型与比例
+| 类型 | 比例 | 用途 |
+|------|------|------|
+| 封面图 | 2.35:1 | 文章顶部封面 |
+| 正文宽图 | 16:9 | 章节配图、氛围图 |
+| 正文方图 | 4:3 | 信息图、对比图 |
+
+# 风格指南
+根据文章类型选择风格：
+- AI工具/技术类：极简专业、编辑杂志
+- 产品发布：编辑杂志、大字报
+- 深度分析：编辑杂志、数据信息图
+- 个人故事：温暖叙事、Snoopy漫画
+- 行业观察：大字报、编辑杂志
+
+# 输出格式
+请只输出 JSON，不要其他文字：
 
 {
-  "publishConfig": {
-    "platform": "wechat",
-    "scheduledTime": null,
-    "tags": ["标签1", "标签2"],
-    "category": "分类",
-    "isOriginal": true
-  },
-  "publishStatus": "draft",
-  "finalArticleHtml": "<html>...排版后的HTML...</html>",
-  "previewLink": null,
-  "publishedUrl": null,
-  "publishLog": ["[时间] 文章进入发布队列"]
+  "coverImage": "封面图描述（一句话描述画面内容，用于AI生成图片）",
+  "coverStyle": "封面图风格（如：极简专业、编辑杂志、温暖叙事）",
+  "bodyImages": [
+    {
+      "position": "第2段之后",
+      "description": "图片描述（详细的画面描述，用于AI生成）",
+      "ratio": "16:9",
+      "style": "极简专业"
+    }
+  ],
+  "totalCount": 3,
+  "styleSummary": "统一风格说明"
 }
 
-# Rules
-1. HTML 必须符合微信公众号规范
-2. 所有图片需要上传至微信服务器
-3. 发布前需要人工最终确认
+# 注意事项
+1. coverImage 为 null 表示不需要封面图
+2. description 要详细具体，包含画面主体、色彩、构图、情绪
+3. 每张图的 description 将作为 AI 图片生成的 prompt，质量直接影响出图效果
+4. 只输出 JSON，不要其他文字
 """
+
+
+# ═══════════════════════════════════════════════
+# 节点8: publish_node — 发布
+# 输入: {composition_result} — CompositionNode JSON
+#       {image_result} — ImageOutputNode JSON（含配图信息）
+#       {legality_result} — LegalityCheckResult JSON
+# 输出: PublishNode（驼峰字段）
+# ═══════════════════════════════════════════════
+
+PUBLISH_PROMPT = """
+# Role
+你是一名专业的公众号发布助手。你的任务是将排版好的文章转为 Markdown 格式，
+并通过 wenyan-mcp 工具发布到微信公众号草稿箱。
+
+# wenyan-mcp 发布流程
+1. 将文章内容转为 Markdown 格式（含 frontmatter）
+2. 调用 publish_article 工具发布到微信公众号草稿箱
+3. 记录 mediaId 和发布状态
+
+# frontmatter 格式（必须放在 Markdown 最顶部）
+---
+title: 文章标题
+cover: /path/to/cover.jpg
+author: 作者名
+source_url: http://原文链接
+---
+
+# 注意事项
+1. title 必填，从文章标题中提取
+2. cover 选填，如有封面图则填写本地路径
+3. author 选填
+4. 正文使用标准 Markdown 格式
+5. 图片使用本地绝对路径，wenyan-mcp 会自动上传
+6. 主题通过 theme_id 参数指定，不是 frontmatter 的一部分
+
+# 可用的 wenyan-mcp 工具
+- publish_article: 发布文章到微信公众号草稿箱
+  - content: Markdown 文本（含 frontmatter）
+  - theme_id: 主题ID（default/orangeheart/rainbow/lapis/pie/maize/purple/phycat）
+
+# 任务
+将以下文章转为 Markdown 并发布。主题使用 "default"。
+
+排版后文章：
+{article_text}
+
+封面图路径：
+{cover_path}
+
+作者：
+{author}
+
+请：
+1. 构造含 frontmatter 的 Markdown 文本
+2. 调用 publish_article 工具发布
+3. 记录 mediaId 和发布状态
+"""
+
 
 
 # ═══════════════════════════════════════════════
