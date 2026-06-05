@@ -15,7 +15,6 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from langchain.tools import tool
 
 from deepagents import create_deep_agent
 
@@ -26,6 +25,7 @@ from wechatessay.states.vx_state import (
     GraphState,
     ImageOutputNode,
 )
+from wechatessay.tools.image_tools.image_tool import generate_image, upload_image
 from wechatessay.utils.json_utils import parse_json_response
 
 logger = logging.getLogger(__name__)
@@ -33,45 +33,6 @@ logger = logging.getLogger(__name__)
 SKILL_DIR = Path(__file__).resolve().parent.parent / "backends" / "skills" / "huashu-wechat-image"
 
 
-@tool
-def generate_image(prompt: str, output_path: str, aspect: str = "wide") -> str:
-    """Generate image via Gemini 3 Pro. Args: prompt(EN), output_path, aspect(cover/wide/standard/square)."""
-    script = SKILL_DIR / "scripts" / "generate_image.py"
-    if not script.exists():
-        return f"Error: {script} not found"
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    cmd = ["python3", str(script), "--prompt", prompt, "--filename", output_path, "--aspect", aspect]
-    api_key = os.environ.get("GEMINI_API_KEY", "")
-    if api_key:
-        cmd.extend(["--api-key", api_key])
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-        if r.returncode == 0 and Path(output_path).exists():
-            return f"OK: {output_path}"
-        return f"Error: {r.stderr[:200]}"
-    except Exception as e:
-        return f"Error: {e}"
-
-
-@tool
-def upload_image(image_path: str) -> str:
-    """Upload image to ImgBB, return permanent URL."""
-    script = SKILL_DIR / "references" / "upload_image.py"
-    if not script.exists():
-        return f"Error: {script} not found"
-    api_key = os.environ.get("IMGBB_API_KEY", "")
-    if not api_key:
-        return "Error: IMGBB_API_KEY not set"
-    try:
-        r = subprocess.run(["python3", str(script), image_path, "--api-key", api_key],
-                          capture_output=True, text=True, timeout=120)
-        for line in r.stdout.split("\n"):
-            url = line.strip()
-            if url.startswith("https://"):
-                return url
-        return f"Error: {r.stderr[:200]}"
-    except Exception as e:
-        return f"Error: {e}"
 
 
 def _create_agent() -> Any:
