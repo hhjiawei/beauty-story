@@ -1357,7 +1357,7 @@ revisionSuggestions 必须包含：
 
 {
   "model": "模型标识",
-  "overallScore": 85,
+  "overallScore": 40,
   "passed": true,
   "strengths": ["优点1：具体描述哪里做得好"],
   "issues": ["问题1：第X段第Y句 + 具体问题 + 修改建议"],

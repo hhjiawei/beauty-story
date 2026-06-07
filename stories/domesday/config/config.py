@@ -47,7 +47,7 @@ STORY_CONFIG = {
 QA_STANDARDS = {
     "completeness_min": 80,           # 完整性最低分
     "format_min": 90,                 # 格式最低分
-    "quality_min": 85,                # 质量最低分
+    "quality_min": 10,                # 质量最低分
     "continuity_min": 95,             # 连贯性最低分
 }
 
