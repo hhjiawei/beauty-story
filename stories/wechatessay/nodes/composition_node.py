@@ -52,7 +52,7 @@ def _create_composition_agent(tools: list[BaseTool]) -> Any:
         memory_files.append(str(mem_file))
 
     return create_deep_agent(
-        model=get_model_instance(MODEL_CONFIG.get("analysis_model"), MODEL_CONFIG["default_model"]),
+        model=get_model_instance(MODEL_CONFIG.get("analysis_model")),
         tools=tools,
         system_prompt=system_prompt,
         backend=backend,

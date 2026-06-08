@@ -61,28 +61,28 @@ def image_node(state: GraphState) -> GraphState:
 
 
 async def _async(state: GraphState) -> GraphState:
-    composition = state.get("composition_result")
+    composition = state.get("composition_result") # 有无标题
     if not composition:
         state["error_message"] = "缺少 composition_result"
         state["error_node"] = "image_node"
         return state
 
     article = composition.formatted_article
-    text = article.full_text or ""
+    text = article or ""
     if not text:
         state["image_result"] = ImageOutputNode()
         state["current_node"] = "image_node"
         _mark_completed(state)
         return state
 
-    title = article.parts[0].title_alternatives[0] if article.parts else "未命名"
-    logger.info(f"[image_node] 配图: {title} ({len(text)}字)")
+    # title = article.parts[0].title_alternatives[0] if article.parts else "未命名"
+    # logger.info(f"[image_node] 配图: {title} ({len(text)}字)")
 
     try:
         agent = _create_agent()
         task = (
             f"请为以下文章配图。\n\n"
-            f"标题: {title}\n"
+            # f"标题: {title}\n"
             f"字数: {len(text)}字\n\n"
             f"文章内容:\n{text}\n\n"
             f"图片输出目录: /mnt/agents/output/images/\n"

@@ -945,7 +945,7 @@ IMAGE_NODE_PROMPT = """
 1. coverImage 为 null 表示不需要封面图
 2. description 要详细具体，包含画面主体、色彩、构图、情绪
 3. 每张图的 description 将作为 AI 图片生成的 prompt，质量直接影响出图效果
-4. 只输出 JSON，不要其他文字
+4. 只输出 JSON内容，为后续节点使用，禁止输出文件
 """
 
 
