@@ -207,7 +207,7 @@ async def review_node_async(state: GraphState) -> GraphState:
     # 判断
     pass_threshold = REVIEW_CONFIG.get("pass_score_threshold", 80)
 
-    if review_result.passed and review_result.overall_score >= pass_threshold:
+    if review_result.overall_score >= pass_threshold:
         state["needs_revision"] = False
         state["review_feedback"] = None
         logger.info(f"[review_node] 第{iteration}轮通过！{model_name}: {review_result.overall_score}分")

@@ -45,6 +45,9 @@ def _create_agent() -> Any:
         "严格按照 skill 定义的工作流程为文章配图。"
         "\n工具: generate_image(生成图片), upload_image(上传图床)"
         "\n输出 JSON: coverImageUrl, bodyImageUrls[], articleWithImages, totalGenerated, imagePlan{}"
+        "过程无需用户检查，直接输出最后结果，结果一定要 JSON结构，不许落盘，不许保存到文件夹，不许擅自加描述、总结等其他内容，你输出的结果只有JSON结构"
+        "只要产生的JSON结构，必须在最后一个AIMessage中，后续不许产生任何message 不许产生toolMessage 和其他aiMessage"
+        "任务完成后，确认下是否产生用户想要的实际内容，而不是概括的内容，也不是中间过程内容，是做好插图的内容"
     )
     return create_deep_agent(
         model=model, tools=[generate_image, upload_image],

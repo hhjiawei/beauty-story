@@ -83,6 +83,10 @@ IMAGE_KEY = {
     "OPENAI_API_KEY": "468d6aba-3c9e-407f-ad91-d5f904662742",
 }
 
+# Inject GEMINI_API_KEY into environment for image generation tools
+os.environ["GEMINI_API_KEY"] = IMAGE_KEY["OPENAI_API_KEY"]
+os.environ["IMGBB_API_KEY"] = IMAGE_KEY["OPENAI_API_KEY"]
+
 
 
 
