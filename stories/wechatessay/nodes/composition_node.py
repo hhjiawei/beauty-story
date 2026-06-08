@@ -1,18 +1,18 @@
 """
-wechatessay.nodes.composition_node
-
-节点6: composition_node — 排版节点
+wechatessay.nodes.composition_node — 排版节点
 
 职责：
 1. 对文章进行公众号风格排版
 2. 设计视觉节奏和留白
 3. 移动端适配
-4. 需要人工审核
+
+节点流向：legality → composition → image
 """
 
 from __future__ import annotations
 
-import json
+import asyncio
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -22,14 +22,19 @@ from langchain_core.tools import BaseTool
 
 from wechatessay.agents.backend import load_backend
 from wechatessay.agents.memory_manager import get_memory_manager
-from wechatessay.config import get_model_instance, BACKEND_CONFIG, MEMORY_CONFIG, MODEL_CONFIG
+from wechatessay.config import get_model_instance, MEMORY_CONFIG, MODEL_CONFIG
 from wechatessay.prompts.vx_prompt import COMPOSITION_NODE_SYSTEM_PROMPT
-from wechatessay.states.vx_state import ArticleOutputNode, CompositionNode, FormatSpec, GraphState
+from wechatessay.states.vx_state import ArticleOutputNode, CompositionNode, GraphState
 from wechatessay.tools.base_tools.base_tool import get_base_tools
 from wechatessay.tools.mcp_tools.mcp_tool import get_total_tools
 from wechatessay.utils.json_utils import parse_json_response
 
+logger = logging.getLogger(__name__)
 
+
+# ═══════════════════════════════════════════════
+# Agent 创建
+# ═══════════════════════════════════════════════
 
 def _create_composition_agent(tools: list[BaseTool]) -> Any:
     """创建 composition_node 的 Deep Agent。"""
@@ -47,7 +52,7 @@ def _create_composition_agent(tools: list[BaseTool]) -> Any:
         memory_files.append(str(mem_file))
 
     return create_deep_agent(
-        model=get_model_instance(MODEL_CONFIG.get("analysis_model")),
+        model=get_model_instance(MODEL_CONFIG.get("analysis_model"), MODEL_CONFIG["default_model"]),
         tools=tools,
         system_prompt=system_prompt,
         backend=backend,
@@ -56,6 +61,10 @@ def _create_composition_agent(tools: list[BaseTool]) -> Any:
     )
 
 
+# ═══════════════════════════════════════════════
+# 排版执行
+# ═══════════════════════════════════════════════
+
 async def _compose_article(
     article: ArticleOutputNode,
     agent: Any,
@@ -63,127 +72,149 @@ async def _compose_article(
     """对文章进行排版。"""
     context = article.full_text or ""
 
-    messages = [
-        {
-            "role": "user",
-            "content": (
-                f"请对以下文章进行公众号风格排版设计。\n\n"
-                f"{context}\n\n"
-                f"请输出 JSON 格式："
-                f'{{"compositionNode": {{"step3": {{"html": "排版后的HTML"}}, '
-                f'"formatSpec": {{...}}, "compositionNotes": ["..."]}}}}'
-            ),
-        }
-    ]
-
-    result = await agent.ainvoke({"messages": messages})
+    result = await agent.ainvoke({"messages": [{"role": "user", "content": context}]})
     response_content = result["messages"][-1].content if result.get("messages") else ""
 
     return _extract_composition(response_content, article)
 
 
-def _extract_composition(response_content: str, original: ArticleOutputNode) -> CompositionNode:
-    """从 LLM 响应中提取排版结果。适配多种输出格式。"""
-    if not response_content:
-        return _fallback_composition(original)
+# ═══════════════════════════════════════════════
+# 结果提取
+# ═══════════════════════════════════════════════
+
+def _extract_composition(response: str, original: ArticleOutputNode) -> CompositionNode:
+    """
+    从 LLM 响应中提取排版结果。
+
+    prompt 要求 LLM 输出：
+    {
+        "formattedArticle": "HTML字符串",
+        "formatSpec": {...},
+        "compositionNotes": [...]
+    }
+
+    提取后 formatted_article 转为 dict：{"fullText": html, "title": title}
+    """
+    if not response:
+        return _fallback(original)
 
     try:
-        parsed = parse_json_response(response_content)
+        parsed = parse_json_response(response)
         if not isinstance(parsed, dict):
-            return _fallback_composition(original)
+            return _fallback(original)
 
-        # 优先级1: compositionNode 结构
-        comp_node = parsed.get("compositionNode") or parsed.get("composition_node")
-        if isinstance(comp_node, dict):
-            return _from_composition_node(comp_node, original)
+        # 提取标题（从原文）
+        title = ""
+        if original.parts and original.parts[0].title_alternatives:
+            title = original.parts[0].title_alternatives[0]
 
-        # 优先级2: 直接是 CompositionNode 格式
-        if "formattedArticle" in parsed or "formatted_article" in parsed:
-            return CompositionNode.model_validate(parsed)
+        # 提取 formattedArticle（字符串 HTML 或 dict）
+        html, extracted_title = _extract_html(parsed, title)
 
-        return _fallback_composition(original)
+        # 提取 formatSpec
+        format_spec = parsed.get("formatSpec") or parsed.get("format_spec", {})
+        if not isinstance(format_spec, dict):
+            format_spec = {}
+
+        # 提取 compositionNotes
+        notes = parsed.get("compositionNotes") or parsed.get("composition_notes", [])
+        if not isinstance(notes, list):
+            notes = [str(notes)] if notes else []
+
+        return CompositionNode(
+            formatted_article={
+                "fullText": html,
+                "title": extracted_title or title,
+            },
+            format_spec=format_spec,
+            composition_notes=notes,
+        )
 
     except Exception as e:
-        print(f"[composition_node] 解析排版结果失败: {e}")
-        return _fallback_composition(original)
+        logger.warning(f"[composition_node] 解析失败: {e}")
+        return _fallback(original)
 
 
-def _from_composition_node(comp_node: dict, original: ArticleOutputNode) -> CompositionNode:
-    """从 compositionNode 结构中提取排版结果。"""
-    # 提取 HTML
-    html = ""
-    step3 = comp_node.get("step3", {})
-    if isinstance(step3, dict):
-        html = step3.get("html", "")
-    if not html:
+def _extract_html(parsed: dict, default_title: str) -> tuple[str, str]:
+    """
+    提取 HTML 文本和标题。
+
+    支持格式：
+    - formattedArticle: "HTML字符串"（prompt 要求的格式）
+    - formattedArticle: {"fullText": "...", "title": "..."}
+    - compositionNode.step3.html: "..."
+    """
+    raw = parsed.get("formattedArticle") or parsed.get("formatted_article", "")
+
+    # 格式1: 字符串 HTML
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip(), default_title
+
+    # 格式2: dict
+    if isinstance(raw, dict):
+        html = raw.get("fullText") or raw.get("full_text") or raw.get("html", "")
+        title = raw.get("title") or default_title
+        return html, title
+
+    # 格式3: compositionNode.step3.html（兼容旧格式）
+    comp_node = parsed.get("compositionNode") or parsed.get("composition_node", {})
+    if isinstance(comp_node, dict):
+        step3 = comp_node.get("step3", {})
+        if isinstance(step3, dict):
+            html = step3.get("html", "")
+            if html:
+                return html, default_title
         html = comp_node.get("html", "")
+        if html:
+            return html, default_title
 
-    # 提取 formatSpec（转换为 FormatSpec 对象，确保字段完整）
-    raw_spec = comp_node.get("formatSpec") or comp_node.get("format_spec", {})
-    if isinstance(raw_spec, dict):
-        format_spec = FormatSpec(
-            fontStyle=raw_spec.get("fontStyle", ""),
-            paragraphSpacing=raw_spec.get("paragraphSpacing", ""),
-            highlightStyle=raw_spec.get("highlightStyle", ""),
-            imagePlacement=raw_spec.get("imagePlacement", []),
-        )
-    else:
-        format_spec = FormatSpec()
+    return "", default_title
 
-    # 提取 compositionNotes
-    notes = comp_node.get("compositionNotes") or comp_node.get("composition_notes", [])
 
-    # 构建 formatted_article（保留元数据，替换全文为排版后的 HTML）
-    formatted = original.model_copy(deep=True)
-    if html:
-        formatted.full_text = html
-        if formatted.parts:
-            formatted.parts[0].content = html
+def _fallback(original: ArticleOutputNode) -> CompositionNode:
+    """排版失败时的兜底：返回原文 HTML。"""
+    title = ""
+    if original.parts and original.parts[0].title_alternatives:
+        title = original.parts[0].title_alternatives[0]
 
     return CompositionNode(
-        formatted_article=formatted,
-        format_spec=format_spec,
-        composition_notes=notes if isinstance(notes, list) else [str(notes)],
-        preview_suggestions=["检查排版效果"],
+        formatted_article={
+            "fullText": original.full_text or "",
+            "title": title,
+        },
+        format_spec={},
+        composition_notes=["使用默认排版"],
     )
 
 
-def _fallback_composition(original: ArticleOutputNode) -> CompositionNode:
-    """排版失败时的兜底。"""
-    return CompositionNode(
-        formatted_article=original,
-        format_spec=FormatSpec(),
-        composition_notes=["使用默认排版（解析失败）"],
-        preview_suggestions=["检查排版效果"],
-    )
+# ═══════════════════════════════════════════════
+# 节点入口
+# ═══════════════════════════════════════════════
+
+def composition_node(state: GraphState) -> GraphState:
+    """同步入口包装。"""
+    return asyncio.run(composition_node_async(state))
 
 
 async def composition_node_async(state: GraphState) -> GraphState:
-    """
-    composition_node 异步执行入口。
-    核心修复：使用 await agent.ainvoke() 而非 agent.invoke()。
-    """
+    """composition_node 异步执行入口。"""
     article = state.get("article_output")
-
     if not article:
         state["error_message"] = "缺少 article_output"
         state["error_node"] = "composition_node"
         return state
 
-    print(f"[composition_node] 开始排版")
+    logger.info("[composition_node] 开始排版")
 
     base_tools = await get_base_tools()
     mcp_tools = await get_total_tools()
-    total_tools = list(base_tools) + list(mcp_tools)
-
-    agent = _create_composition_agent(total_tools)
+    agent = _create_composition_agent(list(base_tools) + list(mcp_tools))
 
     composition = await _compose_article(article, agent)
 
     state["composition_result"] = composition
     state["current_node"] = "composition_node"
-    state["node_status"]["composition_node"] = "completed"  # [TEST] 自动通过
-
+    state["node_status"]["composition_node"] = "completed"
 
     mm = get_memory_manager()
     mm.add_short_term(
@@ -191,11 +222,5 @@ async def composition_node_async(state: GraphState) -> GraphState:
         {"status": "completed"},
     )
 
-    print(f"[composition_node] 完成")
+    logger.info("[composition_node] 完成")
     return state
-
-
-def composition_node(state: GraphState) -> GraphState:
-    """composition_node 同步入口包装。"""
-    import asyncio
-    return asyncio.run(composition_node_async(state))

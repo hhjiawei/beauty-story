@@ -1075,62 +1075,30 @@ class ArticleOutputNode(BaseModel):
 # ═══════════════════════════════════════════════
 # 节点6 产物：排版
 # ═══════════════════════════════════════════════
-
-class FormatSpec(BaseModel):
-    """排版规范"""
-    model_config = ConfigDict(populate_by_name=True)
-
-    font_style: str = Field(
-        ...,
-        alias="fontStyle",
-        description="字体样式",
-    )
-    paragraph_spacing: str = Field(
-        ...,
-        alias="paragraphSpacing",
-        description="段落间距",
-    )
-    highlight_style: str = Field(
-        ...,
-        alias="highlightStyle",
-        description="重点标注样式",
-    )
-    image_placement: List[str] = Field(
-        default_factory=list,
-        alias="imagePlacement",
-        description="图片放置位置",
-    )
-
-
 class CompositionNode(BaseModel):
     """
     排版节点产物
 
-    包含排版后的完整文章、排版规范、以及排版说明。
+    仅保留配图节点需要的数据：排版后的文章 + 排版备注。
+    format_spec 用 dict 存储 LLM 返回的排版规范，不做 Pydantic 校验。
     """
     model_config = ConfigDict(populate_by_name=True)
 
-    formatted_article: ArticleOutputNode = Field(
-        ...,
+    formatted_article: dict = Field(
+        default_factory=dict,
         alias="formattedArticle",
-        description="排版后的文章",
+        description="排版后的文章（配图节点读取 full_text 和标题）",
     )
-    format_spec: FormatSpec = Field(
-        ...,
+    format_spec: dict = Field(
+        default_factory=dict,
         alias="formatSpec",
-        description="排版规范说明",
+        description="排版规范（LLM 返回的原始 dict，不校验字段）",
     )
     composition_notes: List[str] = Field(
         default_factory=list,
         alias="compositionNotes",
-        description="排版注意事项（视觉节奏、移动端适配等）",
+        description="排版备注",
     )
-    preview_suggestions: List[str] = Field(
-        default_factory=list,
-        alias="previewSuggestions",
-        description="预览检查建议（发送前需确认项）",
-    )
-
 
 # ═══════════════════════════════════════════════
 # 节点6.5 产物：配图计划与结果
