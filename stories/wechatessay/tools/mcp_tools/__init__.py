@@ -1,0 +1,12 @@
+"""
+ "wenyan": {
+      "enabled": true,
+      "transport": "stdio",
+      "command": "wenyan-mcp",
+      "env": {
+        "WECHAT_APP_ID": "your_app_id",
+        "WECHAT_APP_SECRET": "your_app_secret"
+      }
+    }
+
+"""
