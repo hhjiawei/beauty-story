@@ -84,7 +84,7 @@ async def _async(state: GraphState) -> GraphState:
             f"请为以下文章配图。\n\n"
             f"标题: {title}\n"
             f"字数: {len(text)}字\n\n"
-            f"文章内容:\n{text[:6000]}\n\n"
+            f"文章内容:\n{text}\n\n"
             f"图片输出目录: /mnt/agents/output/images/\n"
             f"请严格按照 SKILL.md 的工作流程完成。"
         )

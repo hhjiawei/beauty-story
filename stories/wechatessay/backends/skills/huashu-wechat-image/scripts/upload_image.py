@@ -10,9 +10,10 @@
 Upload local images to image hosting (ImgBB) and return permanent URLs.
 
 Usage:
-    python3 upload_image.py "/path/to/image.png"
-    python3 upload_image.py "/path/to/image.png" --api-key "your_key"
-    python3 upload_image.py "/path/a.png" "/path/b.png"  # 批量上传
+    uv run upload_image.py image.png
+    uv run upload_image.py image.png --api-key "your_key"
+    uv run upload_image.py              # 不传则自动扫描 workspaces 下所有图片
+    uv run upload_image.py --latest     # 只上传 workspaces 下最新的一张图
 
 Environment:
     IMGBB_API_KEY - ImgBB API key (get from https://api.imgbb.com/)
@@ -26,15 +27,14 @@ from pathlib import Path
 
 import requests
 
+from wechatessay.config import IMAGE_KEY
+
 IMGBB_UPLOAD_URL = "https://api.imgbb.com/1/upload"
 DEFAULT_EXPIRATION = 0  # 0 = never expire
 
 
-def get_api_key(provided: str | None) -> str | None:
-    """Get API key from arg first, then env var."""
-    if provided:
-        return provided
-    return os.environ.get("IMGBB_API_KEY")
+def get_api_key() -> str | None:
+    return IMAGE_KEY.get("IMGBB_API_KEY")
 
 
 def upload_to_imgbb(image_path: Path, api_key: str, expiration: int = 0) -> str:
@@ -52,6 +52,9 @@ def upload_to_imgbb(image_path: Path, api_key: str, expiration: int = 0) -> str:
     if not image_path.exists():
         raise FileNotFoundError(f"Image not found: {image_path}")
 
+    if image_path.is_dir():
+        raise IsADirectoryError(f"Path is a directory, not a file: {image_path}")
+
     # Read and encode image to base64
     with open(image_path, "rb") as f:
         image_data = base64.b64encode(f.read()).decode("utf-8")
@@ -60,7 +63,7 @@ def upload_to_imgbb(image_path: Path, api_key: str, expiration: int = 0) -> str:
         "key": api_key,
         "image": image_data,
         "expiration": expiration,
-        "name": image_path.stem,  # 保留原文件名作为图片名
+        "name": image_path.stem,
     }
 
     print(f"Uploading {image_path.name} ({image_path.stat().st_size / 1024:.1f} KB) ...")
@@ -91,14 +94,27 @@ def upload_to_imgbb(image_path: Path, api_key: str, expiration: int = 0) -> str:
 
 
 def main():
+    # ========== 改动 1：修正 workspaces 路径 ==========
+    SCRIPT_DIR = Path(__file__).resolve().parent          # .../scripts
+    # scripts → huashu-wechat-image → skills → backends → wechatessay → workspaces
+    WORKSPACES_DIR = SCRIPT_DIR.parents[2] / "workspaces"  # 去掉 / "backends"
+    # ========== 改动结束 ==========
+
     parser = argparse.ArgumentParser(
         description="Upload images to ImgBB and get permanent URLs"
     )
+    # ========== 改动 2：添加位置参数接收图片路径 ==========
     parser.add_argument(
-        "paths",
-        nargs="+",
-        help="One or more image file paths to upload"
+        "images",
+        nargs="*",
+        help="Image file path(s) to upload. If omitted, scans workspaces directory."
     )
+    parser.add_argument(
+        "--latest", "-l",
+        action="store_true",
+        help="Upload only the most recently modified image in workspaces (when no images specified)"
+    )
+    # ========== 改动结束 ==========
     parser.add_argument(
         "--api-key", "-k",
         help="ImgBB API key (overrides IMGBB_API_KEY env var)"
@@ -112,7 +128,7 @@ def main():
 
     args = parser.parse_args()
 
-    api_key = get_api_key(args.api_key)
+    api_key = get_api_key()
     if not api_key:
         print("Error: No ImgBB API key provided.", file=sys.stderr)
         print("Please either:", file=sys.stderr)
@@ -121,27 +137,52 @@ def main():
         print("  Get free key at: https://api.imgbb.com/", file=sys.stderr)
         sys.exit(1)
 
+    # ========== 改动 3：解析要上传的文件列表（文件，不是目录） ==========
+    image_paths: list[Path] = []
+
+    if args.images:
+        # 用户显式指定了图片路径
+        for p in args.images:
+            path = Path(p)
+            if not path.exists() and not path.is_absolute():
+                # 尝试在 workspaces 下查找
+                path = WORKSPACES_DIR / p
+            image_paths.append(path)
+    else:
+        # 未指定，扫描 workspaces
+        if not WORKSPACES_DIR.exists():
+            print(f"Error: Workspaces directory not found: {WORKSPACES_DIR}", file=sys.stderr)
+            sys.exit(1)
+
+        extensions = ("*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.bmp")
+        candidates = []
+        for ext in extensions:
+            candidates.extend(WORKSPACES_DIR.glob(ext))
+
+        if not candidates:
+            print(f"Error: No images found in {WORKSPACES_DIR}", file=sys.stderr)
+            sys.exit(1)
+
+        if args.latest:
+            # 取最新修改的一张
+            candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+            image_paths = [candidates[0]]
+            print(f"Auto-selected latest image: {candidates[0].name}")
+        else:
+            # 全部上传
+            image_paths = candidates
+            print(f"Found {len(candidates)} image(s) in workspaces, uploading all...")
+    # ========== 改动结束 ==========
+
     # Upload all images
     urls = []
-    for path_str in args.paths:
-        image_path = Path(path_str).expanduser().resolve()
+    for image_path in image_paths:
         try:
             url = upload_to_imgbb(image_path, api_key, args.expiration)
             urls.append(url)
         except Exception as e:
             print(f"  ❌ Failed: {e}", file=sys.stderr)
             urls.append(None)
-
-    # Final summary
-    print(f"\n{'=' * 50}")
-    print("UPLOAD SUMMARY")
-    print(f"{'=' * 50}")
-    for i, (path_str, url) in enumerate(zip(args.paths, urls), 1):
-        status = "✅" if url else "❌"
-        print(f"{status} [{i}] {Path(path_str).name}")
-        if url:
-            print(f"    {url}")
-    print(f"{'=' * 50}")
 
     # Return non-zero if any failed
     if any(u is None for u in urls):

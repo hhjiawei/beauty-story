@@ -20,7 +20,7 @@ else:
     ROOT = Path(__file__).parent
 
 # ── 日志配置 ──
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d — %(message)s"
 
 
@@ -81,6 +81,7 @@ MODEL_REGISTRY = {
 
 IMAGE_KEY = {
     "OPENAI_API_KEY": "468d6aba-3c9e-407f-ad91-d5f904662742",
+    "IMGBB_API_KEY": "c39a93f52a2b63b4306ef97e106fbc3d",
 }
 
 # Inject GEMINI_API_KEY into environment for image generation tools
@@ -107,7 +108,7 @@ WRITER_CONFIG = {
 # review_node 可用评审模型（列表，随机选≠写作模型的）
 REVIEW_CONFIG = {
     "models": ["deepseek", "doubao"],
-    "pass_score_threshold": 85,
+    "pass_score_threshold": 50,
 }
 
 
@@ -136,7 +137,7 @@ BACKEND_CONFIG = {
 }
 
 # ── write→review 循环控制 ──
-MAX_REVISION_ROUNDS = 3
+MAX_REVISION_ROUNDS = 1
 
 # ── Memory 配置 ──
 MEMORY_CONFIG = {

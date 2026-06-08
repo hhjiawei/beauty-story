@@ -105,17 +105,23 @@ def download_image(url: str, output_path: Path) -> Path:
 
 
 def main():
+
+    SCRIPT_DIR = Path(__file__).resolve().parent  # .../scripts
+    WORKSPACES_DIR = SCRIPT_DIR.parents[3] / "backends" / "workspaces"  #
+
     parser = argparse.ArgumentParser(
         description="Generate images for WeChat (公众号) using Doubao Seedream 5.0"
     )
     parser.add_argument(
         "--prompt", "-p",
-        required=True,
+        # required=True,
+        default="画一只猫",
         help="Image description/prompt (Chinese supported and recommended for Doubao)"
     )
     parser.add_argument(
         "--filename", "-f",
-        required=True,
+        # required=True,
+        default="cat.png",
         help="Output filename (e.g., wechat-cover.png)"
     )
     parser.add_argument(
@@ -168,8 +174,16 @@ def main():
         api_key=api_key,
     )
 
-    # Set up output path
-    output_path = Path(args.filename)
+    # ========== 改动开始：输出路径解析 ==========
+    filename_path = Path(args.filename)
+    if len(filename_path.parts) == 1:
+        # 用户只给了纯文件名（如 cat.png），自动落到 workspaces
+        output_path = WORKSPACES_DIR / filename_path.name
+    else:
+        # 用户指定了路径（如 ./tmp/cover.png），尊重原路径
+        output_path = filename_path
+    # ========== 改动结束 ==========
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Get aspect ratio info and resolve pixel size

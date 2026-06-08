@@ -269,7 +269,7 @@ TEXT TO RENDER:
 
 ```bash
 export $(grep GEMINI_API_KEY ~/.claude/.env) && \
-uv run /Users/alchain/Documents/写作/.claude/skills/wechat-image/scripts/generate_image.py \
+uv run /Users/alchain/Documents/写作/.claude/skills/wechat-image/scripts/doubao_generate_image.py \
   --prompt "[完整prompt]" \
   --filename "[timestamp]-wechat-[类型]-[描述].png" \
   --aspect [cover|wide|standard|square]

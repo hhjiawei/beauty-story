@@ -757,15 +757,7 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 | 观点/评论 | 16px | 1.8 | 大（18px） | 态度/警示色（如莫兰迪绿） | 观点转折/递进处配图 |
 | 清单/攻略 | 14px | 1.6 | 小（10px） | 效率/标签色（如明快中性色）| 关键列表节点配图 |
 
-请显式输出：
-【排版策略】
-- 采用方案：xxx 型
-- 理由：原文情绪曲线呈...，因此需要...
-- 黑洞段重构方案：说明如何将高危长段拆分为短段，并在何处插入过渡短语或行间留白。
 
-## Step 3｜视觉执行（Visual Execution）
-请在此步骤输出一个纯净的 Markdown 代码块（```html ... 
-```），里面包含可直接复制粘贴到微信公众号后台的 HTML 代码。
 
 ### 3.1 设计令牌（Design Tokens）
 所有样式必须使用 inline CSS。为确保微信后台100%兼容且适配深色模式，必须严格遵循以下令牌：
@@ -781,8 +773,6 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 <blockquote style="margin: 24px 0; padding: 18px; border-left: 3px solid #3ca877; background-color: #f4f9f6; color: #2c3e50; font-size: 15px; line-height: 1.8; border-radius: 0 6px 6px 0;">
   <strong style="color: #111111;">金句内容</strong>
 </blockquote>
-
-
 ```
 
 * **L2 重点短语**：`<strong style="color: #2b64b3;">重点文字</strong>`
@@ -792,16 +782,6 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 * 无序列表：`<ul style="padding-left: 20px; margin: 16px 0;"><li style="margin: 8px 0; color: #353535;">列表内容</li></ul>`
 * 有序步骤：`<ol style="padding-left: 20px; margin: 16px 0; list-style-type: decimal;"><li style="margin: 8px 0; color: #353535;">步骤内容</li></ol>`
 
-
-* **配图占位符**：
-```html
-
-```
-
-
-
-```
-  *(注：L1 金句框前后 1 段内禁止插入图片占位符。)*
 
 ### 3.2 呼吸感控制铁律
 - **首段特权**：文章首段必须 ≤ 60 字，且独立成段，作为吸引读者的“钩子”。
