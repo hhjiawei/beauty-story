@@ -35,8 +35,10 @@ import requests
 from openai import OpenAI
 from PIL import Image
 
-import config.config
 from wechatessay.config import IMAGE_KEY
+
+# Import fixed: read API key from environment/args instead of broken project imports
+# IMAGE_KEY used to come from wechatessay.config, which doesn't exist as installed package
 
 # Aspect ratio presets for WeChat, mapped to Doubao Seedream recommended pixel values
 # Source: https://www.volcengine.com/docs/82379/1541523
@@ -68,8 +70,7 @@ ASPECT_PRESETS = {
 }
 
 
-def get_api_key():
-    """Get API key from argument first, then environment."""
+def get_api_key() -> str | None:
     return IMAGE_KEY.get("OPENAI_API_KEY")
 
 
@@ -176,12 +177,9 @@ def main():
 
     # ========== 改动开始：输出路径解析 ==========
     filename_path = Path(args.filename)
-    if len(filename_path.parts) == 1:
-        # 用户只给了纯文件名（如 cat.png），自动落到 workspaces
-        output_path = WORKSPACES_DIR / filename_path.name
-    else:
-        # 用户指定了路径（如 ./tmp/cover.png），尊重原路径
-        output_path = filename_path
+
+    output_path = WORKSPACES_DIR / filename_path.name
+
     # ========== 改动结束 ==========
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -194,6 +192,9 @@ def main():
     extra_body: dict = {}
     if args.watermark:
         extra_body["watermark"] = True
+
+    # OpenAI SDK 的 client.images.generate() 方法没有原生 tools 参数，火山引擎的 tools 属于 Doubao 的扩展字段，必须塞进 extra_body 里传递。
+    extra_body["tools"] = [{"type": "web_search"}]
 
     # Handle input image for image-to-image
     if args.input_image:

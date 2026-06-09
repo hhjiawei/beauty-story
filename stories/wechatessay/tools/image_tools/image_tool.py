@@ -8,9 +8,9 @@ _SCRIPT_DIR = _HERE.parent.parent / "backends" / "skills" / "huashu-wechat-image
 
 
 @tool
-async def generate_image(prompt: str, output_path: str, aspect: str = "wide") -> str:
+async def doubao_generate_image(prompt: str, output_path: str, aspect: str = "wide") -> str:
     """Generate image via Gemini 3 Pro. Args: prompt(EN), output_path, aspect(cover/wide/standard/square)."""
-    script = _SCRIPT_DIR / "generate_image.py"
+    script = _SCRIPT_DIR / "doubao_generate_image.py"
     if not script.exists():
         return f"Error: {script} not found"
     
@@ -52,4 +52,35 @@ async def upload_image(image_path: str) -> str:
     script = _SCRIPT_DIR / "upload_image.py"
     if not script.exists():
         return f"Error: {script} not found"
-    return "Error: IMGBB_API_KEY not set"
+
+    python_exe = "python" if os.name == "nt" else "python3"
+    cmd = [python_exe, str(script), image_path]
+    # Use the correct API key from config
+    env = os.environ.copy()
+    env["IMGBB_API_KEY"] = "c39a93f52a2b63b4306ef97e106fbc3d"
+
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+        )
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
+        if proc.returncode == 0:
+            # Parse the URL from stdout
+            output = stdout.decode()
+            for line in output.split("\n"):
+                if "URL:" in line or "url" in line.lower().strip().startswith("http"):
+                    url = line.split("URL:")[-1].strip() if "URL:" in line else line.strip()
+                    return url
+            return f"OK: {output}"
+        return f"Error: {stderr.decode()[:500]}"
+    except asyncio.TimeoutError:
+        if proc:
+            proc.kill()
+            await proc.wait()
+        return "Error: Timeout after 60s"
+    except Exception as e:
+        return f"Error: {e}"

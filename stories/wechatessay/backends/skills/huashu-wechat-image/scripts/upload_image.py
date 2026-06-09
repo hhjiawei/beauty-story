@@ -95,7 +95,7 @@ def upload_to_imgbb(image_path: Path, api_key: str, expiration: int = 0) -> str:
 
 def main():
     # ========== 改动 1：修正 workspaces 路径 ==========
-    SCRIPT_DIR = Path(__file__).resolve().parent          # .../scripts
+    SCRIPT_DIR = Path(__file__).resolve().parent  # .../scripts
     # scripts → huashu-wechat-image → skills → backends → wechatessay → workspaces
     WORKSPACES_DIR = SCRIPT_DIR.parents[2] / "workspaces"  # 去掉 / "backends"
     # ========== 改动结束 ==========
@@ -103,17 +103,17 @@ def main():
     parser = argparse.ArgumentParser(
         description="Upload images to ImgBB and get permanent URLs"
     )
-    # ========== 改动 2：添加位置参数接收图片路径 ==========
-    parser.add_argument(
-        "images",
-        nargs="*",
-        help="Image file path(s) to upload. If omitted, scans workspaces directory."
-    )
-    parser.add_argument(
-        "--latest", "-l",
-        action="store_true",
-        help="Upload only the most recently modified image in workspaces (when no images specified)"
-    )
+    # # ========== 改动 2：添加位置参数接收图片路径 ==========
+    # parser.add_argument(
+    #     "images",
+    #     nargs="*",
+    #     help="Image file path(s) to upload. If omitted, scans workspaces directory."
+    # )
+    # parser.add_argument(
+    #     "--latest", "-l",
+    #     action="store_true",
+    #     help="Upload only the most recently modified image in workspaces (when no images specified)"
+    # )
     # ========== 改动结束 ==========
     parser.add_argument(
         "--api-key", "-k",
@@ -140,38 +140,18 @@ def main():
     # ========== 改动 3：解析要上传的文件列表（文件，不是目录） ==========
     image_paths: list[Path] = []
 
-    if args.images:
-        # 用户显式指定了图片路径
-        for p in args.images:
-            path = Path(p)
-            if not path.exists() and not path.is_absolute():
-                # 尝试在 workspaces 下查找
-                path = WORKSPACES_DIR / p
-            image_paths.append(path)
-    else:
-        # 未指定，扫描 workspaces
-        if not WORKSPACES_DIR.exists():
-            print(f"Error: Workspaces directory not found: {WORKSPACES_DIR}", file=sys.stderr)
-            sys.exit(1)
+    extensions = ("*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.bmp")
+    candidates = []
+    for ext in extensions:
+        candidates.extend(WORKSPACES_DIR.glob(ext))
 
-        extensions = ("*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.bmp")
-        candidates = []
-        for ext in extensions:
-            candidates.extend(WORKSPACES_DIR.glob(ext))
+    if not candidates:
+        print(f"Error: No images found in {WORKSPACES_DIR}", file=sys.stderr)
+        sys.exit(1)
 
-        if not candidates:
-            print(f"Error: No images found in {WORKSPACES_DIR}", file=sys.stderr)
-            sys.exit(1)
-
-        if args.latest:
-            # 取最新修改的一张
-            candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-            image_paths = [candidates[0]]
-            print(f"Auto-selected latest image: {candidates[0].name}")
-        else:
-            # 全部上传
-            image_paths = candidates
-            print(f"Found {len(candidates)} image(s) in workspaces, uploading all...")
+        # 全部上传
+    image_paths = candidates
+    print(f"Found {len(candidates)} image(s) in workspaces, uploading all...")
     # ========== 改动结束 ==========
 
     # Upload all images
