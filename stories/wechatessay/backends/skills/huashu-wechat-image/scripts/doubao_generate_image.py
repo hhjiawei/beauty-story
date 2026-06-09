@@ -35,10 +35,15 @@ import requests
 from openai import OpenAI
 from PIL import Image
 
-from wechatessay.config import IMAGE_KEY
+# Fix import: add project root to sys.path
+_project_root = Path(__file__).resolve().parent.parent.parent.parent.parent  # goes up to /
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
 
-# Import fixed: read API key from environment/args instead of broken project imports
-# IMAGE_KEY used to come from wechatessay.config, which doesn't exist as installed package
+# Rename the module-level config import to avoid name collision
+import importlib
+config_mod = importlib.import_module("config")
+IMAGE_KEY = config_mod.IMAGE_KEY
 
 # Aspect ratio presets for WeChat, mapped to Doubao Seedream recommended pixel values
 # Source: https://www.volcengine.com/docs/82379/1541523

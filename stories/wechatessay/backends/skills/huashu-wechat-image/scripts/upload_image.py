@@ -27,7 +27,14 @@ from pathlib import Path
 
 import requests
 
-from wechatessay.config import IMAGE_KEY
+# Fix import: add project root to sys.path
+_project_root = Path(__file__).resolve().parent.parent.parent.parent.parent  # goes up to /
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
+import importlib
+config_mod = importlib.import_module("config")
+IMAGE_KEY = config_mod.IMAGE_KEY
 
 IMGBB_UPLOAD_URL = "https://api.imgbb.com/1/upload"
 DEFAULT_EXPIRATION = 0  # 0 = never expire
