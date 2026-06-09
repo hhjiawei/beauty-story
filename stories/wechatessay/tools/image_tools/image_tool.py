@@ -13,12 +13,12 @@ async def doubao_generate_image(prompt: str, output_path: str, aspect: str = "wi
     script = _SCRIPT_DIR / "doubao_generate_image.py"
     if not script.exists():
         return f"Error: {script} not found"
-    
+
     # Use temp dir to avoid WinError 3 on virtual paths
     safe_name = Path(output_path).name
     safe_path = Path(tempfile.gettempdir()) / "wechat_images" / safe_name
     safe_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Use python instead of python3 on Windows
     python_exe = "python" if os.name == "nt" else "python3"
     cmd = [python_exe, str(script), "--prompt", prompt, "--filename", str(safe_path), "--aspect", aspect]
@@ -47,14 +47,14 @@ async def doubao_generate_image(prompt: str, output_path: str, aspect: str = "wi
 
 
 @tool
-async def upload_image(image_path: str) -> str:
+async def upload_image() -> str:
     """Upload image to ImgBB, return permanent URL."""
     script = _SCRIPT_DIR / "upload_image.py"
     if not script.exists():
         return f"Error: {script} not found"
 
     python_exe = "python" if os.name == "nt" else "python3"
-    cmd = [python_exe, str(script), image_path]
+    cmd = [python_exe, str(script)]
     # Use the correct API key from config
     env = os.environ.copy()
     env["IMGBB_API_KEY"] = "c39a93f52a2b63b4306ef97e106fbc3d"

@@ -764,7 +764,7 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 | 清单/攻略 | 14px | 1.6 | 小（10px） | 效率/标签色（如明快中性色）| 关键列表节点配图 |
 
 
-
+## Step 3｜注意事项
 ### 3.1 设计令牌（Design Tokens）
 所有样式必须使用 inline CSS。为确保微信后台100%兼容且适配深色模式，必须严格遵循以下令牌：
 
@@ -794,7 +794,6 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 - **短段原则**：任何单个自然段绝对不能超过 120 字（手机端约 4 行）。
 - **长短交替**：长段（80-120字，用于叙事或论证铺垫）与短段（30-60字，用于抛出核心观点）必须交替出现，严禁连续两个长段挤在一起。
 
-## Step 4｜交付与自检（Delivery & QA）
 
 # Output Format
 请严格按以下 JSON 结构输出，不要其他文字：
@@ -818,7 +817,7 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 - compositionNode.formatSpec：排版规范（自由dict，有什么写什么）
 - compositionNode.compositionNotes：排版备注列表
 
-### 4.2 排版大师自检清单（Checklist）
+# 排版大师自检清单（Checklist）
 
 请以 Markdown 任务列表形式输出，供用户对照检查：
 
