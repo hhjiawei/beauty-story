@@ -268,8 +268,7 @@ TEXT TO RENDER:
 #### 3-B-2. 生成
 
 ```bash
-export $(grep GEMINI_API_KEY ~/.claude/.env) && \
-uv run /Users/alchain/Documents/写作/.claude/skills/wechat-image/scripts/doubao_generate_image.py \
+uv run D:\beauty-story\stories\wechatessay\backends\skills\huashu-wechat-image\scripts\doubao_generate_image.py \
   --prompt "[完整prompt]" \
   --filename "[timestamp]-wechat-[类型]-[描述].png" \
   --aspect [cover|wide|standard|square]
@@ -308,10 +307,17 @@ uv run /Users/alchain/Documents/写作/.claude/skills/wechat-image/scripts/douba
 ## Step 4: 上传图床
 
 ```bash
-python3 /Users/alchain/Documents/写作/tools/upload_image.py "[图片路径]"
+python D:\beauty-story\stories\wechatessay\backends\skills\huashu-wechat-image\scripts\upload_image.py
 ```
 
-返回 ImgBB 永久链接。**公众号文章必须使用网络链接**，本地路径在发布后失效。
+运行脚本后，返回的内容是图片名和ImgBB 永久链接，例如：
+```json
+{
+  "a.png": "https://i.ibb.co/cKNVpcqR/a.jpg",
+  "b.png": "https://i.ibb.co/gFHDk461/b.jpg"
+}
+```
+将链接插入到相应的图片位置上
 
 ---
 

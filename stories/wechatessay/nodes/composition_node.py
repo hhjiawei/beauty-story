@@ -62,18 +62,76 @@ def _create_composition_agent(tools: list[BaseTool]) -> Any:
 
 
 # ═══════════════════════════════════════════════
+# 新增：结果提取  【新增位置】
+# ═══════════════════════════════════════════════
+def _extract_final_ai_content(result: dict) -> str:
+    """
+    从 Agent 返回的 messages 列表中提取最终排版结果。
+
+    问题场景：
+        messages = [..., 最终结果(AIMessage), ToolMessage, 空AIMessage]
+        直接取 [-1] 会得到空内容，导致解析失败。
+
+    策略：
+        1. 从后向前遍历，跳过 ToolMessage（通过 tool_call_id / name 识别）
+        2. 优先返回包含排版关键字段（formattedArticle 等）的内容
+        3. 兜底返回最后一个非空 AI content
+    """
+    messages = result.get("messages", [])
+    if not messages:
+        return ""
+
+    candidates = []
+
+    for msg in reversed(messages):
+        # --- 跳过工具消息 ---
+        # ToolMessage 通常有 tool_call_id 或 name 属性
+        if hasattr(msg, "tool_call_id"):
+            continue
+
+        # --- 提取 content ---
+        content = getattr(msg, "content", None)
+        if content is None:
+            continue
+
+        text = str(content).strip()
+        if not text:
+            continue
+
+        # --- 快速命中：包含排版结果关键字段，直接返回 ---
+        if any(keyword in text for keyword in (
+                "formattedArticle",
+                "formatted_article",
+                "compositionNode",
+                "composition_node",
+                "formatSpec",
+                "format_spec",
+        )):
+            return text
+
+        candidates.append(text)
+
+    # --- 兜底：返回最后一个非空且非工具的 AI content ---
+    return candidates[0] if candidates else ""
+
+
+# ═══════════════════════════════════════════════
 # 排版执行
 # ═══════════════════════════════════════════════
 
 async def _compose_article(
-    article: ArticleOutputNode,
-    agent: Any,
+        article: ArticleOutputNode,
+        agent: Any,
 ) -> CompositionNode:
     """对文章进行排版。"""
     context = article.full_text or ""
 
     result = await agent.ainvoke({"messages": [{"role": "user", "content": context}]})
-    response_content = result["messages"][-1].content if result.get("messages") else ""
+
+    # 【修改】不再直接取 [-1]，使用鲁棒提取
+    response_content = _extract_final_ai_content(result)
+
+    # response_content = result["messages"][-1].content if result.get("messages") else ""
 
     return _extract_composition(response_content, article)
 

@@ -21,6 +21,7 @@ Environment:
 
 import argparse
 import base64
+import json
 import os
 import sys
 from pathlib import Path
@@ -44,7 +45,7 @@ def get_api_key() -> str | None:
     return IMAGE_KEY.get("IMGBB_API_KEY")
 
 
-def upload_to_imgbb(image_path: Path, api_key: str, expiration: int = 0) -> str:
+def upload_to_imgbb(image_path: Path, api_key: str, expiration: int = 0) -> dict:
     """
     Upload a single image to ImgBB.
 
@@ -54,7 +55,9 @@ def upload_to_imgbb(image_path: Path, api_key: str, expiration: int = 0) -> str:
         expiration: Seconds until image deletion (0 = never)
 
     Returns:
-        Permanent URL of the uploaded image
+        Dictionary with keys:
+            name (str): original file name
+            url  (str): permanent image URL
     """
     if not image_path.exists():
         raise FileNotFoundError(f"Image not found: {image_path}")
@@ -72,7 +75,6 @@ def upload_to_imgbb(image_path: Path, api_key: str, expiration: int = 0) -> str:
         "expiration": expiration,
         "name": image_path.stem,
     }
-
     print(f"Uploading {image_path.name} ({image_path.stat().st_size / 1024:.1f} KB) ...")
 
     try:
@@ -94,13 +96,13 @@ def upload_to_imgbb(image_path: Path, api_key: str, expiration: int = 0) -> str:
         print(f"  🖼️  Display: {display_url}")
         print(f"  🗑️  Delete: {delete_url}")
 
-        return url
+        return {"name": image_path.name, "url": url}
 
     except requests.exceptions.RequestException as e:
         raise RuntimeError(f"Network error during upload: {e}")
 
 
-def main():
+def main() -> dict:
     # ========== 改动 1：修正 workspaces 路径 ==========
     SCRIPT_DIR = Path(__file__).resolve().parent  # .../scripts
     # scripts → huashu-wechat-image → skills → backends → wechatessay → workspaces
@@ -161,19 +163,26 @@ def main():
     print(f"Found {len(candidates)} image(s) in workspaces, uploading all...")
     # ========== 改动结束 ==========
 
-    # Upload all images
-    urls = []
+    # Upload all images and collect results as {name: url}
+    results = {}
     for image_path in image_paths:
         try:
-            url = upload_to_imgbb(image_path, api_key, args.expiration)
-            urls.append(url)
+            info = upload_to_imgbb(image_path, api_key, args.expiration)
+            results[info["name"]] = info["url"]
         except Exception as e:
             print(f"  ❌ Failed: {e}", file=sys.stderr)
-            urls.append(None)
+            # Mark failure with None (or skip entirely)
+            results[image_path.name] = None
 
-    # Return non-zero if any failed
-    if any(u is None for u in urls):
+    # Output final dictionary as JSON (for programmatic use)
+    print("\n📋 Upload results (JSON):")
+    print(json.dumps(results, ensure_ascii=False, indent=2))
+
+    # Non-zero exit if any upload failed
+    if any(v is None for v in results.values()):
         sys.exit(1)
+
+    return results
 
 
 if __name__ == "__main__":

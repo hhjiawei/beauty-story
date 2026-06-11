@@ -38,16 +38,18 @@ SKILL_DIR = Path(__file__).resolve().parent.parent / "backends" / "skills" / "hu
 def _create_agent() -> Any:
     """Create agent: skill→skills param, tools→generate_image+upload_image."""
     backend = load_backend()
-    model = get_model_instance(MODEL_CONFIG.get("default_model"))
+    model = get_model_instance(MODEL_CONFIG.get("image_model"))
     skills = [str(SKILL_DIR)] if SKILL_DIR.exists() else []
     system_prompt = (
         "你是一个公众号配图助手。"
-        "严格按照 skill 定义的工作流程为文章配图。"
-        "\n工具: doubao_generate_image(生成图片), upload_image(上传图床)"
-        "\n输出 JSON: coverImageUrl, bodyImageUrls[], articleWithImages, totalGenerated, imagePlan{}"
-        "过程无需用户检查，直接输出最后结果，结果一定要 JSON结构，不许落盘，不许保存到文件夹，不许擅自加描述、总结等其他内容，你输出的结果只有JSON结构"
-        "只要产生的JSON结构，必须在最后一个AIMessage中，后续不许产生任何message 不许产生toolMessage 和其他aiMessage"
-        "任务完成后，确认下是否产生用户想要的实际内容，而不是概括的内容，也不是中间过程内容，是做好插图的内容"
+        "\n工具: doubao_generate_image(生成图片), upload_image(上传图床) "
+        "\n输出 JSON: coverImageUrl, bodyImageUrls[], articleWithImages, totalGenerated, imagePlan{} "
+        "不许落盘，不许保存到文件夹，不许擅自加描述、总结等其他内容，你输出的结果只有JSON结构,最终结果保存在articleWithImages中 "
+        "步骤：1）通过skill定的流程学习如何为文章配图 2）根据用户上传的 图片插入位置参考image_placement以及上下内容 生成对应参考图，并在该处做好标记"
+        " 3）调用doubao_generate_image生成图片，将图片保存 "
+        "4）全部图片生成完毕后，调用 upload_image函数上传图片同时返回一个字典，字典中包含了图片名称和对应url,将url经过包装后，放入文章中对应的图片名字处"
+        "只要产生的JSON结构，必须在最后一个AIMessage中，后续不许产生任何message 不许产生toolMessage 和其他aiMessage "
+        "生成图片和上传图片必须只使用工具，模型本身禁止生成图片和上传图片，模型仅仅生产图片操作的指令 "
     )
     return create_deep_agent(
         model=model, tools=[doubao_generate_image, upload_image],
@@ -88,7 +90,7 @@ async def _async(state: GraphState) -> GraphState:
             # f"标题: {title}\n"
             f"字数: {len(text)}字\n\n"
             f"文章内容:\n{text}\n\n"
-            f"图片插入位置参考: \n{image_placement}\n\n"
+            f"图片插入位置参考: \n{image_placement}\n\n 若没有则自行决定"
             f"请严格按照 SKILL.md 的工作流程完成。"
         )
         result = await agent.ainvoke({"messages": [{"role": "user", "content": task}]})

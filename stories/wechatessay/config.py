@@ -20,7 +20,7 @@ else:
     ROOT = Path(__file__).parent
 
 # ── 日志配置 ──
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d — %(message)s"
 
 
@@ -98,6 +98,7 @@ MODEL_CONFIG = {
     "search_model": "deepseek",
     "writing_model": "deepseek",
     "review_model": "doubao",
+    "image_model": "doubao",
 }
 
 # write_node 可用写作模型（列表，串行轮询）

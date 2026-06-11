@@ -48,7 +48,12 @@ async def doubao_generate_image(prompt: str, output_path: str, aspect: str = "wi
 
 @tool
 async def upload_image() -> str:
-    """Upload image to ImgBB, return permanent URL."""
+    """Upload image to ImgBB, return image name and permanent URL. eg:
+        {
+      "ab95-icapxph1314342.png": "https://i.ibb.co/cKNVpcqR/ab95-icapxph1314342.jpg",
+      "fd5d-b866dbecd90751b7d56ad59145cc6d8f.png": "https://i.ibb.co/gFHDk461/fd5d-b866dbecd90751b7d56ad59145cc6d8f.jpg"
+        }
+    """
     script = _SCRIPT_DIR / "upload_image.py"
     if not script.exists():
         return f"Error: {script} not found"

@@ -794,24 +794,6 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 - **短段原则**：任何单个自然段绝对不能超过 120 字（手机端约 4 行）。
 - **长短交替**：长段（80-120字，用于叙事或论证铺垫）与短段（30-60字，用于抛出核心观点）必须交替出现，严禁连续两个长段挤在一起。
 
-
-# Output Format
-请严格按以下 JSON 结构输出，不要其他文字：
-
-{
-    "formattedArticle": "排版后的完整HTML（<section>包裹）"
-    "formatSpec": {
-      "fontStyle": "正文Npx | 标题Npx",
-      "paragraphSpacing": "段间距Npx",
-      "imagePlacement": ["第x段后：图片说明"]
-    }},
-    "compositionNotes": [
-      "排版决策说明1",
-      "排版决策说明2"
-    ]
-  }
-}
-
 ## 关键说明
 - formattedArticle：排版后的完整HTML文本（最重要，后续节点直接读取）
 - compositionNode.formatSpec：排版规范（自由dict，有什么写什么）
@@ -833,6 +815,27 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 1. **绝对禁止**：输出中不得包含任何对提示词本身的解释、客套话或过渡语（如“好的，为您排版如下”）。直接从 `## Step 1｜内容诊断` 开始输出。
 2. **HTML 纯净性**：严格只使用指令中允许的 HTML 标签，严禁使用任何 `<div>` 标签，防止微信后台解析塌陷。
 3. **注意事项**： 输出的内容禁止落盘，输出结果后立马结束，禁止输出说明等与内容无关的
+
+# Output Format
+请严格按以下 JSON 结构输出，不要其他文字：
+
+{
+    "formattedArticle": "排版后的完整HTML（<section>包裹）"
+    "formatSpec": {
+      "fontStyle": "正文Npx | 标题Npx",
+      "paragraphSpacing": "段间距Npx",
+      "imagePlacement": ["第x段后：图片说明"]
+    }},
+    "compositionNotes": [
+      "排版决策说明1",
+      "排版决策说明2"
+    ]
+  }
+}
+
+所有检查完成、一切都确定好之后并且确保不会调用todo工具、确保不会有Updated todo list产生后，最后在AIMessage中输出JSON 结构输出
+
+
 """
 
 
