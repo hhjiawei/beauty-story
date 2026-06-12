@@ -38,6 +38,56 @@ from wechatessay.utils.json_utils import parse_json_response
 
 logger = logging.getLogger(__name__)
 
+# ═══════════════════════════════════════════════
+# 新增：结果提取  【新增位置】
+# ═══════════════════════════════════════════════
+def _extract_final_ai_content(result: dict) -> str:
+    """
+    从 Agent 返回的 messages 列表中提取最终排版结果。
+
+    问题场景：
+        messages = [..., 最终结果(AIMessage), ToolMessage, 空AIMessage]
+        直接取 [-1] 会得到空内容，导致解析失败。
+
+    策略：
+        1. 从后向前遍历，跳过 ToolMessage（通过 tool_call_id / name 识别）
+        2. 优先返回包含排版关键字段（formattedArticle 等）的内容
+        3. 兜底返回最后一个非空 AI content
+    """
+    messages = result.get("messages", [])
+    if not messages:
+        return ""
+
+    candidates = []
+
+    for msg in reversed(messages):
+        # --- 跳过工具消息 ---
+        # ToolMessage 通常有 tool_call_id 或 name 属性
+        if hasattr(msg, "tool_call_id"):
+            continue
+
+        # --- 提取 content ---
+        content = getattr(msg, "content", None)
+        if content is None:
+            continue
+
+        text = str(content).strip()
+        if not text:
+            continue
+
+        # --- 快速命中：包含排版结果关键字段，直接返回 ---
+        if any(keyword in text for keyword in (
+                "parts",
+                "fullText",
+                "metadata",
+                "seoInfo",
+        )):
+            return text
+
+        candidates.append(text)
+
+    # --- 兜底：返回最后一个非空且非工具的 AI content ---
+    return candidates[0] if candidates else ""
 
 def _select_writer_model(state: GraphState) -> str:
     """
@@ -224,7 +274,9 @@ async def write_node_async(state: GraphState) -> GraphState:
     task_content = _build_write_task(state)
     try:
         result = await agent.ainvoke({"messages": [{"role": "user", "content": task_content}]})
-        response_content = result["messages"][-1].content if result.get("messages") else ""
+        # response_content = result["messages"][-1].content if result.get("messages") else ""
+
+        response_content = _extract_final_ai_content(result)
     except Exception as e:
         logger.error(f"[write_node] 第{iteration}轮调用失败: {e}")
         state["error_message"] = f"写作失败: {e}"

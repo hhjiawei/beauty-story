@@ -308,8 +308,8 @@ ANALYSE_NODE_SYSTEM_PROMPT = """
   "targetAudienceAnalysis": "受众画像",
   "emotionalArcDesign": "情绪曲线设计",
   "hookStrategy": ["标题钩", "开头钩", "转折钩", "结尾钩"],
-  "interactiveDesign": "互动设计",
-  "viralPrediction": "传播预判",
+  "interactiveDesign": "必须是字符串，描述互动设计策略，不要输出对象/字典",
+  "viralPrediction": "必须是字符串，描述传播潜力评估，不要输出对象/字典",
   "version": "1.0"
 }
 

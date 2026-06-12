@@ -307,10 +307,10 @@ uv run D:\beauty-story\stories\wechatessay\backends\skills\huashu-wechat-image\s
 ## Step 4: 上传图床
 
 ```bash
-python D:\beauty-story\stories\wechatessay\backends\skills\huashu-wechat-image\scripts\upload_image.py
+python D:\beauty-story\stories\wechatessay\backends\skills\huashu-wechat-image\scripts\upload_image.py &
 ```
 
-运行脚本后，返回的内容是图片名和ImgBB 永久链接，例如：
+运行脚本后，返回的内容是图片名和图片的永久链接，例如：
 ```json
 {
   "a.png": "https://i.ibb.co/cKNVpcqR/a.jpg",
