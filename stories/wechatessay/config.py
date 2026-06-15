@@ -11,6 +11,9 @@ import sys
 from pathlib import Path
 from dotenv import find_dotenv
 from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ── 项目根目录 ──
 _ENV_PATH = find_dotenv()
@@ -39,32 +42,40 @@ def setup_logging():
 # 所有模型统一使用 ChatOpenAI 包装（OpenAI 兼容格式）。
 # 如需新增模型：直接添加 ChatOpenAI 实例，然后在 WRITER_CONFIG / REVIEW_CONFIG 中引用。
 
+
 # ── DeepSeek ──
 deepseek_model = ChatOpenAI(
     model="deepseek-v4-flash",
-    base_url="https://api.deepseek.com",
-    api_key="sk-c619888c986041ba9646db331483d4c6",
+    base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
     temperature=1.0,
 )
 
 # ── 豆包 / 火山方舟 ──
 doubao_model = ChatOpenAI(
     model="doubao-seed-2-0-pro-260215",
-    base_url="https://ark.cn-beijing.volces.com/api/v3",
-    api_key="468d6aba-3c9e-407f-ad91-d5f904662742",
+    base_url=os.getenv("DOUBAO_BASE_URL"),
+    api_key=os.getenv("DOUBAO_API_KEY"),
     temperature=1.0,
     max_tokens=18192,  # 显式设置，输出不再截断
 
 )
 
-# ── Qwen（如需启用，取消注释） ──
-# qwen_model = ChatOpenAI(
-#     model="qwen3.6-plus",
-#     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-#     api_key="sk-...",
-#     temperature=1.0,
-# )
+# ── DeepSeek ──
+deepseek_write_model = ChatOpenAI(
+    model="deepseek-v4-pro",
+    base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    temperature=1.0,
+)
 
+# ── Qwen（如需启用，取消注释） ──
+qwen_model = ChatOpenAI(
+    model="qwen3.7-max",
+    base_url=os.getenv("QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
+    api_key=os.getenv("QWEN_API_KEY"),
+    temperature=1.0,
+)
 
 # ═══════════════════════════════════════════════
 # 模型选择配置
@@ -74,10 +85,10 @@ doubao_model = ChatOpenAI(
 # 代码中通过名称（如 "deepseek"、"doubao"）引用模型
 MODEL_REGISTRY = {
     "deepseek": deepseek_model,
+    "deepseek_write": deepseek_write_model,
     "doubao": doubao_model,
-    # "qwen": qwen_model,
+    "qwen": qwen_model,
 }
-
 
 IMAGE_KEY = {
     "OPENAI_API_KEY": "468d6aba-3c9e-407f-ad91-d5f904662742",
@@ -88,30 +99,26 @@ IMAGE_KEY = {
 os.environ["GEMINI_API_KEY"] = IMAGE_KEY["OPENAI_API_KEY"]
 os.environ["IMGBB_API_KEY"] = IMAGE_KEY["IMGBB_API_KEY"]
 
-
-
-
 # 各节点默认使用的模型（写名称，从 MODEL_REGISTRY 解析）
 MODEL_CONFIG = {
     "default_model": "deepseek",
-    "analysis_model": "deepseek",
+    "analysis_model": "deepseek_write",
     "search_model": "deepseek",
-    "writing_model": "deepseek",
+    "writing_model": "deepseek_write",
     "review_model": "doubao",
     "image_model": "doubao",
 }
 
 # write_node 可用写作模型（列表，串行轮询）
 WRITER_CONFIG = {
-    "models": ["deepseek", "doubao"],
+    "models": ["deepseek_write", "qwen"],
 }
 
 # review_node 可用评审模型（列表，随机选≠写作模型的）
 REVIEW_CONFIG = {
-    "models": ["deepseek", "doubao"],
+    "models": ["deepseek_write", "qwen"],
     "pass_score_threshold": 50,
 }
-
 
 # ═══════════════════════════════════════════════
 # 其他配置（保持不变）
@@ -218,7 +225,7 @@ LEGALITY_CONFIG = {
 
 PUBLISH_CONFIG = {
     "theme_id": "default",  # wenyan-mcp 主题
-    "wechat_app_id": "",    # 多号发布时指定
+    "wechat_app_id": "",  # 多号发布时指定
     "default_author": "AI写作助手",
 }
 

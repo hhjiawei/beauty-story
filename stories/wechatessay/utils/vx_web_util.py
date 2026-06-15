@@ -483,7 +483,7 @@ class AsyncWebCrawlerSearch:
                 "url": url,
                 "score": 1.0,  # 无搜索分数，标记为全部内容
                 "snippet": full_text[:500],  # 截断显示
-                "context": full_text[:2000],  # 更多上下文
+                "context": full_text,  # 更多上下文
                 "index": 0,
                 "is_full_content": True,
             })
@@ -563,7 +563,7 @@ async def web_crawler_search(
                     f"{'='*60}\n"
                     f"{i}. 📄 {res['url']}\n"
                     f"{'='*60}\n"
-                    f"{res['context'][:1500]}\n"
+                    f"{res['context']}\n"
                     f"{'='*60}\n"
                 )
             else:

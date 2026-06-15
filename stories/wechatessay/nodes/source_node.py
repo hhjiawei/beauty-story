@@ -77,7 +77,7 @@ async def _analyze_articles(articles: list[str], agent: Any) -> list[PerArticleA
                 "content": (
                     f"请分析以下第 {idx + 1} 篇文章，"
                     f"提取所有结构化信息并以 JSON 格式输出。\n\n"
-                    f"文章内容：\n{article_content[:8000]}\n\n"
+                    f"文章内容：\n{article_content}\n\n"
                     f"请只输出 JSON，不要输出其他内容。"
                     f"结果一定要 PerArticleAnalyseNode 的JSON结构，不许落盘，不许保存到文件夹，不许擅自加描述、总结等其他内容，你输出的结果只有 PerArticleAnalyseNode 的JSON结构"
                     f"只要产生 PerArticleAnalyseNode 的JSON结构必须在最后一个AIMessage中，后续不许产生任何message 不许产生toolMessage 和其他aiMessage"
