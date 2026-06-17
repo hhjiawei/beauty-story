@@ -138,10 +138,6 @@ async def _analyze_writing(
 
     response_content = _extract_final_ai_content(result)
 
-
-
-
-
     try:
         parsed = parse_json_response(response_content)
         if isinstance(parsed, dict):
@@ -154,6 +150,7 @@ async def _analyze_writing(
         writing_analysis={
             "commonAngles": ["角度1"], "mergeableAngles": ["融合1"],
             "opposingAngles": ["对立1"], "controversialAngles": ["争议1"],
+            "mergeableAngles":["可融合角度（2-3个，说明融合逻辑）"],
             "thoughtProvokingAngles": ["深思1"],
         },
         writing_style={"finalStyle": "口语化大白话", "styleReason": "", "styleExample": ""},

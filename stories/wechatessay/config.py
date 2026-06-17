@@ -66,7 +66,7 @@ deepseek_write_model = ChatOpenAI(
     model="deepseek-v4-pro",
     base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
     api_key=os.getenv("DEEPSEEK_API_KEY"),
-    temperature=1.0,
+    temperature=1.5,
 )
 
 # ── Qwen（如需启用，取消注释） ──
@@ -74,7 +74,7 @@ qwen_model = ChatOpenAI(
     model="qwen3.7-max",
     base_url=os.getenv("QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
     api_key=os.getenv("QWEN_API_KEY"),
-    temperature=1.0,
+    temperature=1.3,
 )
 
 # ═══════════════════════════════════════════════
@@ -102,8 +102,10 @@ os.environ["IMGBB_API_KEY"] = IMAGE_KEY["IMGBB_API_KEY"]
 # 各节点默认使用的模型（写名称，从 MODEL_REGISTRY 解析）
 MODEL_CONFIG = {
     "default_model": "deepseek",
+    "source_model": "deepseek",
     "analysis_model": "deepseek_write",
     "search_model": "deepseek",
+    "plot_model": "qwen",
     "writing_model": "deepseek_write",
     "review_model": "doubao",
     "image_model": "doubao",
@@ -111,7 +113,7 @@ MODEL_CONFIG = {
 
 # write_node 可用写作模型（列表，串行轮询）
 WRITER_CONFIG = {
-    "models": ["deepseek_write", "qwen"],
+    "models": ["deepseek_write"],
 }
 
 # review_node 可用评审模型（列表，随机选≠写作模型的）

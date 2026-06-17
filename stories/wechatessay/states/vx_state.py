@@ -63,22 +63,22 @@ class GoldSentencePosition(str, Enum):
 
 class FlowStatus(str, Enum):
     """节点执行状态"""
-    PENDING = "pending"           # 待执行
-    RUNNING = "running"           # 执行中
+    PENDING = "pending"  # 待执行
+    RUNNING = "running"  # 执行中
     WAITING_HUMAN = "waiting_human"  # 等待人工审核
-    APPROVED = "approved"         # 人工通过
-    REJECTED = "rejected"         # 人工拒绝/需修改
-    COMPLETED = "completed"       # 已完成
-    FAILED = "failed"             # 执行失败
+    APPROVED = "approved"  # 人工通过
+    REJECTED = "rejected"  # 人工拒绝/需修改
+    COMPLETED = "completed"  # 已完成
+    FAILED = "failed"  # 执行失败
 
 
 class ReviewDecision(str, Enum):
     """人工评审决策"""
-    APPROVE = "approve"           # 通过，继续下一节点/下一段
-    REJECT = "reject"             # 拒绝，返回上一节点
-    REVISE = "revise"             # 需要修改，附带修改意见
-    RETRY = "retry"               # 重试当前节点
-    BACK = "back"                 # 【write_node 专用】回退到上一段重写
+    APPROVE = "approve"  # 通过，继续下一节点/下一段
+    REJECT = "reject"  # 拒绝，返回上一节点
+    REVISE = "revise"  # 需要修改，附带修改意见
+    RETRY = "retry"  # 重试当前节点
+    BACK = "back"  # 【write_node 专用】回退到上一段重写
 
 
 # ═══════════════════════════════════════════════
@@ -90,7 +90,7 @@ class DataComparison(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     key_specific_data: str = Field(
-        ...,
+
         alias="keySpecificData",
         description="关键具象数据（如物业费上涨20%、涉及300户居民）",
     )
@@ -106,17 +106,17 @@ class ExtendedContent(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     macro_background: str = Field(
-        ...,
+
         alias="macroBackground",
         description="宏观背景环境（社会、政策背景）",
     )
     deep_reasons: str = Field(
-        ...,
+
         alias="deepReasons",
         description="深层原因（根本原因，不局限于表面现象）",
     )
     positive_focus: str = Field(
-        ...,
+
         alias="positiveFocus",
         description="正向落点（积极举措、改进方向，提升账号质感）",
     )
@@ -183,32 +183,32 @@ class PerArticleAnalyseNode(BaseModel):
 
     # ── 基础信息 ──
     hotspot_title: str = Field(
-        ...,
+
         alias="hotspotTitle",
         description="热点标题/话题（精准概括事件核心，贴合公众号标题调性）",
     )
     vertical_track: str = Field(
-        ...,
+
         alias="verticalTrack",
         description="垂直赛道",
     )
     core_demand: str = Field(
-        ...,
+
         alias="coreDemand",
         description="核心诉求/摘要（概括热点本质，明确事件核心问题）",
     )
     emotional_tendency: Literal["positive", "negative", "neutral"] = Field(
-        ...,
+
         alias="emotionalTendency",
         description="情感倾向（positive/negative/neutral）",
     )
     writing_style: str = Field(
-        ...,
+
         alias="writingStyle",
         description="文风建议（口语化大白话/严肃科普/共情引导及适配理由）",
     )
     writing_structure: str = Field(
-        ...,
+
         alias="writingStructure",
         description="行文结构建议（总分总/观点前置/案例穿插/情绪递进及理由）",
     )
@@ -218,22 +218,22 @@ class PerArticleAnalyseNode(BaseModel):
         description="事件发展经历阶段",
     )
     region_scope: str = Field(
-        ...,
+
         alias="regionScope",
         description="精准地域范围（城市/区县/街道/小区/路段）",
     )
     public_complaints: str = Field(
-        ...,
+
         alias="publicComplaints",
         description="民间高频吐槽点",
     )
     data_comparison: DataComparison = Field(
-        ...,
+
         alias="dataComparison",
         description="数据&对比信息",
     )
     extended_content: ExtendedContent = Field(
-        ...,
+
         alias="extendedContent",
         description="延伸拔高素材",
     )
@@ -273,32 +273,32 @@ class TotalArticleAnalyseNode(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     hotspot_title: str = Field(
-        ...,
+
         alias="hotspotTitle",
         description="汇总后的热点标题（去重合并后的核心话题）",
     )
     vertical_track: str = Field(
-        ...,
+
         alias="verticalTrack",
         description="统一垂直赛道",
     )
     core_demand: str = Field(
-        ...,
+
         alias="coreDemand",
         description="核心诉求汇总（合并多篇文章的核心观点）",
     )
     emotional_tendency: Literal["positive", "negative", "neutral"] = Field(
-        ...,
+
         alias="emotionalTendency",
         description="综合情感倾向",
     )
     writing_style: str = Field(
-        ...,
+
         alias="writingStyle",
         description="推荐文风（综合评估）",
     )
     writing_structure: str = Field(
-        ...,
+
         alias="writingStructure",
         description="推荐行文结构",
     )
@@ -308,22 +308,22 @@ class TotalArticleAnalyseNode(BaseModel):
         description="合并去重后的事件时间线",
     )
     region_scope: str = Field(
-        ...,
+
         alias="regionScope",
         description="地域范围汇总",
     )
     public_complaints: str = Field(
-        ...,
+
         alias="publicComplaints",
         description="高频吐槽点汇总",
     )
     data_comparison: DataComparison = Field(
-        ...,
+
         alias="dataComparison",
         description="数据对比汇总",
     )
     extended_content: ExtendedContent = Field(
-        ...,
+
         alias="extendedContent",
         description="延伸素材汇总",
     )
@@ -382,7 +382,7 @@ class SearchSourceDetail(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     platform: str = Field(
-        ...,
+
         alias="platform",
         description="来源平台（知乎/今日头条/微博/百度等）",
     )
@@ -392,12 +392,12 @@ class SearchSourceDetail(BaseModel):
         description="原文链接",
     )
     title: str = Field(
-        ...,
+
         alias="title",
         description="内容标题",
     )
     content_summary: str = Field(
-        ...,
+
         alias="contentSummary",
         description="内容摘要（200字以内）",
     )
@@ -425,7 +425,7 @@ class PublicOpinion(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     overall_sentiment: str = Field(
-        ...,
+
         alias="overallSentiment",
         description="整体舆论倾向（支持/反对/中立/撕裂）",
     )
@@ -440,7 +440,7 @@ class PublicOpinion(BaseModel):
         description="网友高赞观点/神评论",
     )
     debate_focus: str = Field(
-        ...,
+
         alias="debateFocus",
         description="舆论争论焦点",
     )
@@ -455,30 +455,40 @@ class ArticleSearchNode(BaseModel):
     """
     model_config = ConfigDict(populate_by_name=True)
 
-    cause_process_result: str = Field(
-        ...,
+    cause_process_result: str | dict[str, Any] | list[Any] | None = Field(
+        default=None,
+
         alias="causeProcessResult",
-        description="事件起因、经过、结果补充（完善时间线，明确事件定性，补充一线现场细节）",
+
+        description="事件起因、经过、结果补充（完善时间线，明确事件定性，补充一线现场细节）。允许字符串、对象或数组",
     )
-    topic_angle: str = Field(
-        ...,
+    topic_angle: str | dict[str, Any] | list[Any] | None = Field(
+        default=None,
+
         alias="topicAngle",
-        description="创作角度补充（3-5个贴合的爆款角度，结合痛点与用户需求）",
+
+        description="创作角度补充（3-5个贴合的爆款角度，结合痛点与用户需求）。允许字符串、对象或数组",
     )
-    topic_material: str = Field(
-        ...,
+    topic_material: str | dict[str, Any] | list[Any] | None = Field(
+        default=None,
+
         alias="topicMaterial",
-        description="支撑材料补充（官方文件、权威报道、真实案例、数据，确保可追溯）",
+
+        description="支撑材料补充（官方文件、权威报道、真实案例、数据，确保可追溯）。允许字符串、对象或数组",
     )
-    controversial_points: str = Field(
-        ...,
+    controversial_points: str | dict[str, Any] | list[Any] | None = Field(
+        default=None,
+
         alias="controversialPoints",
-        description="争议焦点梳理（网友评论、多方回应、媒体解读、高频吐槽、遗留争议）",
+
+        description="争议焦点梳理（网友评论、多方回应、媒体解读、高频吐槽、遗留争议）。允许字符串、对象或数组",
     )
-    creation_inspiration: str = Field(
-        ...,
+    creation_inspiration: str | dict[str, Any] | list[Any] | None = Field(
+        default=None,
+
         alias="creationInspiration",
-        description="创作灵感补充（热点趋势、爆款逻辑、话题延伸、关键词优化）",
+
+        description="创作灵感补充（热点趋势、爆款逻辑、话题延伸、关键词优化）。允许字符串、对象或数组",
     )
 
     # ── 新增字段 ──
@@ -576,17 +586,17 @@ class WritingStyle(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     final_style: str = Field(
-        ...,
+
         alias="finalStyle",
         description="最终确定的写作风格（口语化大白话/严肃科普/共情引导）",
     )
     style_reason: str = Field(
-        ...,
+
         alias="styleReason",
         description="风格选择理由（结合事件特点、受众、传播目标）",
     )
     style_example: str = Field(
-        ...,
+
         alias="styleExample",
         description="风格化表达示例（1-2个句子）",
     )
@@ -602,17 +612,17 @@ class WritingTemplate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     title: str = Field(
-        ...,
+
         alias="title",
         description="建议标题（吸引眼球，贴合热点）",
     )
     subtitle: str = Field(
-        ...,
+
         alias="subtitle",
         description="副标题（补充说明，增强吸引力）",
     )
     introduction: str = Field(
-        ...,
+
         alias="introduction",
         description="引言模板（引子设计，吸引读者阅读）",
     )
@@ -622,7 +632,7 @@ class WritingTemplate(BaseModel):
         description="主体段落结构（每段核心内容、逻辑关系）",
     )
     conclusion: str = Field(
-        ...,
+
         alias="conclusion",
         description="结尾模板（升华主题，引导互动）",
     )
@@ -633,12 +643,12 @@ class WritingPlan(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     core_idea: str = Field(
-        ...,
+
         alias="coreIdea",
         description="核心创作思路（文章核心观点，贯穿全文）",
     )
     lead_in: str = Field(
-        ...,
+
         alias="leadIn",
         description="引子设计（如何开头，吸引读者注意力）",
     )
@@ -674,51 +684,59 @@ class ArticleBlueprintNode(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     writing_analysis: WritingAnalysis = Field(
-        ...,
+
         alias="writingAnalysis",
         description="写作角度分析（常用/融合/对立/争议/深思角度）",
     )
     writing_style: WritingStyle = Field(
-        ...,
+
         alias="writingStyle",
         description="写作风格定义（最终风格、选择理由、表达示例）",
     )
     writing_template: WritingTemplate = Field(
-        ...,
+
         alias="writingTemplate",
         description="写作模板框架（标题/副标题/引言/主体/结尾）",
     )
     writing_plan: WritingPlan = Field(
-        ...,
+
         alias="writingPlan",
         description="写作执行计划（核心思路/引子/线索/资料/方向）",
     )
 
     # ── 新增字段 ──
-    target_audience_analysis: str = Field(
-        ...,
+    target_audience_analysis: str | dict[str, Any] | None = Field(
+        default=None,
+
         alias="targetAudienceAnalysis",
-        description="目标受众画像分析（年龄/职业/痛点/阅读习惯）",
+
+        description="目标受众画像分析（年龄/职业/痛点/阅读习惯）。允许字符串或对象",
     )
-    emotional_arc_design: str = Field(
-        ...,
+    emotional_arc_design: str | dict[str, Any] | None = Field(
+        default=None,
+
         alias="emotionalArcDesign",
-        description="情绪曲线设计（开头→中段→结尾的情绪起伏规划）",
+
+        description="情绪曲线设计（开头→中段→结尾的情绪起伏规划）。允许字符串或对象",
     )
     hook_strategy: List[str] = Field(
         default_factory=list,
         alias="hookStrategy",
         description="钩子的设计策略（标题钩、开头钩、转折钩、结尾钩）",
     )
-    interactive_design: str = Field(
-        ...,
+    interactive_design: str | dict[str, Any] | None = Field(
+        default=None,
+
         alias="interactiveDesign",
-        description="互动设计（如何引导读者留言、转发、点赞）",
+
+        description="互动设计（如何引导读者留言、转发、点赞）。允许字符串或对象",
     )
-    viral_prediction: str = Field(
-        ...,
+    viral_prediction: str | dict[str, Any] | None = Field(
+        default=None,
+
         alias="viralPrediction",
-        description="传播预判（为什么这篇文章可能爆，预估传播路径）",
+
+        description="传播预判（为什么这篇文章可能爆，预估传播路径）。允许字符串或对象",
     )
 
     # ── 版本信息 ──
@@ -738,12 +756,12 @@ class GlobalStyle(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     tone: str = Field(
-        ...,
+
         alias="tone",
         description="语调（如：辛辣讽刺、温情共鸣、极简硬核）",
     )
     language_requirement: str = Field(
-        ...,
+
         alias="languageRequirement",
         description="语言约束（如：多用短句、杜绝成语、增加互动问句）",
     )
@@ -759,12 +777,12 @@ class GoldSentenceRequirement(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     position: Literal["end", "middle", "none"] = Field(
-        ...,
+
         alias="position",
         description="金句预留位置（end/middle/none）",
     )
     theme: str = Field(
-        ...,
+
         alias="theme",
         description="金句的灵魂/核心词",
     )
@@ -775,13 +793,13 @@ class WordCountRange(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     min: int = Field(
-        ...,
+
         alias="min",
         description="最小字数",
         ge=0,
     )
     max: int = Field(
-        ...,
+
         alias="max",
         description="最大字数",
         ge=0,
@@ -797,13 +815,13 @@ class ContentSegment(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     segment_index: int = Field(
-        ...,
+
         alias="segmentIndex",
         description="序列号",
         ge=0,
     )
     segment_type: Literal["introduction", "body", "conclusion"] = Field(
-        ...,
+
         alias="segmentType",
         description="段落类型（introduction/body/conclusion）",
     )
@@ -813,7 +831,7 @@ class ContentSegment(BaseModel):
         description="本段小标题（如果有）",
     )
     core_logic: str = Field(
-        ...,
+
         alias="coreLogic",
         description="本段必须要讲透的逻辑点",
     )
@@ -823,22 +841,22 @@ class ContentSegment(BaseModel):
         description="必须包含的客观事实或线索（来自 clues/reference）",
     )
     emotional_objective: str = Field(
-        ...,
+
         alias="emotionalObjective",
         description="读者情绪预期（如：认知失调、深表同情、恍然大悟）",
     )
     rhetorical_device: str = Field(
-        ...,
+
         alias="rhetoricalDevice",
         description="建议使用的修辞（如：排比、反问、故事引入）",
     )
     gold_sentence_requirement: GoldSentenceRequirement = Field(
-        ...,
+
         alias="goldSentenceRequirement",
         description="金句预留要求",
     )
     word_count_range: WordCountRange = Field(
-        ...,
+
         alias="wordCountRange",
         description="字数范围",
     )
@@ -876,7 +894,7 @@ class ArticlePlotNode(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     writing_context: "WritingContext" = Field(
-        ...,
+
         alias="writingContext",
         description="写作上下文（标题、核心观点、受众、风格）",
     )
@@ -914,22 +932,22 @@ class WritingContext(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     article_title: str = Field(
-        ...,
+
         alias="articleTitle",
         description="最终确定的爆款标题",
     )
     core_idea: str = Field(
-        ...,
+
         alias="coreIdea",
         description="贯穿全文的核心观点",
     )
     target_audience: str = Field(
-        ...,
+
         alias="targetAudience",
         description="目标受众画像（便于AI调整表达深度）",
     )
     global_style: GlobalStyle = Field(
-        ...,
+
         alias="globalStyle",
         description="全局风格",
     )
@@ -944,12 +962,12 @@ class GoldenSentence(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     position: str = Field(
-        ...,
+
         alias="position",
         description="金句位置（如：第3段）",
     )
     text: str = Field(
-        ...,
+
         alias="text",
         description="金句内容",
     )
@@ -965,12 +983,12 @@ class ShareTextVariant(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     platform: str = Field(
-        ...,
+
         alias="platform",
         description="目标平台（朋友圈/微信群/微博）",
     )
     text: str = Field(
-        ...,
+
         alias="text",
         description="转发文案",
     )
@@ -985,7 +1003,7 @@ class ArticlePart(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     part_index: int = Field(
-        ...,
+
         alias="partIndex",
         description="段落编号",
         ge=1,
@@ -996,7 +1014,7 @@ class ArticlePart(BaseModel):
         description="文章标题（主标题及1-2个备选）",
     )
     content: str = Field(
-        ...,
+
         alias="content",
         description="正文（按 contentSegments 顺序输出，严格遵循节奏与留白要求）",
     )
@@ -1011,12 +1029,12 @@ class ArticlePart(BaseModel):
         description="转发语建议（按平台区分）",
     )
     reading_time: str = Field(
-        ...,
+
         alias="readingTime",
         description="预估阅读时间（如：5分钟）",
     )
     rhythm: str = Field(
-        ...,
+
         alias="rhythm",
         description="整体节奏简述（如：开头钩子→中段铺陈与反转→结尾落点）",
     )
@@ -1100,6 +1118,7 @@ class CompositionNode(BaseModel):
         description="排版备注",
     )
 
+
 # ═══════════════════════════════════════════════
 # 节点6.5 产物：配图计划与结果
 # ═══════════════════════════════════════════════
@@ -1109,12 +1128,12 @@ class BodyImagePlan(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     position: str = Field(
-        ...,
+
         alias="position",
         description="插入位置（如：第2段之后、H2标题下方）",
     )
     description: str = Field(
-        ...,
+
         alias="description",
         description="图片内容描述（用于AI生成图片的prompt）",
     )
@@ -1170,22 +1189,22 @@ class GeneratedImage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     position: str = Field(
-        ...,
+
         alias="position",
         description="插入位置",
     )
     image_path: str = Field(
-        ...,
+
         alias="imagePath",
         description="生成的图片文件路径",
     )
     description: str = Field(
-        ...,
+
         alias="description",
         description="图片描述",
     )
     ratio: str = Field(
-        ...,
+
         alias="ratio",
         description="图片比例",
     )
@@ -1235,27 +1254,27 @@ class LegalityIssue(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     issue_type: str = Field(
-        ...,
+
         alias="issueType",
         description="问题类型（sensitive/ai_marker/grammar/factual）",
     )
     severity: Literal["critical", "warning", "info"] = Field(
-        ...,
+
         alias="severity",
         description="严重程度",
     )
     location: str = Field(
-        ...,
+
         alias="location",
         description="问题位置（段落/句子）",
     )
     original_text: str = Field(
-        ...,
+
         alias="originalText",
         description="原文",
     )
     suggestion: str = Field(
-        ...,
+
         alias="suggestion",
         description="修改建议",
     )
@@ -1270,12 +1289,12 @@ class LegalityCheckResult(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     is_passed: bool = Field(
-        ...,
+
         alias="isPassed",
         description="是否通过检查",
     )
     overall_score: int = Field(
-        ...,
+
         alias="overallScore",
         description="综合评分 0-100",
         ge=0,
@@ -1307,12 +1326,12 @@ class LegalityCheckResult(BaseModel):
         description="文风问题列表（与目标风格偏离）",
     )
     ai_flavor_score: float = Field(
-        ...,
+
         alias="aiFlavorScore",
         description="AI 感得分 0-1（越低越好）",
     )
     readability_score: float = Field(
-        ...,
+
         alias="readabilityScore",
         description="可读性得分 0-1",
     )
@@ -1321,10 +1340,10 @@ class LegalityCheckResult(BaseModel):
         alias="correctionSuggestions",
         description="整体修改建议汇总",
     )
-    corrected_article: Optional[ArticleOutputNode] = Field(
+    corrected_article: Optional[ArticleOutputNode | str] = Field(
         None,
         alias="correctedArticle",
-        description="修改后的文章（如已自动修正）",
+        description="修改后的文章（如已自动修正）。允许输出完整对象或纯文本字符串",
     )
 
 
@@ -1337,7 +1356,7 @@ class PublishConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     platform: str = Field(
-        ...,
+
         alias="platform",
         description="发布平台（wechat/wordpress/zhihu 等）",
     )
@@ -1430,12 +1449,12 @@ class HumanReviewRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     node_name: str = Field(
-        ...,
+
         alias="nodeName",
         description="被评审的节点名称",
     )
     decision: Literal["approve", "reject", "revise", "retry"] = Field(
-        ...,
+
         alias="decision",
         description="评审决策",
     )
@@ -1465,17 +1484,17 @@ class WritingRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     iteration: int = Field(
-        ...,
+
         alias="iteration",
         description="第几轮写作（从0开始，0=首次，1=第1次修改，...）",
     )
     model_used: str = Field(
-        ...,
+
         alias="modelUsed",
         description="本轮使用的模型标识",
     )
     self_score: int = Field(
-        ...,
+
         alias="selfScore",
         description="模型自评分数 0-100",
     )
@@ -1505,22 +1524,22 @@ class ReviewRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     iteration: int = Field(
-        ...,
+
         alias="iteration",
         description="对应第几轮写作",
     )
     model_used: str = Field(
-        ...,
+
         alias="modelUsed",
         description="评审使用的模型标识",
     )
     overall_score: int = Field(
-        ...,
+
         alias="overallScore",
         description="综合评分 0-100",
     )
     passed: bool = Field(
-        ...,
+
         alias="passed",
         description="是否通过评审",
     )
@@ -1546,22 +1565,22 @@ class ReviewResult(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     iteration: int = Field(
-        ...,
+
         alias="iteration",
         description="对应第几轮写作",
     )
     model_used: str = Field(
-        ...,
+
         alias="modelUsed",
         description="评审使用的模型",
     )
     overall_score: int = Field(
-        ...,
+
         alias="overallScore",
         description="综合评分 0-100",
     )
     passed: bool = Field(
-        ...,
+
         alias="passed",
         description="是否通过评审",
     )
@@ -1576,7 +1595,7 @@ class ReviewResult(BaseModel):
         description="发现的问题",
     )
     revision_suggestions: str = Field(
-        ...,
+
         alias="revisionSuggestions",
         description="具体修改建议",
     )
@@ -1594,82 +1613,82 @@ class GraphState(TypedDict):
     """
 
     # ── 输入层 ──
-    input_path: str                    # 文章所在目录或文件路径（工作流入口）
+    input_path: str  # 文章所在目录或文件路径（工作流入口）
 
     per_article_results: List[PerArticleAnalyseNode]  # 单篇分析结果列表
 
-    total_article_results: TotalArticleAnalyseNode    # 汇总后的分析结果
+    total_article_results: TotalArticleAnalyseNode  # 汇总后的分析结果
 
     # ── 节点产出层（按工作流顺序） ──
-    search_result: Optional[ArticleSearchNode]        # 热点调研结果
+    search_result: Optional[ArticleSearchNode]  # 热点调研结果
 
     blueprint_result: Optional[ArticleBlueprintNode]  # 写作蓝图结果
 
-    plot_result: Optional[ArticlePlotNode]            # 大纲结果
+    plot_result: Optional[ArticlePlotNode]  # 大纲结果
 
-    article_output: Optional[ArticleOutputNode]       # 写作内容
+    article_output: Optional[ArticleOutputNode]  # 写作内容
 
-    composition_result: Optional[CompositionNode]     # 排版结果
+    composition_result: Optional[CompositionNode]  # 排版结果
 
-    image_result: Optional[ImageOutputNode]           # 配图结果（含图片路径和带图片标记的文章）
+    image_result: Optional[ImageOutputNode]  # 配图结果（含图片路径和带图片标记的文章）
 
-    legality_result: Optional[LegalityCheckResult]    # 合规检查结果（含 corrected_article 修改后的文章）
+    legality_result: Optional[LegalityCheckResult]  # 合规检查结果（含 corrected_article 修改后的文章）
 
-    needs_legality_fix: bool                          # 校验是否要求继续修改
+    needs_legality_fix: bool  # 校验是否要求继续修改
 
-    legality_iteration: int                           # 当前校验轮次（0=首次，1=第1次修改...）
+    legality_iteration: int  # 当前校验轮次（0=首次，1=第1次修改...）
 
-    legality_fix_history: List[Dict[str, Any]]        # 每次修改记录（位置+原文+修改后+原因）
+    legality_fix_history: List[Dict[str, Any]]  # 每次修改记录（位置+原文+修改后+原因）
 
-    publish_result: Optional[PublishNode]             # 发布结果
+    publish_result: Optional[PublishNode]  # 发布结果
 
     # ── 流程控制层 ──
-    current_node: str                                 # 当前执行节点名称
+    current_node: str  # 当前执行节点名称
 
-    node_status: Dict[str, str]                       # 各节点执行状态
+    node_status: Dict[str, str]  # 各节点执行状态
 
     # ── 人机协同层 ──
-    human_reviews: List[HumanReviewRecord]            # 人工评审记录
+    human_reviews: List[HumanReviewRecord]  # 人工评审记录
 
-    pending_human_review: Optional[Dict[str, Any]]    # 待人工评审的内容
+    pending_human_review: Optional[Dict[str, Any]]  # 待人工评审的内容
 
-    revision_notes: Optional[str]                     # 修改意见（人工反馈）
+    revision_notes: Optional[str]  # 修改意见（人工反馈）
 
-    retry_counts: Dict[str, int]                      # 各节点重试计数
+    retry_counts: Dict[str, int]  # 各节点重试计数
 
     # ── 全局配置 ──
-    writing_config: Dict[str, Any]                    # 写作配置覆盖项
+    writing_config: Dict[str, Any]  # 写作配置覆盖项
 
     # ── 错误处理 ──
-    error_message: Optional[str]                      # 错误信息
+    error_message: Optional[str]  # 错误信息
 
-    error_node: Optional[str]                         # 出错节点
+    error_node: Optional[str]  # 出错节点
 
     # ── write_node / review_node 串行循环控制 ──
     # 流程：write(模型A) → review(模型B≠A) → write(模型B) → review(模型C≠B) → ...
 
-    iteration: int                                    # 当前轮次（0=首次写作，1=第1次修改，...）
+    iteration: int  # 当前轮次（0=首次写作，1=第1次修改，...）
 
-    writer_model: str                                 # 本轮写作使用的模型
+    writer_model: str  # 本轮写作使用的模型
 
-    reviewer_model: str                               # 本轮评审使用的模型（下轮写作用）
+    reviewer_model: str  # 本轮评审使用的模型（下轮写作用）
 
-    review_feedback: Optional[str]                    # 评审意见（传给 write_node 指导修改）
+    review_feedback: Optional[str]  # 评审意见（传给 write_node 指导修改）
 
-    needs_revision: bool                              # 评审是否要求修改
+    needs_revision: bool  # 评审是否要求修改
 
-    review_result: Optional[ReviewResult]             # 最后一次评审结果
+    review_result: Optional[ReviewResult]  # 最后一次评审结果
 
-    writing_history: List[WritingRecord]              # 写作历史（每轮一条）
+    writing_history: List[WritingRecord]  # 写作历史（每轮一条）
 
-    review_history: List[ReviewRecord]                # 评审历史（每轮一条）
+    review_history: List[ReviewRecord]  # 评审历史（每轮一条）
 
-    revision_count: int                               # 【保留兼容】
+    revision_count: int  # 【保留兼容】
 
     # ── 保留字段（兼容旧版本，不再使用） ──
-    write_node_phase: str                             # 废弃：原逐段写作阶段控制
-    current_segment_index: int                        # 废弃：原逐段索引
-    segment_contents: List[str]                       # 废弃：原段落内容列表
-    segment_golden_sentences: List[Dict[str, Any]]    # 废弃：原金句列表
-    segment_approved: List[bool]                      # 废弃：原审核标记
-    total_segments: int                               # 废弃：原总段数
+    write_node_phase: str  # 废弃：原逐段写作阶段控制
+    current_segment_index: int  # 废弃：原逐段索引
+    segment_contents: List[str]  # 废弃：原段落内容列表
+    segment_golden_sentences: List[Dict[str, Any]]  # 废弃：原金句列表
+    segment_approved: List[bool]  # 废弃：原审核标记
+    total_segments: int  # 废弃：原总段数

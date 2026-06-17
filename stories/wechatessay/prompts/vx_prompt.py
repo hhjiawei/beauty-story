@@ -51,58 +51,58 @@ SOURCE_NODE_SYSTEM_PROMPT = """
 {
   "per_article_results": [
     {
-      "hotspotTitle": "热点标题",
-      "verticalTrack": "垂直赛道",
-      "coreDemand": "核心诉求",
-      "emotionalTendency": "positive/negative/neutral",
-      "writingStyle": "文风建议",
-      "writingStructure": "行文结构建议",
-      "eventLine": ["阶段1", "阶段2", "阶段3"],
-      "regionScope": "地域范围",
-      "publicComplaints": "民间吐槽点",
+      "hotspotTitle": "string 【必填】 热点标题，精准概括事件核心",
+      "verticalTrack": "string 【必填】 垂直赛道",
+      "coreDemand": "string 【必填】 核心诉求/摘要",
+      "emotionalTendency": "enum 【必填】 仅允许: 'positive' | 'negative' | 'neutral'",
+      "writingStyle": "string 【必填】 文风建议",
+      "writingStructure": "string 【必填】 行文结构建议",
+      "eventLine": ["string 【数组项】 事件阶段，至少1个"],
+      "regionScope": "string 【必填】 精准地域范围",
+      "publicComplaints": "string 【必填】 民间高频吐槽点",
       "dataComparison": {
-        "keySpecificData": "关键数据",
-        "horizontalComparison": "横向对比"
+        "keySpecificData": "string 【必填】 关键具象数据（如物业费上涨20%）",
+        "horizontalComparison": "string|null 【可选】 横向对比，无则填null"
       },
       "extendedContent": {
-        "macroBackground": "宏观背景",
-        "deepReasons": "深层原因",
-        "positiveFocus": "正向落点"
+        "macroBackground": "string 【必填】 宏观背景环境",
+        "deepReasons": "string 【必填】 深层原因",
+        "positiveFocus": "string 【必填】 正向落点/积极举措"
       },
-      "creationIdeas": ["切入点1", "切入点2"],
+      "creationIdeas": ["string 【数组项，至少1个】 切入点与创作思路"],
       "supplementary": {
-        "keyQuotes": ["金句1", "金句2"],
-        "vividDetails": ["细节1", "细节2"],
-        "uniquePerspectives": ["视角1"],
-        "emotionalTriggers": ["触发点1"],
-        "dataSources": ["来源1"],
-        "contrastMaterials": ["反差素材1"],
-        "followUpClues": ["线索1"]
+        "keyQuotes": ["string 【数组】 关键引用/金句"],
+        "vividDetails": ["string 【数组】 生动细节"],
+        "uniquePerspectives": ["string 【数组】 独特视角"],
+        "emotionalTriggers": ["string 【数组】 情绪触发点"],
+        "dataSources": ["string 【数组】 数据来源"],
+        "contrastMaterials": ["string 【数组】 反差素材"],
+        "followUpClues": ["string 【数组】 后续追踪线索"]
       },
-      "sourceUrl": "来源URL",
-      "analyzedAt": "分析时间"
+      "sourceUrl": "string|null 【可选】 来源URL",
+      "analyzedAt": "string|null 【可选】 ISO8601时间，如2026-06-16T09:48:00Z"
     }
   ],
   "total_article_results": {
-    "hotspotTitle": "汇总标题",
-    "verticalTrack": "统一赛道",
-    "coreDemand": "汇总诉求",
-    "emotionalTendency": "neutral",
-    "writingStyle": "推荐风格",
-    "writingStructure": "推荐结构",
-    "eventLine": ["合并时间线"],
-    "regionScope": "地域汇总",
-    "publicComplaints": "吐槽汇总",
-    "dataComparison": {...},
-    "extendedContent": {...},
-    "creationIdeas": ["汇总思路"],
-    "allKeyQuotes": ["所有引用"],
-    "allVividDetails": ["所有细节"],
-    "allUniquePerspectives": ["所有视角"],
-    "allEmotionalTriggers": ["所有触发点"],
-    "sourceCount": 2,
-    "sourceUrls": ["url1", "url2"],
-    "summaryVersion": "1.0"
+    "hotspotTitle": "string 【必填】 汇总标题（去重合并后）",
+    "verticalTrack": "string 【必填】 统一赛道",
+    "coreDemand": "string 【必填】 汇总诉求",
+    "emotionalTendency": "enum 【必填】 'positive' | 'negative' | 'neutral'",
+    "writingStyle": "string 【必填】 推荐风格",
+    "writingStructure": "string 【必填】 推荐结构",
+    "eventLine": ["string 【数组】 合并去重后的时间线"],
+    "regionScope": "string 【必填】 地域汇总",
+    "publicComplaints": "string 【必填】 吐槽汇总",
+    "dataComparison": {"keySpecificData": "string", "horizontalComparison": "string|null"},
+    "extendedContent": {"macroBackground": "string", "deepReasons": "string", "positiveFocus": "string"},
+    "creationIdeas": ["string 【数组】 汇总思路"],
+    "allKeyQuotes": ["string 【数组】 所有引用汇总"],
+    "allVividDetails": ["string 【数组】 所有细节汇总"],
+    "allUniquePerspectives": ["string 【数组】 所有视角汇总"],
+    "allEmotionalTriggers": ["string 【数组】 所有触发点汇总"],
+    "sourceCount": "integer 【必填】 源文章数量，≥0",
+    "sourceUrls": ["string 【数组】 所有源URL"],
+    "summaryVersion": "string 【必填】 版本，如'1.0'"
   }
 }
 
@@ -207,36 +207,36 @@ Web-Access 操作前明确告知账号封禁风险，获得用户默许后继续
 请只输出JSON格式，不要其他文字，不要保存到.json文件，直接输出，后续工作流需要数据：
 
 {
-  "causeProcessResult": "事件补充（含起因/经过/结果）",
-  "topicAngle": "创作角度补充（3-5个）",
-  "topicMaterial": "支撑材料补充",
-  "controversialPoints": "争议焦点梳理",
-  "creationInspiration": "创作灵感补充",
+  "causeProcessResult": "string | object | array 【必填】 事件起因/经过/结果补充，允许字符串、对象或数组",
+  "topicAngle": "string | object | array 【必填】 创作角度补充（3-5个角度），允许字符串、对象或数组",
+  "topicMaterial": "string | object | array 【必填】 支撑材料补充，允许字符串、对象或数组",
+  "controversialPoints": "string | object | array 【必填】 争议焦点梳理，允许字符串、对象或数组",
+  "creationInspiration": "string | object | array 【必填】 创作灵感补充，允许字符串、对象或数组",
   "searchSources": [
     {
-      "platform": "知乎/头条/微博等",
-      "url": "链接",
-      "title": "标题",
-      "contentSummary": "摘要",
-      "engagementMetrics": "互动数据",
-      "authorView": "作者观点",
-      "credibilityScore": 4
+      "platform": "string 【必填】 来源平台，如知乎/头条/微博",
+      "url": "string|null 【可选】 原文链接",
+      "title": "string 【必填】 内容标题",
+      "contentSummary": "string 【必填】 内容摘要，严格≤200字",
+      "engagementMetrics": "string|null 【可选】 互动数据（点赞/评论数）",
+      "authorView": "string|null 【可选】 作者观点或立场",
+      "credibilityScore": "integer 【必填】 可信度评分，范围1-5"
     }
   ],
   "publicOpinion": {
-    "overallSentiment": "整体舆论倾向",
-    "keyOpinionLeaders": ["KOL观点1"],
-    "netizenHighlights": ["高赞评论1"],
-    "debateFocus": "争论焦点"
+    "overallSentiment": "string 【必填】 整体倾向：支持/反对/中立/撕裂",
+    "keyOpinionLeaders": ["string 【数组】 KOL观点"],
+    "netizenHighlights": ["string 【数组】 网友高赞观点/神评论"],
+    "debateFocus": "string 【必填】 舆论争论焦点"
   },
-  "relatedCases": ["同类案例1"],
-  "expertQuotes": ["专家观点1"],
-  "dataSupplements": ["数据补充1"],
-  "legalPolicyReferences": ["法规引用1"],
-  "visualMaterials": ["可视化建议1"],
-  "seoKeywords": ["关键词1"],
-  "searchQueriesUsed": ["使用的查询1"],
-  "searchedAt": "搜索时间"
+  "relatedCases": ["string 【数组】 同类/关联案例"],
+  "expertQuotes": ["string 【数组】 专家/权威观点"],
+  "dataSupplements": ["string 【数组】 数据补充（统计数字/图表）"],
+  "legalPolicyReferences": ["string 【数组】 法律法规/政策文件"],
+  "visualMaterials": ["string 【数组】 可视化素材建议"],
+  "seoKeywords": ["string 【数组】 SEO关键词"],
+  "searchQueriesUsed": ["string 【数组，必填】 实际使用的搜索查询词"],
+  "searchedAt": "string|null 【可选】 搜索时间，ISO8601格式"
 }
 
 # Rules
@@ -245,6 +245,7 @@ Web-Access 操作前明确告知账号封禁风险，获得用户默许后继续
 3. 舆论分析要客观，涵盖不同立场的观点
 4. 数据补充必须标注来源，确保可追溯
 5. 输出的内容禁止落盘，输出结果后立马结束，禁止输出说明等与内容无关的
+6. 目前测试阶段，禁止使用Web-Access，仅使用TrendRadar
 """
 
 
@@ -272,45 +273,46 @@ ANALYSE_NODE_SYSTEM_PROMPT = """
     生成适配公众号的文章标题、副标题、引言、主体结构、结尾模板
 3. **完整写作方案**
     确定核心创作思路、引子设计、行文线索、所需参考资料、核心写作方向，以及分章节的完整文章结构（含章节标题、核心内容、建议字数、段落功能）
-
+4. **有自己的思维和灵魂**
+    如果文中有一些比喻、举例子而并非事实信息，需要生成更有趣、有内涵、有价值的例子
 # Output Format
 请只输出JSON格式，不要其他文字，不要保存到.json文件，直接输出，后续工作流需要数据：
 
 {
   "writingAnalysis": {
-    "commonAngles": ["常用角度1"],
-    "mergeableAngles": ["可融合角度1: 融合逻辑"],
-    "opposingAngles": ["可对立角度1: 对立点"],
-    "controversialAngles": ["争议角度1: 焦点"],
-    "thoughtProvokingAngles": ["深思角度1: 思考方向"]
+    "commonAngles": ["string 【数组，3-5个】 市面上常用写作角度"],
+    "mergeableAngles": ["string 【数组，2-3个】 可融合角度，格式：'角度: 融合逻辑'"],
+    "opposingAngles": ["string 【数组，2-3个】 可对立角度，格式：'角度: 对立核心'"],
+    "controversialAngles": ["string 【数组，2-3个】 争议角度，格式：'角度: 争议焦点'"],
+    "thoughtProvokingAngles": ["string 【数组，2-3个】 深思角度，格式：'角度: 思考方向'"]
   },
   "writingStyle": {
-    "finalStyle": "口语化大白话/严肃科普/共情引导",
-    "styleReason": "选择理由",
-    "styleExample": "风格示例句子",
-    "toneKeywords": ["犀利", "温暖"]
+    "finalStyle": "enum|string 【必填】 仅允许: '口语化大白话' | '严肃科普' | '共情引导'",
+    "styleReason": "string 【必填】 风格选择理由",
+    "styleExample": "string 【必填】 风格化表达示例，1-2个句子",
+    "toneKeywords": ["string 【数组】 语气关键词，如：犀利、温暖、克制"]
   },
   "writingTemplate": {
-    "title": "建议标题",
-    "subtitle": "副标题",
-    "introduction": "引言模板",
-    "bodyStructure": ["段落1核心", "段落2核心"],
-    "conclusion": "结尾模板"
+    "title": "string 【必填】 建议标题",
+    "subtitle": "string 【必填】 副标题",
+    "introduction": "string 【必填】 引言模板",
+    "bodyStructure": ["string 【数组】 主体段落结构，每段核心内容"],
+    "conclusion": "string 【必填】 结尾模板"
   },
   "writingPlan": {
-    "coreIdea": "核心观点",
-    "leadIn": "引子设计",
-    "clues": ["线索1", "线索2"],
-    "referenceMaterials": ["参考资料1"],
-    "writingDirection": ["方向1", "方向2"],
-    "riskNotes": ["风险点1"]
+    "coreIdea": "string 【必填】 核心创作思路/贯穿全文的核心观点",
+    "leadIn": "string 【必填】 引子设计",
+    "clues": ["string 【数组，3-5个】 文章线索"],
+    "referenceMaterials": ["string 【数组】 参考资料清单"],
+    "writingDirection": ["string 【数组，2-3个】 写作方向"],
+    "riskNotes": ["string 【数组】 风险提示"]
   },
-  "targetAudienceAnalysis": "受众画像",
-  "emotionalArcDesign": "情绪曲线设计",
-  "hookStrategy": ["标题钩", "开头钩", "转折钩", "结尾钩"],
-  "interactiveDesign": "必须是字符串，描述互动设计策略，不要输出对象/字典",
-  "viralPrediction": "必须是字符串，描述传播潜力评估，不要输出对象/字典",
-  "version": "1.0"
+  "targetAudienceAnalysis": "string | object 【必填】 目标受众画像（年龄/职业/痛点/阅读习惯），允许字符串或对象",
+  "emotionalArcDesign": "string | object 【必填】 情绪曲线设计（开头→中段→结尾的情绪起伏），允许字符串或对象",
+  "hookStrategy": ["string 【数组】 钩子策略（标题钩/开头钩/转折钩/结尾钩）"],
+  "interactiveDesign": "string | object 【必填】 互动设计策略（如何引导留言/转发/点赞），允许字符串或对象",
+  "viralPrediction": "string | object 【必填】 传播潜力评估（预估传播路径），允许字符串或对象",
+  "version": "string 【必填】 版本，如'1.0'"
 }
 
 # Rules
@@ -319,7 +321,7 @@ ANALYSE_NODE_SYSTEM_PROMPT = """
 3. 模板框架要可直接落地，不要空洞
 4. 执行计划要具体可执行
 5. 输出的内容禁止落盘，输出结果后立马结束，禁止输出说明等与内容无关的
-6. 分析的角度要从和原文有一定的差异，不能完全跟原文类似
+6. 分析的角度要从和原文有一定的差异，不能完全跟原文结构类似
 """
 
 
@@ -364,78 +366,51 @@ PLOT_NODE_SYSTEM_PROMPT = """
 
 {
   "writingContext": {
-    "articleTitle": "【必填】主标题（25字以内，含冲突/悬念/数字/痛点）",
-    "coreIdea": "【必填】贯穿全文的一句话核心观点",
-    "targetAudience": "【必填】目标受众画像（年龄/职业/痛点/阅读习惯）",
+    "articleTitle": "string 【必填】 主标题，≤25字，含冲突/悬念/数字/痛点",
+    "coreIdea": "string 【必填】 贯穿全文的一句话核心观点",
+    "targetAudience": "string 【必填】 目标受众画像（便于AI调整表达深度）",
     "globalStyle": {
-      "tone": "【必填】语调（如：辛辣讽刺/温情共鸣/极简硬核）",
-      "languageRequirement": "【必填】语言约束（如：多用短句/杜绝成语/增加互动问句）",
-      "exampleSentences": ["【必填】1-2个风格样板句"]
+      "tone": "string 【必填】 语调，如：辛辣讽刺/温情共鸣/极简硬核",
+      "languageRequirement": "string 【必填】 语言约束，如：多用短句/杜绝成语",
+      "exampleSentences": ["string 【数组，1-2个】 风格样板句"]
     }
   },
   "contentSegments": [
     {
-      "segmentIndex": 0,
-      "segmentType": "introduction",
-      "sectionTitle": "【可选】本段小标题",
-      "coreLogic": "【必填】本段必须讲透的逻辑点（一段话概括）",
-      "keyInformation": ["【必填】必须包含的事实/数据/线索"],
-      "emotionalObjective": "【必填】读者情绪预期（如：认知失调→好奇→共鸣→愤怒→恍然大悟→行动欲）",
-      "rhetoricalDevice": "【必填】修辞手法（如：排比/反问/故事引入/数据冲击/场景代入）",
+      "segmentIndex": "integer 【必填】 从0开始，连续递增，不允许跳号",
+      "segmentType": "enum 【必填】 仅允许: 'introduction' | 'body' | 'conclusion'",
+      "sectionTitle": "string|null 【可选】 本段小标题，无则null",
+      "coreLogic": "string 【必填】 本段必须讲透的逻辑点（一段话概括）",
+      "keyInformation": ["string 【数组】 必须包含的事实/数据/线索"],
+      "emotionalObjective": "string 【必填】 读者情绪预期，如：认知失调→好奇→共鸣",
+      "rhetoricalDevice": "string 【必填】 修辞手法，如：排比/反问/故事引入",
       "goldSentenceRequirement": {
-        "position": "【必填】end|middle|none",
-        "theme": "【必填】金句的灵魂关键词（如：代价/真相/觉醒）"
+        "position": "enum 【必填】 仅允许: 'end' | 'middle' | 'none'",
+        "theme": "string 【必填】 金句的灵魂关键词"
       },
       "wordCountRange": {
-        "min": 200,
-        "max": 400
+        "min": "integer 【必填】 最小字数，≥0",
+        "max": "integer 【必填】 最大字数，≥0，且必须≥min"
       },
-      "transitionToNext": "【必填】如何引出下一段（埋悬念/留钩子/做铺垫）",
-      "materialSources": ["【可选】本段引用素材来源"],
-      "visualAids": ["【可选】配图/排版建议"],
-      "commentGuidance": "【可选】引导读者评论的方向"
-    },
-    {
-      "segmentIndex": 1,
-      "segmentType": "body",
-      "sectionTitle": "...",
-      "coreLogic": "...",
-      "keyInformation": ["..."],
-      "emotionalObjective": "...",
-      "rhetoricalDevice": "...",
-      "goldSentenceRequirement": {
-        "position": "end",
-        "theme": "..."
-      },
-      "wordCountRange": {
-        "min": 300,
-        "max": 500
-      },
-      "transitionToNext": "...",
-      "materialSources": [],
-      "visualAids": [],
-      "commentGuidance": null
+      "transitionToNext": "string|null 【可选】 如何引出下一段（埋悬念/留钩子）",
+      "materialSources": ["string 【可选】 本段引用素材来源"],
+      "visualAids": ["string 【可选】 配图/排版建议"],
+      "commentGuidance": "string|null 【可选】 引导读者评论的方向"
     }
   ],
-  "globalChecklist": [
-    "【必填】是否回应了开头的引子",
-    "【必填】是否使用了数据支撑争议点",
-    "【必填】结尾是否引导了转发",
-    "主体是否有至少1个'没见过'的视角或数据",
-    "全文是否有一条清晰的情绪主线，而非信息堆砌"
-  ],
+  "globalChecklist": ["string 【数组，必填】 写作完成后自查准则"],
   "articleMetadata": {
-    "estimatedWordCount": 2500,
-    "readingTime": "8分钟",
-    "tags": ["标签1", "标签2"],
-    "coverImageSuggestion": "文字+视觉的配合策略（如：冲突感图片/数据可视化/人物特写）"
+    "estimatedWordCount": "integer 【必填】 预估总字数",
+    "readingTime": "string 【必填】 预估阅读时长，如'8分钟'",
+    "tags": ["string 【数组】 文章标签"],
+    "coverImageSuggestion": "string 【必填】 封面图策略（文字+视觉配合）"
   },
   "seoConfig": {
-    "keywords": ["关键词1", "关键词2"],
-    "description": "50字以内的文章摘要",
-    "topicTags": ["#话题标签"]
+    "keywords": ["string 【数组】 SEO关键词"],
+    "description": "string 【必填】 50字以内的文章摘要",
+    "topicTags": ["string 【数组】 话题标签，如#话题"]
   },
-  "version": "1.0"
+  "version": "string 【必填】 版本，如'1.0'"
 }
 
 ---
@@ -478,6 +453,7 @@ PLOT_NODE_SYSTEM_PROMPT = """
 - 要求：适合截图发朋友圈、包含冲突或洞察、不超过30字
 - 金句写入该段的 keyInformation 中（标注为"【金句】xxx"）
 
+## 全文中的举例、引用等，不得和参考资料中的举例相似，要生成不同的举例，并且要比资料中的例子更加深刻，有价值，让人认可。
 ---
 
 # 🚨 铁律（违反任何一条都会导致输出失败）
@@ -580,17 +556,16 @@ COMPOSITION_NODE_SYSTEM_PROMPT = """
 请严格按以下 JSON 结构输出，不要其他文字：
 
 {
-    "formattedArticle": "排版后的完整HTML（<section>包裹）"
-    "formatSpec": {
-      "fontStyle": "正文Npx | 标题Npx",
-      "paragraphSpacing": "段间距Npx",
-      "imagePlacement": ["第x段后：图片说明"]
-    }},
-    "compositionNotes": [
-      "排版决策说明1",
-      "排版决策说明2"
-    ]
-  }
+  "formattedArticle": {
+    "fullText": "string 【必填】 排版后的完整HTML文本（必须被<section>包裹）",
+    "title": "string 【必填】 文章标题"
+  },
+  "formatSpec": {
+    "fontStyle": "string",
+    "paragraphSpacing": "string",
+    "imagePlacement": ["string 【数组】 第x段后：图片说明"]
+  },
+  "compositionNotes": ["string 【数组】 排版决策说明"]
 }
 
 所有检查完成、一切都确定好之后并且确保不会调用todo工具、确保不会有Updated todo list产生后，最后在AIMessage中输出JSON 结构输出
@@ -623,25 +598,25 @@ LEGALITY_REVIEW_PROMPT = """
 
 正确的输出格式示例：
 {
-  "isPassed": true,
-  "overallScore": 85,
+  "isPassed": "boolean 【必填】 true 或 false 默认true",
+  "overallScore": "integer 【必填】 综合评分，0-100",
   "typoIssues": [
     {
-      "issueType": "typo",
-      "severity": "warning",
-      "location": "第2段第3行",
-      "originalText": "错词",
-      "suggestion": "正确写法"
+      "issueType": "string 【必填】 问题类型，如'typo'",
+      "severity": "enum 【必填】 仅允许: 'critical' | 'warning' | 'info'",
+      "location": "string 【必填】 问题位置，如'第2段第3行'",
+      "originalText": "string 【必填】 原文内容",
+      "suggestion": "string 【必填】 修改建议"
     }
   ],
-  "aiFlavorIssues": [],
-  "sensitiveIssues": [],
-  "factualIssues": [],
-  "styleIssues": [],
-  "aiFlavorScore": 0.2,
-  "readabilityScore": 0.85,
-  "correctionSuggestions": ["修改说明"],
-  "correctedFullText": "修改后的完整文章全文放在这里..."
+  "aiFlavorIssues": ["object 【数组】 同typoIssues结构，AI感问题"],
+  "sensitiveIssues": ["object 【数组】 同typoIssues结构，敏感内容问题"],
+  "factualIssues": ["object 【数组】 同typoIssues结构，事实性问题"],
+  "styleIssues": ["object 【数组】 同typoIssues结构，文风问题"],
+  "aiFlavorScore": "float 【必填】 AI感得分，0.0-1.0（越低越好）",
+  "readabilityScore": "float 【必填】 可读性得分，0.0-1.0",
+  "correctionSuggestions": ["string 【数组】 整体修改建议汇总"],
+  "correctedArticle": "object | string | null 【可选】 修改后的完整文章对象（ArticleOutputNode结构）或纯文本字符串，如未自动修正则填null"
 }
 
 # 修改规则
@@ -692,18 +667,18 @@ IMAGE_NODE_PROMPT = """
 请只输出 JSON，不要其他文字：
 
 {
-  "coverImage": "封面图描述（一句话描述画面内容，用于AI生成图片）",
-  "coverStyle": "封面图风格（如：极简专业、编辑杂志、温暖叙事）",
+  "coverImage": "string|null 【可选】 封面图画面描述，null表示不需要封面图",
+  "coverStyle": "string 【必填】 封面图风格，如：极简专业/编辑杂志/温暖叙事",
   "bodyImages": [
     {
-      "position": "第2段之后",
-      "description": "图片描述（详细的画面描述，用于AI生成）",
-      "ratio": "16:9",
-      "style": "极简专业"
+      "position": "string 【必填】 插入位置，如'第2段之后'或'H2标题下方'",
+      "description": "string 【必填】 详细画面描述（将作为AI生图prompt）",
+      "ratio": "string 【必填】 图片比例，如'16:9'/'4:3'/'1:1'",
+      "style": "string 【必填】 风格描述"
     }
   ],
-  "totalCount": 3,
-  "styleSummary": "统一风格说明"
+  "totalCount": "integer 【必填】 预计总配图数，≥0",
+  "styleSummary": "string 【必填】 统一风格说明"
 }
 
 # 注意事项
@@ -849,39 +824,51 @@ keyInformation 中的事实和数据，必须"化装"进入场景。让它们为
 - 允许"不完美的表达"——人说话本来就不是句句完整的
 - 绝对拟人,你的语气必须像一个真实的人，可以使用一些口语化的表达（如“说实话”、“有点出戏”、“这谁顶得住”），禁止使用AI常用的机械过渡词。
 
+## 10.全文中的举例、引用注意事项
+- 要生成的举例或者引用更加深刻，有价值，让人认可，有说服力，不改变客观事实。
+
 # 输出格式
 请输出完整的文章 JSON（ArticleOutputNode 结构）：
 
 {
   "parts": [
     {
-      "partIndex": 1,
-      "titleAlternatives": ["主标题", "备选1", "备选2"],
-      "content": "第1段完整正文（严格遵循大纲要求，注意排版格式）",
+      "partIndex": "integer 【必填】 段落编号，从1开始，≥1",
+      "titleAlternatives": ["string 【数组】 主标题及1-2个备选"],
+      "content": "string 【必填】 第N段完整正文（严格遵循大纲要求）",
       "goldenSentences": [
         {
-          "position": "本段内位置描述",
-          "text": "金句内容",
-          "highlightType": "bold"
+          "position": "string 【必填】 本段内位置描述，如'第3段末尾'",
+          "text": "string 【必填】 金句内容",
+          "highlightType": "enum 【必填】 仅允许: 'default' | 'bold' | 'quote'"
         }
       ],
-      "shareTexts": [{"platform": "朋友圈", "text": "转发语文案"}],
-      "readingTime": "N分钟",
-      "rhythm": "节奏描述"
+      "shareTexts": [
+        {
+          "platform": "string 【必填】 目标平台，如朋友圈/微信群/微博",
+          "text": "string 【必填】 转发文案"
+        }
+      ],
+      "readingTime": "string 【必填】 预估阅读时间，如'5分钟'",
+      "rhythm": "string 【必填】 节奏描述，如'开头钩子→中段反转→结尾落点'",
+      "sectionImages": ["string 【可选】 本段建议配图描述"],
+      "internalLinks": ["string 【可选】 内链建议（相关文章链接）"]
     }
   ],
-  "fullText": "完整全文拼接（用于直接阅读或发布）",
+  "fullText": "string 【必填】 完整全文拼接（用于直接阅读或发布）",
   "metadata": {
-    "totalWordCount": 0,
-    "readingTime": "N分钟",
-    "generatedAt": "ISO时间"
+    "totalWordCount": "integer 【必填】 文章总字数",
+    "readingTime": "string 【必填】 总阅读时长",
+    "generatedAt": "string 【必填】 生成时间，ISO8601格式"
   },
   "seoInfo": {
-    "keywordDensity": {},
-    "description": "摘要",
-    "tags": []
-  }
+    "keywordDensity": "object 【必填】 关键词密度统计，如{'关键词': 0.03}",
+    "description": "string 【必填】 文章摘要",
+    "tags": ["string 【数组】 标签"]
+  },
+  "version": "string 【必填】 版本，如'1.0'"
 }
+
 
 # 核心规则
 1. **严格遵循大纲**：每段必须按照 contentSegments 的要求执行
@@ -978,7 +965,7 @@ revisionSuggestions 必须包含：
 {
   "model": "模型标识",
   "overallScore": 40,
-  "passed": true,
+  "passed": true 默认true,
   "strengths": ["优点1：具体描述哪里做得好"],
   "issues": ["问题1：第X段第Y句 + 具体问题 + 修改建议"],
   "revisionSuggestions": "极其详细的修改意见（包含问题清单、修改示例、优先级、保留项）"
