@@ -31,7 +31,8 @@ from wechatessay.utils.json_utils import parse_json_response
 
 logger = logging.getLogger(__name__)
 
-
+# SKILL_DIR = Path(__file__).resolve().parent.parent / "backends" / "skills" / "wechat-layout-designer"
+SKILL_DIR = Path(__file__).resolve().parent.parent / "backends" / "skills" / "gongzhonghao-typeset"
 # ═══════════════════════════════════════════════
 # Agent 创建
 # ═══════════════════════════════════════════════
@@ -41,6 +42,8 @@ def _create_composition_agent(tools: list[BaseTool]) -> Any:
     backend = load_backend()
     mm = get_memory_manager()
     memory_context = mm.build_memory_context("排版设计")
+
+    skills = [str(SKILL_DIR)] if SKILL_DIR.exists() else []
 
     system_prompt = COMPOSITION_NODE_SYSTEM_PROMPT
     if memory_context:
@@ -57,6 +60,7 @@ def _create_composition_agent(tools: list[BaseTool]) -> Any:
         system_prompt=system_prompt,
         backend=backend,
         memory=memory_files,
+        skills=skills,
         name="composition_designer",
     )
 
