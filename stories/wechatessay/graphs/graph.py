@@ -22,6 +22,7 @@ LangGraph 图定义（含 write→review 循环 + legality 自循环）。
 from __future__ import annotations
 
 from langgraph.graph import END, StateGraph
+from langgraph.types import RetryPolicy
 
 from wechatessay.nodes.analyse_node import analyse_node
 from wechatessay.nodes.collect_node import collect_node
@@ -169,16 +170,16 @@ def build_graph() -> StateGraph:
     workflow = StateGraph(GraphState)
 
     # ── 添加节点 ──
-    workflow.add_node("source_node", source_node_wrapper)
-    workflow.add_node("collect_node", collect_node_wrapper)
-    workflow.add_node("analyse_node", analyse_node_wrapper)
-    workflow.add_node("plot_node", plot_node_wrapper)
-    workflow.add_node("write_node", write_node_wrapper)
-    workflow.add_node("review_node", review_node_wrapper)
-    workflow.add_node("composition_node", composition_node_wrapper)
-    workflow.add_node("image_node", image_node_wrapper)
-    workflow.add_node("legality_node", legality_node_wrapper)
-    workflow.add_node("publish_node", publish_node_wrapper)
+    workflow.add_node("source_node", source_node_wrapper ,retry_policy=RetryPolicy(max_attempts=3, initial_interval=1.0))
+    workflow.add_node("collect_node", collect_node_wrapper ,retry_policy=RetryPolicy(max_attempts=3, initial_interval=1.0))
+    workflow.add_node("analyse_node", analyse_node_wrapper ,retry_policy=RetryPolicy(max_attempts=3, initial_interval=1.0))
+    workflow.add_node("plot_node", plot_node_wrapper ,retry_policy=RetryPolicy(max_attempts=3, initial_interval=1.0))
+    workflow.add_node("write_node", write_node_wrapper ,retry_policy=RetryPolicy(max_attempts=3, initial_interval=1.0))
+    workflow.add_node("review_node", review_node_wrapper ,retry_policy=RetryPolicy(max_attempts=3, initial_interval=1.0))
+    workflow.add_node("composition_node", composition_node_wrapper ,retry_policy=RetryPolicy(max_attempts=3, initial_interval=1.0))
+    workflow.add_node("image_node", image_node_wrapper ,retry_policy=RetryPolicy(max_attempts=3, initial_interval=1.0))
+    workflow.add_node("legality_node", legality_node_wrapper ,retry_policy=RetryPolicy(max_attempts=3, initial_interval=1.0))
+    workflow.add_node("publish_node", publish_node_wrapper ,retry_policy=RetryPolicy(max_attempts=3, initial_interval=1.0))
 
     # ── 定义入口 ──
     workflow.set_entry_point("source_node")
