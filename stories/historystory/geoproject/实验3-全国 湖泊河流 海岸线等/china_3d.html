@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中国古风地形 · 3D 全国版</title>
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Noto Serif SC", "SimSun", "STSong", serif; background: #f5f0e8; overflow: hidden; }
+    #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+
+    .map-title {
+      position: absolute; top: 20px; left: 20px; z-index: 10;
+      background: rgba(250, 246, 240, 0.95);
+      padding: 16px 24px; border-radius: 12px; border: 1px solid #d4c9b8;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08); backdrop-filter: blur(8px);
+      max-width: 340px;
+    }
+    .map-title h2 { font-size: 20px; color: #3d3229; letter-spacing: 4px; margin-bottom: 6px; }
+    .map-title p { font-size: 11px; color: #8c7e6e; line-height: 1.5; }
+    .map-title .meta { margin-top: 8px; padding-top: 8px; border-top: 1px solid #d4c9b8; font-size: 10px; color: #a09080; }
+
+    .loading {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20;
+      background: rgba(250, 246, 240, 0.95); padding: 20px 36px; border-radius: 12px;
+      border: 1px solid #d4c9b8; font-size: 14px; color: #5a5046;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .loading.hidden { display: none; }
+    .spinner { width: 18px; height: 18px; border: 2px solid #d4c9b8; border-top-color: #c45c3e; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .warn-box {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px;
+      padding: 16px 24px; font-size: 13px; color: #856404; z-index: 25;
+      display: none; max-width: 400px; text-align: center; line-height: 1.6;
+    }
+    .warn-box.show { display: block; }
+
+    .exaggeration-control {
+      position: absolute; bottom: 24px; right: 24px; z-index: 10;
+      background: rgba(250, 246, 240, 0.96); padding: 14px 18px;
+      border-radius: 10px; border: 1px solid #d4c9b8;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      min-width: 200px;
+    }
+    .exaggeration-control label {
+      font-size: 12px; color: #5a5046; display: block; margin-bottom: 8px;
+      font-weight: bold;
+    }
+    .exaggeration-control input {
+      width: 100%; accent-color: #c45c3e;
+    }
+    .exaggeration-control .value {
+      font-size: 11px; color: #c45c3e; text-align: right; margin-top: 4px;
+    }
+    .exaggeration-control .hint {
+      font-size: 10px; color: #a09080; margin-top: 6px; line-height: 1.4;
+    }
+
+    .landmark-popup {
+      position: absolute; top: 20px; right: 20px; z-index: 10;
+      background: rgba(250, 246, 240, 0.96); padding: 14px 18px;
+      border-radius: 10px; border: 1px solid #d4c9b8;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      max-width: 240px; max-height: 70vh; overflow-y: auto;
+    }
+    .landmark-popup h3 {
+      font-size: 14px; color: #3d3229; margin-bottom: 10px;
+      border-bottom: 1px solid #d4c9b8; padding-bottom: 6px;
+    }
+    .landmark-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 0; font-size: 12px; color: #5a5046;
+      border-bottom: 1px dashed #e0d8cc;
+    }
+    .landmark-item:last-child { border-bottom: none; }
+    .landmark-elev { color: #c45c3e; font-weight: bold; }
+    .landmark-type { font-size: 10px; color: #8c7e6e; }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div><span>正在加载3D古风地形...</span></div>
+  <div class="warn-box" id="warnBox">
+    <b>3D 地形加载失败</b><br>
+    DEM 高程瓦片缺失，已降级为 2D 地图。<br>
+    请先运行 <code>python pipline_china.py</code> 生成瓦片。
+  </div>
+
+  <div id="map"></div>
+
+  <div class="map-title">
+    <h2>中国古风地形</h2>
+    <p>太行山 · 秦岭 · 青藏高原 · 四川盆地 · 长江黄河</p>
+    <div class="meta">层级: z=6~8 | 3D exaggeration: 12x | 渲染: 古风配色</div>
+  </div>
+
+  <div class="landmark-popup">
+    <h3>地标海拔</h3>
+    <div class="landmark-item"><span>珠穆朗玛峰</span><span class="landmark-elev">8848m</span></div>
+    <div class="landmark-item"><span>青藏高原</span><span class="landmark-elev">4000m+</span></div>
+    <div class="landmark-item"><span>华山</span><span class="landmark-elev">2154m</span></div>
+    <div class="landmark-item"><span>泰山</span><span class="landmark-elev">1545m</span></div>
+    <div class="landmark-item"><span>四川盆地</span><span class="landmark-elev">~500m</span></div>
+    <div class="landmark-item"><span>塔里木盆地</span><span class="landmark-elev">~1000m</span></div>
+    <div class="landmark-item"><span>长江中下游平原</span><span class="landmark-elev">~50m</span></div>
+    <div class="landmark-item"><span>华北平原</span><span class="landmark-elev">~50m</span></div>
+  </div>
+
+  <div class="exaggeration-control">
+    <label>地形夸张倍数（实时调节）</label>
+    <input type="range" id="exSlider" min="0" max="30" value="12" step="0.5">
+    <div class="value" id="exValue">12.0 x</div>
+    <div class="hint">
+      拉到 20x+ 看青藏高原拔地而起<br>
+      降到 0x 看原始平面
+    </div>
+  </div>
+
+<script>
+const TILE_URL = 'http://localhost:8000/tiles/china_relief/{z}/{x}/{y}.webp';
+const DEM_URL = 'http://localhost:8000/tiles/china_dem/{z}/{x}/{y}.png';
+const CHINA_BOUNDS = [73.0, 18.0, 136.0, 54.0];
+
+// 手动地标数据：控制视频讲解中需要突出的地形点
+const landmarks = [
+  { name: '珠穆朗玛峰', coords: [86.92, 27.99], elev: 8848, type: 'peak' },
+  { name: '华山', coords: [110.08, 34.48], elev: 2154, type: 'peak' },
+  { name: '泰山', coords: [117.10, 36.25], elev: 1545, type: 'peak' },
+  { name: '秦岭', coords: [108.0, 34.0], elev: 3767, type: 'peak' },
+  { name: '太行山', coords: [113.5, 37.0], elev: 2882, type: 'peak' },
+  { name: '青藏高原', coords: [91.0, 30.0], elev: 4500, type: 'plateau' },
+  { name: '四川盆地', coords: [105.0, 30.0], elev: 500, type: 'basin' },
+  { name: '塔里木盆地', coords: [82.0, 39.0], elev: 1000, type: 'basin' },
+  { name: '长江中下游平原', coords: [116.0, 31.0], elev: 50, type: 'plain' },
+  { name: '华北平原', coords: [114.0, 38.0], elev: 50, type: 'plain' }
+];
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      dem: {
+        type: 'raster-dem',
+        tiles: [DEM_URL],
+        tileSize: 256,
+        bounds: CHINA_BOUNDS,
+        attribution: 'DEM © Mapzen/AWS Open Data',
+        minzoom: 6,
+        maxzoom: 8,
+        encoding: 'terrarium'
+      },
+      relief: {
+        type: 'raster',
+        tiles: [TILE_URL],
+        tileSize: 256,
+        bounds: CHINA_BOUNDS,
+        attribution: 'Terrain © 古风自制',
+        minzoom: 6,
+        maxzoom: 8
+      }
+    },
+    layers: [
+      {
+        id: 'relief-layer',
+        type: 'raster',
+        source: 'relief',
+        paint: { 'raster-opacity': 1.0 }
+      }
+    ],
+    terrain: {
+      source: 'dem',
+      exaggeration: 12
+    },
+    sky: {
+      'sky-type': 'atmosphere',
+      'sky-atmosphere-sun': [0.0, 90.0],
+      'sky-atmosphere-sun-intensity': 15
+    },
+    fog: {
+      'range': [0.5, 8],
+      'color': '#f0e8d8',
+      'horizon-blend': 0.15
+    },
+    light: {
+      'anchor': 'viewport',
+      'color': '#fff8f0',
+      'intensity': 0.85,
+      'position': [1.15, 210, 25]
+    }
+  },
+  center: [105.0, 35.0],
+  zoom: 4.5,
+  pitch: 78,
+  bearing: -15,
+  minZoom: 6,
+  maxZoom: 8.5,
+  maxPitch: 85,
+  maxBounds: [[70, 15], [140, 55]]
+});
+
+map.addControl(new maplibregl.AttributionControl({
+  customAttribution: '3D Terrain © Mapzen | 古风渲染 © 自制 | Natural Earth'
+}), 'bottom-right');
+
+map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+function checkDEMAndFallback() {
+  const testUrl = DEM_URL.replace('{z}', '6').replace('{x}', '211').replace('{y}', '101');
+  fetch(testUrl)
+    .then(r => {
+      if (!r.ok) throw new Error('DEM 404');
+      console.log('✅ DEM 瓦片检测通过');
+    })
+    .catch(e => {
+      console.warn('❌ DEM 瓦片缺失，降级到 2D:', e);
+      map.setTerrain(null);
+      map.setFog(null);
+      map.setPitch(0);
+      document.getElementById('warnBox').classList.add('show');
+    });
+}
+
+function initNaturalFeatures() {
+  map.addSource('ocean', {
+    type: 'geojson',
+    data: 'http://localhost:8000/geojson/ocean.json'
+  });
+  map.addLayer({
+    id: 'ocean-fill',
+    type: 'fill',
+    source: 'ocean',
+    paint: {
+      'fill-color': '#8ba89a',
+      'fill-opacity': 0.85
+    }
+  });
+
+  map.addSource('lakes', {
+    type: 'geojson',
+    data: 'http://localhost:8000/geojson/lakes.json'
+  });
+  map.addLayer({
+    id: 'lakes-fill',
+    type: 'fill',
+    source: 'lakes',
+    paint: {
+      'fill-color': '#9bb8aa',
+      'fill-opacity': 0.8
+    }
+  });
+
+  map.addSource('rivers', {
+    type: 'geojson',
+    data: 'http://localhost:8000/geojson/rivers.json'
+  });
+  map.addLayer({
+    id: 'rivers-line',
+    type: 'line',
+    source: 'rivers',
+    paint: {
+      'line-color': '#7a9a8a',
+      'line-width': [
+        'interpolate', ['linear'], ['zoom'],
+        4, 0.5,
+        6, 1,
+        8, 1.5,
+        10, 2.5,
+        12, 4
+      ],
+      'line-opacity': 0.9
+    }
+  });
+
+  map.addSource('coastline', {
+    type: 'geojson',
+    data: 'http://localhost:8000/geojson/coastline.json'
+  });
+  map.addLayer({
+    id: 'coastline-line',
+    type: 'line',
+    source: 'coastline',
+    paint: {
+      'line-color': '#5a7a6a',
+      'line-width': 2,
+      'line-opacity': 0.8
+    }
+  });
+}
+
+function initLandmarks() {
+  const features = landmarks.map(l => ({
+    type: 'Feature',
+    properties: { name: l.name, elev: l.elev, type: l.type },
+    geometry: { type: 'Point', coordinates: l.coords }
+  }));
+
+  map.addSource('landmarks', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: features }
+  });
+
+  const colorExpr = [
+    'case',
+    ['==', ['get', 'type'], 'peak'], '#c45c3e',
+    ['==', ['get', 'type'], 'plateau'], '#8c5e3e',
+    ['==', ['get', 'type'], 'basin'], '#2a7d8f',
+    '#8c9e5e'
+  ];
+
+  map.addLayer({
+    id: 'landmark-circle',
+    type: 'circle',
+    source: 'landmarks',
+    paint: {
+      'circle-radius': 8,
+      'circle-color': colorExpr,
+      'circle-stroke-width': 2,
+      'circle-stroke-color': '#fff',
+      'circle-opacity': 0.9
+    }
+  });
+
+  map.addLayer({
+    id: 'landmark-label',
+    type: 'symbol',
+    source: 'landmarks',
+    layout: {
+      'text-field': ['concat', ['get', 'name'], '\n', ['get', 'elev'], 'm'],
+      'text-size': 11,
+      'text-offset': [0, 1.2],
+      'text-anchor': 'top',
+      'text-font': ['Noto Sans Regular']
+    },
+    paint: {
+      'text-color': '#3d3229',
+      'text-halo-color': 'rgba(250,246,240,0.9)',
+      'text-halo-width': 2
+    }
+  });
+}
+
+document.getElementById('exSlider').addEventListener('input', function(e) {
+  const val = parseFloat(e.target.value);
+  document.getElementById('exValue').textContent = val.toFixed(1) + ' x';
+  map.setTerrain({ source: 'dem', exaggeration: val });
+});
+
+map.on('load', () => {
+  document.getElementById('loading').classList.add('hidden');
+  checkDEMAndFallback();
+  initNaturalFeatures();
+  initLandmarks();
+  console.log('✅ 全国 3D 古风地图加载完成');
+
+  setTimeout(() => {
+    map.easeTo({ center: [110.08, 34.48], zoom: 7.5, pitch: 82, duration: 2500 });
+  }, 2000);
+});
+
+map.on('error', (e) => {
+  console.error('❌ 地图错误:', e);
+  document.querySelector('#loading span').textContent = '瓦片加载失败，请检查服务器';
+});
+</script>
+</body>
+</html>

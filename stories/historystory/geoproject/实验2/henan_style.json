@@ -1,0 +1,29 @@
+{
+  "version": 8,
+  "sources": {
+    "relief": {
+      "type": "raster",
+      "tiles": [
+        "http://localhost:8000/../tiles/henan_relief/{z}/{x}/{y}.webp"
+      ],
+      "tileSize": 256,
+      "bounds": [
+        110.0,
+        31.0,
+        117.0,
+        37.0
+      ],
+      "attribution": "Terrain Tiles © Mapzen, AWS Open Data"
+    }
+  },
+  "layers": [
+    {
+      "id": "relief-layer",
+      "type": "raster",
+      "source": "relief",
+      "paint": {
+        "raster-opacity": 1.0
+      }
+    }
+  ]
+}

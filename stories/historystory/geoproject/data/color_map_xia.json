@@ -1,0 +1,300 @@
+{
+  "colors": {
+    "夏朝": {
+      "fill": "#8B2500",
+      "stroke": "#5C1800",
+      "fill_opacity": 0.7,
+      "label": "夏朝",
+      "is_suzerain": true,
+      "vassal_fill": "#AD664C",
+      "vassal_stroke": "#84513F",
+      "vassal_fill_opacity": 0.6
+    },
+    "商部落": {
+      "fill": "#1B4F72",
+      "stroke": "#123A56",
+      "fill_opacity": 0.7,
+      "label": "商部落",
+      "is_suzerain": true,
+      "vassal_fill": "#5F839C",
+      "vassal_stroke": "#4D6B80",
+      "vassal_fill_opacity": 0.6
+    },
+    "商朝": {
+      "fill": "#154360",
+      "stroke": "#0E2F44",
+      "fill_opacity": 0.75,
+      "label": "商朝",
+      "is_suzerain": true,
+      "vassal_fill": "#5B7B8F",
+      "vassal_stroke": "#4A6372",
+      "vassal_fill_opacity": 0.6
+    },
+    "葛国": {
+      "fill": "#C0392B",
+      "stroke": "#922B21",
+      "fill_opacity": 0.65,
+      "label": "葛国",
+      "is_suzerain": false
+    },
+    "有施氏": {
+      "fill": "#D35400",
+      "stroke": "#A04000",
+      "fill_opacity": 0.65,
+      "label": "有施氏",
+      "is_suzerain": false
+    },
+    "有缗氏": {
+      "fill": "#E67E22",
+      "stroke": "#CA6F1E",
+      "fill_opacity": 0.65,
+      "label": "有缗氏",
+      "is_suzerain": false
+    },
+    "有仍氏": {
+      "fill": "#F1C40F",
+      "stroke": "#D4AC0D",
+      "fill_opacity": 0.65,
+      "label": "有仍氏",
+      "is_suzerain": false
+    },
+    "有鬲氏": {
+      "fill": "#27AE60",
+      "stroke": "#1E8449",
+      "fill_opacity": 0.65,
+      "label": "有鬲氏",
+      "is_suzerain": false
+    },
+    "有虞氏": {
+      "fill": "#2980B9",
+      "stroke": "#1F618D",
+      "fill_opacity": 0.65,
+      "label": "有虞氏",
+      "is_suzerain": false
+    },
+    "有穷氏": {
+      "fill": "#8E44AD",
+      "stroke": "#6C3483",
+      "fill_opacity": 0.65,
+      "label": "有穷氏",
+      "is_suzerain": false
+    },
+    "寒氏": {
+      "fill": "#2C3E50",
+      "stroke": "#1B2631",
+      "fill_opacity": 0.65,
+      "label": "寒氏",
+      "is_suzerain": false
+    },
+    "薛国": {
+      "fill": "#E74C3C",
+      "stroke": "#C0392B",
+      "fill_opacity": 0.65,
+      "label": "薛国",
+      "is_suzerain": false
+    },
+    "邾国": {
+      "fill": "#F39C12",
+      "stroke": "#D68910",
+      "fill_opacity": 0.65,
+      "label": "邾国",
+      "is_suzerain": false
+    },
+    "滕国": {
+      "fill": "#16A085",
+      "stroke": "#117A65",
+      "fill_opacity": 0.65,
+      "label": "滕国",
+      "is_suzerain": false
+    },
+    "鲁国": {
+      "fill": "#A569BD",
+      "stroke": "#7D3C98",
+      "fill_opacity": 0.65,
+      "label": "鲁国",
+      "is_suzerain": false
+    },
+    "三鬷": {
+      "fill": "#7F8C8D",
+      "stroke": "#5F6A6A",
+      "fill_opacity": 0.65,
+      "label": "三鬷",
+      "is_suzerain": false
+    },
+    "彭国": {
+      "fill": "#BDC3C7",
+      "stroke": "#99A3A4",
+      "fill_opacity": 0.65,
+      "label": "彭国",
+      "is_suzerain": false
+    },
+    "过国": {
+      "fill": "#AEB6BF",
+      "stroke": "#85929E",
+      "fill_opacity": 0.65,
+      "label": "过国",
+      "is_suzerain": false
+    },
+    "涂山氏": {
+      "fill": "#5DADE2",
+      "stroke": "#3498DB",
+      "fill_opacity": 0.65,
+      "label": "涂山氏",
+      "is_suzerain": false
+    },
+    "防风氏": {
+      "fill": "#48C9B0",
+      "stroke": "#1ABC9C",
+      "fill_opacity": 0.65,
+      "label": "防风氏",
+      "is_suzerain": false
+    },
+    "英氏": {
+      "fill": "#AED6F1",
+      "stroke": "#85C1E9",
+      "fill_opacity": 0.65,
+      "label": "英氏",
+      "is_suzerain": false
+    },
+    "巢国": {
+      "fill": "#A3E4D7",
+      "stroke": "#76D7C4",
+      "fill_opacity": 0.65,
+      "label": "巢国",
+      "is_suzerain": false
+    },
+    "莱夷": {
+      "fill": "#D5DBDB",
+      "stroke": "#BFC9CA",
+      "fill_opacity": 0.65,
+      "label": "莱夷",
+      "is_suzerain": false
+    },
+    "岷山氏": {
+      "fill": "#85929E",
+      "stroke": "#5D6D7E",
+      "fill_opacity": 0.65,
+      "label": "岷山氏",
+      "is_suzerain": false
+    },
+    "有扈氏": {
+      "fill": "#566573",
+      "stroke": "#2C3E50",
+      "fill_opacity": 0.65,
+      "label": "有扈氏",
+      "is_suzerain": false
+    },
+    "有易氏": {
+      "fill": "#2E86C1",
+      "stroke": "#2471A3",
+      "fill_opacity": 0.65,
+      "label": "有易氏",
+      "is_suzerain": false
+    },
+    "三苗": {
+      "fill": "#1ABC9C",
+      "stroke": "#16A085",
+      "fill_opacity": 0.65,
+      "label": "三苗",
+      "is_suzerain": false
+    },
+    "豕韦": {
+      "fill": "#CB4335",
+      "stroke": "#A93226",
+      "fill_opacity": 0.65,
+      "label": "豕韦",
+      "is_suzerain": false
+    },
+    "顾国": {
+      "fill": "#E74C3C",
+      "stroke": "#C0392B",
+      "fill_opacity": 0.65,
+      "label": "顾国",
+      "is_suzerain": false
+    },
+    "昆吾": {
+      "fill": "#D98880",
+      "stroke": "#C0392B",
+      "fill_opacity": 0.65,
+      "label": "昆吾",
+      "is_suzerain": false
+    },
+    "有莘氏": {
+      "fill": "#F5B041",
+      "stroke": "#D68910",
+      "fill_opacity": 0.65,
+      "label": "有莘氏",
+      "is_suzerain": false
+    },
+    "畎夷": {
+      "fill": "#6C3483",
+      "stroke": "#4A235A",
+      "fill_opacity": 0.65,
+      "label": "畎夷",
+      "is_suzerain": false
+    },
+    "于夷": {
+      "fill": "#1E8449",
+      "stroke": "#196F3D",
+      "fill_opacity": 0.65,
+      "label": "于夷",
+      "is_suzerain": false
+    },
+    "方夷": {
+      "fill": "#D4AC0D",
+      "stroke": "#B7950B",
+      "fill_opacity": 0.65,
+      "label": "方夷",
+      "is_suzerain": false
+    },
+    "黄夷": {
+      "fill": "#CA6F1E",
+      "stroke": "#A04000",
+      "fill_opacity": 0.65,
+      "label": "黄夷",
+      "is_suzerain": false
+    },
+    "白夷": {
+      "fill": "#5DADE2",
+      "stroke": "#3498DB",
+      "fill_opacity": 0.65,
+      "label": "白夷",
+      "is_suzerain": false
+    },
+    "赤夷": {
+      "fill": "#E74C3C",
+      "stroke": "#C0392B",
+      "fill_opacity": 0.65,
+      "label": "赤夷",
+      "is_suzerain": false
+    },
+    "玄夷": {
+      "fill": "#2C3E50",
+      "stroke": "#1B2631",
+      "fill_opacity": 0.65,
+      "label": "玄夷",
+      "is_suzerain": false
+    },
+    "风夷": {
+      "fill": "#F39C12",
+      "stroke": "#D68910",
+      "fill_opacity": 0.65,
+      "label": "风夷",
+      "is_suzerain": false
+    },
+    "阳夷": {
+      "fill": "#16A085",
+      "stroke": "#117A65",
+      "fill_opacity": 0.65,
+      "label": "阳夷",
+      "is_suzerain": false
+    },
+    "neutral": {
+      "fill": "#7F8C8D",
+      "stroke": "#566573",
+      "fill_opacity": 0.03,
+      "label": "neutral",
+      "is_suzerain": false
+    }
+  }
+}

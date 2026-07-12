@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鸣条之战 · 3D 战役地图</title>
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Noto Serif SC", "SimSun", "STSong", serif; background: #f5f0e8; overflow: hidden; }
+    #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+
+    .story-panel {
+      position: absolute; top: 16px; left: 16px; bottom: 90px; width: 360px;
+      background: rgba(250, 246, 240, 0.96); border: 1px solid #d4c9b8;
+      border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      z-index: 10; display: flex; flex-direction: column; overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+    .story-header {
+      padding: 18px 20px; border-bottom: 2px solid #c45c3e;
+      background: linear-gradient(135deg, #faf6f0 0%, #f0e6d6 100%);
+      flex-shrink: 0;
+    }
+    .story-header h1 { margin: 0; font-size: 22px; color: #3d3229; letter-spacing: 6px; }
+    .story-header .subtitle { font-size: 11px; color: #8c7e6e; margin-top: 6px; letter-spacing: 1px; }
+    .story-list { flex: 1; overflow-y: auto; padding: 10px; }
+    .story-item {
+      padding: 12px 14px; margin-bottom: 8px; border-radius: 8px; cursor: pointer;
+      border: 1px solid transparent; transition: all 0.25s;
+      background: rgba(255,255,255,0.5);
+    }
+    .story-item:hover { background: rgba(196, 92, 62, 0.06); border-color: #d4c9b8; }
+    .story-item.active { background: rgba(196, 92, 62, 0.12); border-color: #c45c3e; }
+    .story-item .year { font-size: 10px; color: #c45c3e; font-weight: bold; letter-spacing: 1px; }
+    .story-item .title { font-size: 14px; color: #3d3229; margin: 4px 0; font-weight: bold; }
+    .story-item .loc { font-size: 11px; color: #8c7e6e; }
+    .story-item .char-tag {
+      display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 4px;
+      font-size: 11px; font-weight: bold;
+    }
+    .char-tag.shang { background: #c45c3e; color: #fff; }
+    .char-tag.xia { background: #2a7d8f; color: #fff; }
+
+    .detail-popup {
+      position: absolute; top: 16px; right: 16px; width: 320px;
+      background: rgba(250, 246, 240, 0.96); border: 1px solid #d4c9b8;
+      border-radius: 12px; padding: 18px; z-index: 11;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12); display: none;
+      backdrop-filter: blur(10px);
+    }
+    .detail-popup h2 { margin: 0 0 8px 0; font-size: 17px; color: #3d3229; border-bottom: 2px solid #c45c3e; padding-bottom: 6px; }
+    .detail-popup .meta { font-size: 11px; color: #c45c3e; margin-bottom: 10px; }
+    .detail-popup .text { font-size: 13px; color: #5a5046; line-height: 1.8; }
+
+    .controls-bar {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 10px; align-items: center; z-index: 10;
+      background: rgba(250, 246, 240, 0.95); padding: 10px 20px;
+      border-radius: 10px; border: 1px solid #d4c9b8; box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    .controls-bar button {
+      background: #c45c3e; color: white; border: none; padding: 7px 16px;
+      border-radius: 5px; cursor: pointer; font-family: inherit; font-size: 12px;
+      transition: all 0.2s;
+    }
+    .controls-bar button:hover { background: #a84a30; }
+    .controls-bar button.secondary { background: #8c7e6e; }
+    .controls-bar button.secondary:hover { background: #6b5d4d; }
+    .progress-text { font-size: 12px; color: #8c7e6e; min-width: 70px; text-align: center; }
+
+    .loading {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20;
+      background: rgba(250, 246, 240, 0.95); padding: 20px 36px; border-radius: 12px;
+      border: 1px solid #d4c9b8; font-size: 14px; color: #5a5046;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .loading.hidden { display: none; }
+    .spinner { width: 18px; height: 18px; border: 2px solid #d4c9b8; border-top-color: #c45c3e; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .legend {
+      position: absolute; bottom: 70px; right: 16px; z-index: 10;
+      background: rgba(250, 246, 240, 0.92); padding: 10px 14px;
+      border-radius: 8px; border: 1px solid #d4c9b8; font-size: 11px;
+      color: #5a5046; display: flex; flex-direction: column; gap: 6px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .legend-line { width: 24px; height: 3px; border-radius: 2px; }
+    .legend-line.shang { background: #c45c3e; }
+    .legend-line.xia { background: #2a7d8f; border-top: 2px dashed #2a7d8f; height: 0; }
+
+    .warn-box {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px;
+      padding: 16px 24px; font-size: 13px; color: #856404; z-index: 25;
+      display: none; max-width: 400px; text-align: center; line-height: 1.6;
+    }
+    .warn-box.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div><span id="loadText">正在加载3D地形...</span></div>
+  <div class="warn-box" id="warnBox">
+    <b>3D 地形加载失败</b><br>
+    DEM 高程瓦片缺失，已降级为 2D 地图。<br>
+    请关闭服务器，运行 <code>python fix_dem.py</code> 补全瓦片后刷新。
+  </div>
+  <div id="map"></div>
+
+  <div class="story-panel">
+    <div class="story-header">
+      <h1>鸣条之战</h1>
+      <div class="subtitle">约前1600年 · 商汤伐桀 · 七阶段战役全图</div>
+    </div>
+    <div class="story-list" id="storyList"></div>
+  </div>
+
+  <div class="detail-popup" id="detailPopup">
+    <h2 id="dTitle"></h2>
+    <div class="meta" id="dMeta"></div>
+    <div class="text" id="dText"></div>
+  </div>
+
+  <div class="controls-bar">
+    <button onclick="prevStory()">◀ 上一章</button>
+    <button onclick="togglePlay()" id="playBtn">▶ 播放</button>
+    <button onclick="nextStory()">下一章 ▶</button>
+    <button class="secondary" onclick="resetView()">全局视角</button>
+    <div class="progress-text" id="progressText">1 / 7</div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-line shang"></div><span>商军进攻/追击</span></div>
+    <div class="legend-item"><div class="legend-line xia"></div><span>夏军败退路线</span></div>
+  </div>
+
+<script>
+const TILE_URL = 'http://localhost:8000/tiles/relief/{z}/{x}/{y}.webp';
+const DEM_URL = 'http://localhost:8000/tiles/dem/{z}/{x}/{y}.png';
+const CHINA_BOUNDS = [73.0, 18.0, 136.0, 54.0];
+
+const stories = [
+  { id: 111, year: "约前1600年", title: "亳都誓师", location: "亳 · 今河南商丘", coords: [115.65, 34.45], desc: "商汤大会诸侯于亳都，精选战车七十乘、必死之士六千人，联合各方国联军誓师。汤发布《汤誓》：'时日曷丧，予及汝皆亡！'诸侯咸从，商军正式出征伐夏。", char: "商军" },
+  { id: 112, year: "约前1600年", title: "剪除羽翼 · 伐葛伯", location: "葛 · 今河南宁陵", coords: [115.32, 34.45], desc: "商军自亳都西进，首伐葛伯（今河南宁陵）。葛伯不祀，汤始征之，一战而下。此战打通西进通道，夏朝东方屏障开始动摇。", char: "商军" },
+  { id: 113, year: "约前1600年", title: "拔除屏障 · 灭昆吾", location: "昆吾 · 今河南许昌", coords: [113.85, 34.04], desc: "商军继续西进，攻灭昆吾氏（今河南许昌）。昆吾为夏朝东方最后一道重镇，与韦、顾互为犄角。昆吾既灭，夏桀在东方的军事支点尽数拔除，商汤得以长驱直入。", char: "商军" },
+  { id: 114, year: "约前1600年", title: "兵临夏都", location: "斟鄩 · 今河南偃师", coords: [112.78, 34.72], desc: "商军沿黄河南岸快速推进，直逼夏都斟鄩（今河南偃师二里头）。夏桀仓促集结夏师，然桀暴虐无道，百姓弗堪。桀见商军势大，不敢固守都城，率残部仓促北渡黄河，欲退守晋南。", char: "商军" },
+  { id: 115, year: "约前1600年", title: "夏军北逃", location: "陑 · 今山西永济", coords: [110.45, 34.87], desc: "夏桀自斟鄩弃城北逃，渡黄河退入晋南，欲凭中条山之险重整旗鼓。夏师士气低落，沿途溃散，夏军主力已呈瓦解之势。", char: "夏军" },
+  { id: 116, year: "约前1600年", title: "升自陑 · 鸣条决战", location: "鸣条岗 · 今山西夏县", coords: [111.22, 35.14], desc: "伊尹相汤率商军精锐'升自陑'，从永济一带渡河翻山中条山，进入晋南追击夏桀。两军会战于鸣条之野（今山西夏县西北）。夏师虽众，然师无战心；商师七十乘战车纵横冲阵，大破夏师。桀仅率残部弃车而逃。", char: "商军" },
+  { id: 117, year: "约前1600年", title: "追亡逐北 · 夏亡", location: "南巢 · 今安徽巢湖", coords: [117.32, 31.60], desc: "商军穷追不舍，桀自鸣条东逃，终在历山南巢（今安徽巢湖）被追及。汤遵天命而不杀，将桀与妺喜放逐于此。桀忧愤而死，夏朝四百余年国祚终结。商汤班师回亳，践天子位。", char: "商军" }
+];
+
+const segments = [];
+for (let i = 1; i < stories.length; i++) {
+  const prev = stories[i - 1];
+  const curr = stories[i];
+  segments.push({ id: curr.id, from: prev.coords, to: curr.coords, char: curr.char, title: curr.title, index: i });
+}
+
+let currentStory = 0;
+let isPlaying = false;
+let playTimer = null;
+let is3D = true;
+
+// ==================== 地图初始化（3D 增强版） ====================
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      dem: {
+        type: 'raster-dem',
+        tiles: [DEM_URL],
+        tileSize: 256,
+        bounds: CHINA_BOUNDS,
+        attribution: 'DEM © Mapzen/AWS Open Data',
+        minzoom: 4,
+        maxzoom: 6,
+        encoding: 'terrarium'
+      },
+      relief: {
+        type: 'raster',
+        tiles: [TILE_URL],
+        tileSize: 256,
+        bounds: CHINA_BOUNDS,
+        attribution: 'Terrain © 自制',
+        minzoom: 4,
+        maxzoom: 6
+      }
+    },
+    layers: [
+      {
+        id: 'relief-layer',
+        type: 'raster',
+        source: 'relief',
+        paint: { 'raster-opacity': 1.0 }
+      }
+    ],
+    terrain: {
+      source: 'dem',
+      exaggeration: 3.5
+    },
+    sky: {
+      'sky-type': 'atmosphere',
+      'sky-atmosphere-sun': [0.0, 90.0],
+      'sky-atmosphere-sun-intensity': 15
+    },
+    fog: {
+      'range': [2, 12],
+      'color': '#f5f0e8',
+      'horizon-blend': 0.3
+    },
+    light: {
+      'anchor': 'viewport',
+      'color': '#ffffff',
+      'intensity': 0.6,
+      'position': [1.15, 210, 30]
+    }
+  },
+  center: [111.5, 34.8],
+  zoom: 5.0,
+  pitch: 75,
+  bearing: -15,
+  minZoom: 4,
+  maxZoom: 6.5,
+  maxBounds: [[70, 15], [140, 55]]
+});
+
+map.addControl(new maplibregl.AttributionControl({
+  customAttribution: '3D Terrain © Mapzen | 史料 © 史记·殷本纪/尚书·汤誓'
+}), 'bottom-right');
+
+map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+// ==================== DEM 检测与降级 ====================
+function checkDEMAndFallback() {
+  const testUrl = DEM_URL.replace('{z}', '5').replace('{x}', '25').replace('{y}', '12');
+  fetch(testUrl)
+    .then(r => {
+      if (!r.ok) throw new Error('DEM 404');
+      console.log('✅ DEM 瓦片检测通过');
+    })
+    .catch(e => {
+      console.warn('❌ DEM 瓦片缺失，降级到 2D:', e);
+      is3D = false;
+      map.setTerrain(null);
+      map.setFog(null);
+      map.setPitch(0);
+      document.getElementById('warnBox').classList.add('show');
+    });
+}
+
+// ==================== 路线初始化 ====================
+function initAllRoutes() {
+  const pointFeatures = stories.map((s, i) => ({
+    type: 'Feature',
+    properties: { index: i + 1, id: s.id, title: s.title, char: s.char },
+    geometry: { type: 'Point', coordinates: s.coords }
+  }));
+
+  map.addSource('all-points', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: pointFeatures }
+  });
+
+  map.addLayer({
+    id: 'points-circle',
+    type: 'circle',
+    source: 'all-points',
+    paint: {
+      'circle-radius': 10,
+      'circle-color': ['case', ['==', ['get', 'char'], '商军'], '#c45c3e', '#2a7d8f'],
+      'circle-stroke-width': 2,
+      'circle-stroke-color': '#fff',
+      'circle-opacity': 0.7
+    }
+  });
+
+  map.addLayer({
+    id: 'points-label',
+    type: 'symbol',
+    source: 'all-points',
+    layout: {
+      'text-field': ['get', 'index'],
+      'text-size': 11,
+      'text-font': ['Noto Sans Regular'],
+      'text-offset': [0, 0]
+    },
+    paint: {
+      'text-color': '#fff',
+      'text-halo-color': ['case', ['==', ['get', 'char'], '商军'], '#c45c3e', '#2a7d8f'],
+      'text-halo-width': 2
+    }
+  });
+
+  segments.forEach((seg, idx) => {
+    const sid = `seg-${seg.id}`;
+    const color = seg.char === '商军' ? '#c45c3e' : '#2a7d8f';
+
+    map.addSource(sid, {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: [seg.from, seg.to] }
+      }
+    });
+
+    if (seg.char === '商军') {
+      map.addLayer({
+        id: `${sid}-glow`, type: 'line', source: sid,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': color, 'line-width': 8, 'line-opacity': 0.15, 'line-blur': 4 }
+      });
+    }
+
+    map.addLayer({
+      id: sid, type: 'line', source: sid,
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': color,
+        'line-width': 3,
+        'line-opacity': 0.35,
+        'line-dasharray': seg.char === '夏军' ? [4, 3] : [1, 0]
+      }
+    });
+  });
+}
+
+function highlightStage(idx) {
+  map.setPaintProperty('points-circle', 'circle-radius', [
+    'case', ['==', ['get', 'index'], idx + 1], 16, 8
+  ]);
+  map.setPaintProperty('points-circle', 'circle-opacity', [
+    'case', ['==', ['get', 'index'], idx + 1], 1.0, 0.4
+  ]);
+
+  segments.forEach((seg, i) => {
+    const sid = `seg-${seg.id}`;
+    const isActive = (i === idx - 1);
+
+    if (map.getLayer(`${sid}-glow`)) {
+      map.setPaintProperty(`${sid}-glow`, 'line-opacity', isActive ? 0.35 : 0);
+      map.setPaintProperty(`${sid}-glow`, 'line-width', isActive ? 12 : 8);
+    }
+
+    map.setPaintProperty(sid, 'line-opacity', isActive ? 0.95 : 0.2);
+    map.setPaintProperty(sid, 'line-width', isActive ? 5 : 2);
+  });
+}
+
+// ==================== 故事面板 ====================
+function initStoryList() {
+  const list = document.getElementById('storyList');
+  list.innerHTML = '';
+  stories.forEach((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'story-item' + (i === 0 ? ' active' : '');
+    const tagClass = s.char === '商军' ? 'shang' : 'xia';
+    el.innerHTML = `
+      <div class="year">${s.year}</div>
+      <div class="title">${i + 1}. ${s.title}</div>
+      <div class="loc">${s.location}</div>
+      <span class="char-tag ${tagClass}">${s.char}</span>
+    `;
+    el.onclick = () => selectStory(i);
+    list.appendChild(el);
+  });
+}
+
+function selectStory(idx) {
+  currentStory = idx;
+  const s = stories[idx];
+
+  document.querySelectorAll('.story-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  const pop = document.getElementById('detailPopup');
+  document.getElementById('dTitle').textContent = `${idx + 1}. ${s.title}`;
+  document.getElementById('dMeta').textContent = `${s.year} · ${s.location} · ${s.char}`;
+  document.getElementById('dText').textContent = s.desc;
+  pop.style.display = 'block';
+
+  document.getElementById('progressText').textContent = `${idx + 1} / ${stories.length}`;
+
+  highlightStage(idx);
+
+  const zoom = idx === 0 ? 5.2 : (s.char === '夏军' ? 6.0 : 5.8);
+  const pitch = is3D ? 75 : 0;
+  map.easeTo({ center: s.coords, zoom: zoom, pitch: pitch, duration: 1500 });
+
+  const items = document.querySelectorAll('.story-item');
+  items[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ==================== 播放控制 ====================
+function togglePlay() {
+  const btn = document.getElementById('playBtn');
+  if (isPlaying) {
+    clearInterval(playTimer);
+    isPlaying = false;
+    btn.textContent = '▶ 播放';
+  } else {
+    isPlaying = true;
+    btn.textContent = '⏸ 暂停';
+    if (currentStory >= stories.length - 1) currentStory = 0;
+    selectStory(currentStory);
+    playTimer = setInterval(() => {
+      if (currentStory >= stories.length - 1) {
+        togglePlay();
+        return;
+      }
+      selectStory(currentStory + 1);
+    }, 5000);
+  }
+}
+
+function nextStory() {
+  if (currentStory < stories.length - 1) selectStory(currentStory + 1);
+}
+
+function prevStory() {
+  if (currentStory > 0) selectStory(currentStory - 1);
+}
+
+function resetView() {
+  const pitch = is3D ? 75 : 0;
+  map.easeTo({ center: [111.5, 34.8], zoom: 5.0, pitch: pitch, bearing: -15, duration: 1500 });
+  map.setPaintProperty('points-circle', 'circle-radius', 10);
+  map.setPaintProperty('points-circle', 'circle-opacity', 0.7);
+  segments.forEach(seg => {
+    const sid = `seg-${seg.id}`;
+    if (map.getLayer(`${sid}-glow`)) {
+      map.setPaintProperty(`${sid}-glow`, 'line-opacity', 0.15);
+    }
+    map.setPaintProperty(sid, 'line-opacity', 0.35);
+    map.setPaintProperty(sid, 'line-width', 3);
+  });
+  document.getElementById('detailPopup').style.display = 'none';
+}
+
+// ==================== 启动 ====================
+map.on('load', () => {
+  document.getElementById('loading').classList.add('hidden');
+  checkDEMAndFallback();
+  initAllRoutes();
+  initStoryList();
+  selectStory(0);
+  console.log('✅ 地图加载完成');
+});
+
+map.on('error', (e) => {
+  console.error('❌ 地图错误:', e);
+  document.getElementById('loadText').textContent = '瓦片加载失败，请检查服务器和瓦片文件';
+});
+</script>
+</body>
+</html>
