@@ -31,8 +31,8 @@
       "vassal_fill_opacity": 0.6
     },
     "葛国": {
-      "fill": "#C0392B",
-      "stroke": "#922B21",
+      "fill": "#A93226",
+      "stroke": "#7B241C",
       "fill_opacity": 0.65,
       "label": "葛国",
       "is_suzerain": false
@@ -79,46 +79,11 @@
       "label": "有穷氏",
       "is_suzerain": false
     },
-    "寒氏": {
-      "fill": "#2C3E50",
-      "stroke": "#1B2631",
-      "fill_opacity": 0.65,
-      "label": "寒氏",
-      "is_suzerain": false
-    },
     "薛国": {
       "fill": "#E74C3C",
       "stroke": "#C0392B",
       "fill_opacity": 0.65,
       "label": "薛国",
-      "is_suzerain": false
-    },
-    "邾国": {
-      "fill": "#F39C12",
-      "stroke": "#D68910",
-      "fill_opacity": 0.65,
-      "label": "邾国",
-      "is_suzerain": false
-    },
-    "滕国": {
-      "fill": "#16A085",
-      "stroke": "#117A65",
-      "fill_opacity": 0.65,
-      "label": "滕国",
-      "is_suzerain": false
-    },
-    "鲁国": {
-      "fill": "#A569BD",
-      "stroke": "#7D3C98",
-      "fill_opacity": 0.65,
-      "label": "鲁国",
-      "is_suzerain": false
-    },
-    "三鬷": {
-      "fill": "#7F8C8D",
-      "stroke": "#5F6A6A",
-      "fill_opacity": 0.65,
-      "label": "三鬷",
       "is_suzerain": false
     },
     "彭国": {
@@ -206,8 +171,8 @@
       "is_suzerain": false
     },
     "顾国": {
-      "fill": "#E74C3C",
-      "stroke": "#C0392B",
+      "fill": "#C0392B",
+      "stroke": "#922B21",
       "fill_opacity": 0.65,
       "label": "顾国",
       "is_suzerain": false
@@ -255,15 +220,15 @@
       "is_suzerain": false
     },
     "白夷": {
-      "fill": "#5DADE2",
-      "stroke": "#3498DB",
+      "fill": "#87CEEB",
+      "stroke": "#5DADE2",
       "fill_opacity": 0.65,
       "label": "白夷",
       "is_suzerain": false
     },
     "赤夷": {
-      "fill": "#E74C3C",
-      "stroke": "#C0392B",
+      "fill": "#FF6347",
+      "stroke": "#E74C3C",
       "fill_opacity": 0.65,
       "label": "赤夷",
       "is_suzerain": false
@@ -294,6 +259,139 @@
       "stroke": "#566573",
       "fill_opacity": 0.03,
       "label": "neutral",
+      "is_suzerain": false
+    },
+    "斟寻氏": {
+      "fill": "#A0522D",
+      "stroke": "#8B4513",
+      "fill_opacity": 0.65,
+      "label": "斟寻氏",
+      "is_suzerain": false
+    },
+    "有男氏": {
+      "fill": "#CD853F",
+      "stroke": "#A0522D",
+      "fill_opacity": 0.65,
+      "label": "有男氏",
+      "is_suzerain": false
+    },
+    "有苏氏": {
+      "fill": "#D2691E",
+      "stroke": "#A0522D",
+      "fill_opacity": 0.65,
+      "label": "有苏氏",
+      "is_suzerain": false
+    },
+    "有邰氏": {
+      "fill": "#BC8F8F",
+      "stroke": "#8B4513",
+      "fill_opacity": 0.65,
+      "label": "有邰氏",
+      "is_suzerain": false
+    },
+    "杞国": {
+      "fill": "#B8860B",
+      "stroke": "#8B6914",
+      "fill_opacity": 0.65,
+      "label": "杞国",
+      "is_suzerain": false
+    },
+    "缯国": {
+      "fill": "#DAA520",
+      "stroke": "#B8860B",
+      "fill_opacity": 0.65,
+      "label": "缯国",
+      "is_suzerain": false
+    },
+    "褒国": {
+      "fill": "#8B7355",
+      "stroke": "#6B5344",
+      "fill_opacity": 0.65,
+      "label": "褒国",
+      "is_suzerain": false
+    },
+    "崇国": {
+      "fill": "#8B6914",
+      "stroke": "#6B4910",
+      "fill_opacity": 0.65,
+      "label": "崇国",
+      "is_suzerain": false
+    },
+    "费国": {
+      "fill": "#C19A6B",
+      "stroke": "#9A7B4F",
+      "fill_opacity": 0.65,
+      "label": "费国",
+      "is_suzerain": false
+    },
+    "观国": {
+      "fill": "#D2B48C",
+      "stroke": "#B8966B",
+      "fill_opacity": 0.65,
+      "label": "观国",
+      "is_suzerain": false
+    },
+    "鬼方": {
+      "fill": "#708090",
+      "stroke": "#4A5560",
+      "fill_opacity": 0.65,
+      "label": "鬼方",
+      "is_suzerain": false
+    },
+    "土方": {
+      "fill": "#778899",
+      "stroke": "#556677",
+      "fill_opacity": 0.65,
+      "label": "土方",
+      "is_suzerain": false
+    },
+    "荤粥": {
+      "fill": "#696969",
+      "stroke": "#4A4A4A",
+      "fill_opacity": 0.65,
+      "label": "荤粥",
+      "is_suzerain": false
+    },
+    "山戎": {
+      "fill": "#808080",
+      "stroke": "#606060",
+      "fill_opacity": 0.65,
+      "label": "山戎",
+      "is_suzerain": false
+    },
+    "犬戎": {
+      "fill": "#556B2F",
+      "stroke": "#3D4F1F",
+      "fill_opacity": 0.65,
+      "label": "犬戎",
+      "is_suzerain": false
+    },
+    "熏育": {
+      "fill": "#6B8E23",
+      "stroke": "#4A6B1F",
+      "fill_opacity": 0.65,
+      "label": "熏育",
+      "is_suzerain": false
+    },
+    "石峁集团": {
+      "fill": "#9370DB",
+      "stroke": "#7B68EE",
+      "fill_opacity": 0.65,
+      "label": "石峁集团",
+      "is_suzerain": false
+    },
+    "寒国": {
+      "fill": "#2F4F4F",
+      "stroke": "#1F3F3F",
+      "fill_opacity": 0.65,
+      "label": "寒国",
+      "is_suzerain": false
+    },
+    "戈国": {
+      "fill": "#8B4513",
+      "stroke": "#6B3500",
+      "fill_opacity": 0.65,
+      "label": "戈国",
       "is_suzerain": false
     }
   }

@@ -237,7 +237,42 @@
           "to": "商部落",
           "vassal_of": null,
           "type": "占领"
-        }
+        },
+        {
+          "city_id": "yangcheng",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+          },
+          {
+          "city_id": "yangdi",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+          },
+          {
+          "city_id": "pingyang",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+          },
+          {
+          "city_id": "diqiu",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+          },
+          {
+          "city_id": "xihe",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+          }
       ],
       "note": "鸣条之战，夏师败绩，商汤武力征服夏朝核心区域"
     },
@@ -355,6 +390,41 @@
         },
         {
           "city_id": "chaoguo",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "yangcheng",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "yangdi",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "pingyang",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "diqiu",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xihe",
           "from": "商部落",
           "to": "商朝",
           "vassal_of": null,

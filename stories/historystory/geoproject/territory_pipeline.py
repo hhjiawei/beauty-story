@@ -9,6 +9,26 @@
 3. 颜色优化：附庸淡化30%，neutral几乎透明，边界线变细
 
 用法: python territory_pipeline.py
+
+
+china_adm3.geojson是什么？
+china_adm3.geojson 是预处理后的中国县级行政区划边界数据，从 geoBoundaries 下载的原始数据转换而来。
+属性	说明
+来源	geoBoundaries 全球行政区划数据库（中国 ADM3 县级）
+原始格式	Shapefile（.shp + .shx + .dbf + .prj）
+转换后	GeoJSON（china_adm3.geojson）
+内容	中国约 2800+ 个县级/区级行政边界多边形
+坐标系	WGS84（EPSG:4326，经纬度）
+关键字段	county_idx（整数索引 0~N-1）、shapeName（拼音名称）、geometry（边界多边形）
+
+
+
+
+
+
+
+
+
 """
 
 import json

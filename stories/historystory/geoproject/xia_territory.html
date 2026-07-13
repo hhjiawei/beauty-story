@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>夏桀时期疆域变化 - 历史疆域动态渲染</title>
+
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Microsoft YaHei", "SimSun", "Noto Serif SC", serif;
+            background: #1a1a1a;
+            overflow: hidden;
+        }
+        #map { width: 100vw; height: 100vh; position: relative; }
+
+        /* 标题栏 */
+        .title-bar {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; text-align: center; pointer-events: none;
+        }
+        .title-bar h1 {
+            color: #f5f0e8; font-size: 28px; font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); letter-spacing: 4px; margin-bottom: 5px;
+        }
+        .title-bar .subtitle {
+            color: #c9b896; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); letter-spacing: 2px;
+        }
+
+        /* 时间轴控制器 */
+        .time-controller {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; background: rgba(20, 15, 10, 0.85);
+            border: 1px solid rgba(201, 184, 150, 0.3); border-radius: 12px;
+            padding: 20px 30px; min-width: 400px; backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .time-display { text-align: center; margin-bottom: 15px; }
+        .time-display .year {
+            color: #e8d5b5; font-size: 32px; font-weight: bold; letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(232, 213, 181, 0.3);
+        }
+        .time-display .event-title { color: #c9b896; font-size: 16px; margin-top: 8px; letter-spacing: 1px; }
+        .time-display .event-desc { color: #8a7e6b; font-size: 12px; margin-top: 5px; max-width: 350px; line-height: 1.5; }
+
+        .progress-bar {
+            width: 100%; height: 4px; background: rgba(201, 184, 150, 0.2);
+            border-radius: 2px; margin: 15px 0; position: relative; cursor: pointer;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #c9b896, #e8d5b5);
+            border-radius: 2px; transition: width 0.3s ease; width: 0%;
+        }
+        .progress-dot {
+            position: absolute; top: 50%; transform: translate(-50%, -50%);
+            width: 8px; height: 8px; background: #e8d5b5; border-radius: 50%;
+            box-shadow: 0 0 6px rgba(232, 213, 181, 0.6); transition: left 0.3s ease;
+        }
+
+        .controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; }
+        .btn {
+            background: rgba(201, 184, 150, 0.15); border: 1px solid rgba(201, 184, 150, 0.4);
+            color: #c9b896; padding: 8px 20px; border-radius: 6px; cursor: pointer;
+            font-family: inherit; font-size: 14px; transition: all 0.2s; letter-spacing: 2px;
+        }
+        .btn:hover { background: rgba(201, 184, 150, 0.3); border-color: rgba(201, 184, 150, 0.6); color: #e8d5b5; }
+        .btn:active { transform: scale(0.95); }
+        .btn-play {
+            background: rgba(139, 37, 0, 0.3); border-color: rgba(139, 37, 0, 0.5);
+            color: #e8d5b5; font-size: 16px; padding: 8px 25px;
+        }
+        .btn-play:hover { background: rgba(139, 37, 0, 0.5); }
+        .btn-play.playing { background: rgba(27, 79, 114, 0.3); border-color: rgba(27, 79, 114, 0.5); }
+        .counter { color: #8a7e6b; font-size: 12px; letter-spacing: 1px; }
+
+        /* 图例 */
+        .legend {
+            position: absolute; top: 80px; right: 20px; z-index: 1000;
+            background: rgba(20, 15, 10, 0.85); border: 1px solid rgba(201, 184, 150, 0.3);
+            border-radius: 8px; padding: 15px; backdrop-filter: blur(10px); max-width: 200px;
+        }
+        .legend-title { color: #c9b896; font-size: 14px; font-weight: bold; margin-bottom: 10px; letter-spacing: 2px; border-bottom: 1px solid rgba(201, 184, 150, 0.2); padding-bottom: 8px; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 6px; font-size: 12px; color: #a09582; }
+        .legend-color { width: 16px; height: 12px; border-radius: 2px; margin-right: 8px; border: 1px solid rgba(255,255,255,0.2); }
+        .legend-label { flex: 1; }
+        .legend-note { font-size: 10px; color: #6b5f4f; margin-left: 24px; }
+
+        /* 加载提示 */
+        .loading-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1a1a1a; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 2000;
+            transition: opacity 0.5s;
+        }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .loading-text { color: #c9b896; font-size: 18px; letter-spacing: 4px; margin-top: 20px; }
+        .loading-spinner {
+            width: 40px; height: 40px; border: 3px solid rgba(201, 184, 150, 0.2);
+            border-top-color: #c9b896; border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 错误提示 */
+        .error-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1a1a1a; display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 3000;
+        }
+        .error-overlay.show { display: flex; }
+        .error-text { color: #ff6b6b; font-size: 16px; margin-top: 20px; max-width: 600px; text-align: center; line-height: 1.6; }
+        .error-hint { color: #8a7e6b; font-size: 13px; margin-top: 15px; }
+
+        /* 快捷键提示 */
+        .shortcuts {
+            position: absolute; bottom: 20px; right: 20px; z-index: 1000;
+            color: #6b5f4f; font-size: 11px; text-align: right; line-height: 1.8;
+        }
+        .shortcuts kbd {
+            background: rgba(201, 184, 150, 0.15); border: 1px solid rgba(201, 184, 150, 0.3);
+            border-radius: 3px; padding: 2px 6px; font-family: inherit; color: #a09582;
+        }
+
+        /* 城池弹窗 */
+        .city-popup {
+            position: absolute; z-index: 1000; background: rgba(20, 15, 10, 0.9);
+            border: 1px solid rgba(201, 184, 150, 0.4); border-radius: 8px;
+            padding: 12px 15px; color: #e8d5b5; font-size: 13px;
+            pointer-events: none; display: none; max-width: 250px; backdrop-filter: blur(10px);
+        }
+        .city-popup .popup-name { font-size: 16px; font-weight: bold; color: #c9b896; margin-bottom: 5px; }
+        .city-popup .popup-owner { color: #8a7e6b; font-size: 12px; }
+        .city-popup .popup-note { color: #6b5f4f; font-size: 11px; margin-top: 5px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loading-text">正在加载历史疆域数据...</div>
+    </div>
+
+    <!-- 错误遮罩 -->
+    <div class="error-overlay" id="error-overlay">
+        <div class="loading-spinner" style="border-top-color: #ff6b6b;"></div>
+        <div class="error-text" id="error-text">数据加载失败</div>
+        <div class="error-hint" id="error-hint"></div>
+    </div>
+
+    <!-- 地图容器 -->
+    <div id="map"></div>
+
+    <!-- 标题 -->
+    <div class="title-bar">
+        <h1>夏桀时期疆域变化</h1>
+        <div class="subtitle">公元前1652年 — 公元前1600年 · 夏商之际</div>
+    </div>
+
+    <!-- 图例 -->
+    <div class="legend" id="legend">
+        <div class="legend-title">势力图例</div>
+        <div id="legend-content"></div>
+    </div>
+
+    <!-- 时间轴控制器 -->
+    <div class="time-controller" id="time-controller" style="display:none;">
+        <div class="time-display">
+            <div class="year" id="year-display">前1652年</div>
+            <div class="event-title" id="event-title">夏桀即位，初始状态</div>
+            <div class="event-desc" id="event-desc">夏桀元年即位，定都斟鄩</div>
+        </div>
+
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+            <div class="progress-dot" id="progress-dot" style="left: 0%"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="btn-first">⏮ 首</button>
+            <button class="btn" id="btn-prev">← 上</button>
+            <button class="btn btn-play" id="btn-play">▶ 播放</button>
+            <button class="btn" id="btn-next">下 →</button>
+            <button class="btn" id="btn-last">末 ⏭</button>
+            <span class="counter" id="counter">1 / 1</span>
+        </div>
+    </div>
+
+    <!-- 快捷键提示 -->
+    <div class="shortcuts">
+        <kbd>←</kbd> <kbd>→</kbd> 切换事件<br>
+        <kbd>Space</kbd> 播放/暂停<br>
+        <kbd>Home</kbd> <kbd>End</kbd> 首尾
+    </div>
+
+    <!-- 城池弹窗 -->
+    <div class="city-popup" id="city-popup">
+        <div class="popup-name" id="popup-name"></div>
+        <div class="popup-owner" id="popup-owner"></div>
+        <div class="popup-note" id="popup-note"></div>
+    </div>
+
+    <script>
+        // ==================== 配置 ====================
+        const CONFIG = {
+            // 【重要】改为相对路径，根据你的实际目录结构调整
+            // 如果 HTML 文件和 output 文件夹同级，用 './output'
+            // 如果 output 在上一级目录，用 '../output'
+            outputDir: './output',
+
+            // 本地瓦片服务器（必须运行 python start_server.py 等）
+            tileServer: 'http://localhost:8000/tiles/china_dem/{z}/{x}/{y}.png',
+
+            // 初始视图
+            initialCenter: [113.5, 34.5],
+            initialZoom: 5,
+
+            // 播放间隔（毫秒）
+            playInterval: 2000,
+        };
+
+        // ==================== 全局状态 ====================
+        let map;
+        let sliceIndex = [];
+        let currentIndex = 0;
+        let isPlaying = false;
+        let playTimer = null;
+        let citiesData = {};
+        let dataLoaded = false;
+
+        // ==================== 错误处理 ====================
+        function showError(message, hint) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error-text').textContent = message;
+            document.getElementById('error-hint').textContent = hint || '';
+            document.getElementById('error-overlay').classList.add('show');
+            console.error(message);
+        }
+
+        // ==================== 初始化地图 ====================
+        function initMap() {
+            map = new maplibregl.Map({
+                container: 'map',
+                style: {
+                    version: 8,
+                    sources: {
+                        'local-tiles': {
+                            type: 'raster',
+                            tiles: [CONFIG.tileServer],
+                            tileSize: 256,
+                        }
+                    },
+                    layers: [
+                        {
+                            id: 'background',
+                            type: 'background',
+                            paint: { 'background-color': '#1a1a2e' }
+                        },
+                        {
+                            id: 'local-tiles',
+                            type: 'raster',
+                            source: 'local-tiles',
+                            paint: {
+                                // 核心：暗调+去饱和，让底图变"古风宣纸"感
+                                'raster-opacity': 0.5,           // 透明度降低，突出疆域面
+                                'raster-brightness-min': 0.1,    // 最暗处压到很暗
+                                'raster-brightness-max': 0.5,    // 最亮处不超过50%
+                                'raster-saturation': -0.9,       // 去饱和（-1=黑白，-0.9=接近老地图）
+                                'raster-contrast': 0.05,         // 低对比，柔和
+                            }
+                        },
+                        // 在 layers 数组中，放在 local-tiles 之后，territory-fill 之前
+                        {
+                            id: 'vintage-overlay',
+                            type: 'background',
+                            paint: {
+                                'background-color': '#3d2b1f',  // 深褐/暗棕
+                                'background-opacity': 0.25      // 25%透明度，罩在底图上
+                            }
+                        }
+                    ]
+                },
+                center: CONFIG.initialCenter,
+                zoom: CONFIG.initialZoom,
+                maxZoom: 12,
+                minZoom: 3,
+            });
+
+            map.addControl(new maplibregl.NavigationControl(), 'top-left');
+
+            map.on('load', async () => {
+                try {
+                    await loadData();
+                    if (!dataLoaded) return;
+
+                    initLayers();
+                    initControls();
+                    updateDisplay();
+                    generateLegend();
+
+                    document.getElementById('time-controller').style.display = 'block';
+                    document.getElementById('loading').classList.add('hidden');
+                } catch (e) {
+                    showError('地图初始化失败: ' + e.message, '请检查控制台详细错误信息');
+                }
+            });
+
+            // 瓦片加载错误提示
+            map.on('error', (e) => {
+                console.warn('Map error:', e);
+            });
+        }
+
+        // ==================== 加载数据 ====================
+        async function loadData() {
+            try {
+                // 1. 加载时间索引
+                const indexUrl = `${CONFIG.outputDir}/slice_index.json`;
+                console.log('加载索引:', indexUrl);
+
+                const indexRes = await fetch(indexUrl);
+                if (!indexRes.ok) {
+                    throw new Error(`索引文件加载失败: ${indexRes.status} ${indexRes.statusText}\n路径: ${indexUrl}`);
+                }
+                sliceIndex = await indexRes.json();
+
+                if (!Array.isArray(sliceIndex) || sliceIndex.length === 0) {
+                    throw new Error('slice_index.json 为空或格式错误');
+                }
+
+                // 2. 尝试加载城池数据（可选，失败不阻断）
+                try {
+                    const citiesRes = await fetch('data/city_with_idx.json');
+                    if (citiesRes.ok) {
+                        const citiesJson = await citiesRes.json();
+                        if (citiesJson && Array.isArray(citiesJson.cities)) {
+                            citiesJson.cities.forEach(c => { citiesData[c.id] = c; });
+                        }
+                    }
+                } catch (e) {
+                    console.warn('城池数据加载失败（可选）:', e);
+                }
+
+                dataLoaded = true;
+                console.log(`加载完成: ${sliceIndex.length} 个时间断面, ${Object.keys(citiesData).length} 个城池`);
+
+            } catch (e) {
+                const hint = `可能原因：
+1. 未启动本地 HTTP 服务器（请用 python -m http.server 或 live-server 运行）
+2. outputDir 路径错误（当前设置: "${CONFIG.outputDir}"）
+3. slice_index.json 文件不存在
+4. 瓦片服务器未启动（localhost:8000）
+
+请确保文件结构如下：
+项目目录/
+  ├── xia_territory.html  (本文件)
+  ├── output/
+  │   ├── slice_index.json
+  │   ├── time_slice_initial.geojson
+  │   └── ...其他 geojson
+  └── data/
+      └── city_with_idx.json (可选)`;
+                showError(e.message, hint);
+                throw e;
+            }
+        }
+
+        // ==================== 初始化图层 ====================
+        function initLayers() {
+            // 初始数据：第一个时间断面或 initial
+            const initialFile = sliceIndex[0]?.file || 'time_slice_initial.geojson';
+            const initialUrl = `${CONFIG.outputDir}/${initialFile}`;
+
+            map.addSource('territory', {
+                type: 'geojson',
+                data: initialUrl
+            });
+
+            map.addLayer({
+                id: 'territory-fill',
+                type: 'fill',
+                source: 'territory',
+                paint: {
+                    'fill-color': ['get', 'fill'],
+                    'fill-opacity': ['get', 'fill_opacity'],
+                    'fill-outline-color': ['get', 'stroke']
+                }
+            });
+
+            map.addLayer({
+                id: 'territory-border',
+                type: 'line',
+                source: 'territory',
+                filter: ['!=', ['get', 'owner'], 'neutral'],
+                paint: {
+                    'line-color': ['get', 'stroke'],
+                    'line-width': ['get', 'stroke_width'],
+                    'line-opacity': 0.8
+                }
+            });
+
+            map.on('mousemove', 'territory-fill', (e) => {
+                if (e.features.length > 0) {
+                    map.getCanvas().style.cursor = 'pointer';
+                }
+            });
+
+            map.on('mouseleave', 'territory-fill', () => {
+                map.getCanvas().style.cursor = '';
+            });
+        }
+
+        // ==================== 切换时间断面 ====================
+        function switchTimeSlice(index) {
+            if (!dataLoaded || sliceIndex.length === 0) return;
+            if (index < 0 || index >= sliceIndex.length) return;
+
+            currentIndex = index;
+            const slice = sliceIndex[index];
+
+            // 更新疆域面
+            const fileUrl = `${CONFIG.outputDir}/${slice.file}`;
+            map.getSource('territory').setData(fileUrl);
+
+            // 同步更新行军路线（如果存在）
+            if (typeof window.updateMarchingRoutes === 'function') {
+                window.updateMarchingRoutes(slice.year);
+            }
+
+            updateDisplay();
+            preloadAdjacent(index);
+        }
+
+        function updateDisplay() {
+            if (!dataLoaded || sliceIndex.length === 0) return;
+
+            const slice = sliceIndex[currentIndex] || { year: -1652, title: '初始状态', event_id: 'initial' };
+
+            // 年份显示
+            const yearText = slice.year < 0 ? `前${Math.abs(slice.year)}年` : `${slice.year}年`;
+            document.getElementById('year-display').textContent = yearText;
+
+            // 事件标题
+            document.getElementById('event-title').textContent = slice.title || '初始状态';
+
+            // 事件描述
+            const desc = getEventDescription(slice.event_id);
+            document.getElementById('event-desc').textContent = desc;
+
+            // 进度条
+            const progress = sliceIndex.length > 1
+                ? (currentIndex / (sliceIndex.length - 1)) * 100
+                : 0;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+            document.getElementById('progress-dot').style.left = `${progress}%`;
+
+            // 计数器：修复为正确逻辑
+            document.getElementById('counter').textContent = `${currentIndex + 1} / ${sliceIndex.length}`;
+        }
+
+        function getEventDescription(eventId) {
+            const descMap = {
+                'initial': '夏桀元年即位，定都斟鄩',
+                'evt_002': '夏桀伐有施氏，得妺喜',
+                'evt_003': '夏桀伐岷山氏，得琬琰',
+                'evt_004': '夏桀为仍之会，有缗叛之',
+                'evt_005': '商汤灭葛国',
+                'evt_006': '商汤灭豕韦',
+                'evt_007': '商汤灭顾国',
+                'evt_008': '商汤击败昆吾',
+                'evt_009': '夏桀囚禁商汤于夏台',
+                'evt_010': '商汤获释，有施氏叛夏归商',
+                'evt_011': '伊尹入夏刺探军情',
+                'evt_012': '商汤联络东方方国',
+                'evt_013': '夏桀起九夷之师征商',
+                'evt_014': '商汤暂时臣服，遣使请罪',
+                'evt_015': '鸣条之战，商汤大败夏桀',
+                'evt_016': '夏桀逃奔三鬷',
+                'evt_017': '商汤灭三鬷，夏桀被俘',
+                'evt_018': '商汤放逐夏桀于南巢',
+                'evt_019': '商汤在亳称王，夏朝灭亡',
+            };
+            return descMap[eventId] || '';
+        }
+
+        // ==================== 预加载优化 ====================
+        function preloadAdjacent(index) {
+            for (let i = -2; i <= 2; i++) {
+                const idx = index + i;
+                if (idx >= 0 && idx < sliceIndex.length && idx !== index) {
+                    fetch(`${CONFIG.outputDir}/${sliceIndex[idx].file}`).catch(() => {});
+                }
+            }
+        }
+
+        // ==================== 播放控制 ====================
+        function togglePlay() {
+            if (isPlaying) pause(); else play();
+        }
+
+        function play() {
+            if (!dataLoaded || sliceIndex.length === 0) return;
+            isPlaying = true;
+            document.getElementById('btn-play').textContent = '⏸ 暂停';
+            document.getElementById('btn-play').classList.add('playing');
+
+            playTimer = setInterval(() => {
+                if (currentIndex >= sliceIndex.length - 1) {
+                    pause();
+                    return;
+                }
+                switchTimeSlice(currentIndex + 1);
+            }, CONFIG.playInterval);
+        }
+
+        function pause() {
+            isPlaying = false;
+            document.getElementById('btn-play').textContent = '▶ 播放';
+            document.getElementById('btn-play').classList.remove('playing');
+            clearInterval(playTimer);
+        }
+
+        // ==================== 控件初始化 ====================
+        function initControls() {
+            document.getElementById('btn-first').addEventListener('click', () => {
+                pause();
+                switchTimeSlice(0);
+            });
+
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                pause();
+                switchTimeSlice(currentIndex - 1);
+            });
+
+            document.getElementById('btn-play').addEventListener('click', togglePlay);
+
+            document.getElementById('btn-next').addEventListener('click', () => {
+                pause();
+                switchTimeSlice(currentIndex + 1);
+            });
+
+            document.getElementById('btn-last').addEventListener('click', () => {
+                pause();
+                switchTimeSlice(sliceIndex.length - 1);
+            });
+
+            // 进度条点击跳转
+            document.getElementById('progress-bar').addEventListener('click', (e) => {
+                if (!dataLoaded || sliceIndex.length === 0) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const ratio = x / rect.width;
+                const index = Math.round(ratio * (sliceIndex.length - 1));
+                pause();
+                switchTimeSlice(index);
+            });
+
+            // 键盘控制
+            document.addEventListener('keydown', (e) => {
+                if (!dataLoaded) return;
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        pause();
+                        switchTimeSlice(currentIndex - 1);
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        pause();
+                        switchTimeSlice(currentIndex + 1);
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        togglePlay();
+                        break;
+                    case 'Home':
+                        e.preventDefault();
+                        pause();
+                        switchTimeSlice(0);
+                        break;
+                    case 'End':
+                        e.preventDefault();
+                        pause();
+                        switchTimeSlice(sliceIndex.length - 1);
+                        break;
+                }
+            });
+        }
+
+        // ==================== 生成图例 ====================
+        function generateLegend() {
+            const legendData = [
+                { name: '夏朝', color: '#8B2500', note: '核心王朝' },
+                { name: '夏朝附庸', color: '#C5927F', note: '姒姓诸侯' },
+                { name: '商部落', color: '#1B4F72', note: '商族势力' },
+                { name: '商部落附庸', color: '#8DA7B8', note: '联盟方国' },
+                { name: '独立方国', color: '#D35400', note: '各方势力' },
+                { name: '九夷', color: '#6C3483', note: '东夷各部' },
+                { name: '北方部族', color: '#708090', note: '鬼方/土方等' },
+                { name: '无人控制', color: '#7F8C8D', note: 'neutral' },
+            ];
+
+            const container = document.getElementById('legend-content');
+            container.innerHTML = ''; // 清空
+            legendData.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'legend-item';
+                div.innerHTML = `
+                    <div class="legend-color" style="background: ${item.color}; opacity: 0.8;"></div>
+                    <div class="legend-label">${item.name}</div>
+                `;
+                container.appendChild(div);
+
+                if (item.note) {
+                    const note = document.createElement('div');
+                    note.className = 'legend-note';
+                    note.textContent = item.note;
+                    container.appendChild(note);
+                }
+            });
+        }
+
+        // ==================== 启动 ====================
+        initMap();
+    </script>
+</body>
+</html>
