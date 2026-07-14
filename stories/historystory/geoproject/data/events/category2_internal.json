@@ -1,0 +1,1338 @@
+{
+  "events": [
+    {
+      "id": "evt_001",
+      "year": -2070,
+      "title": "大禹都阳城",
+      "changes": [
+        {
+          "city_id": "xia_yangcheng",
+          "from": "夏部落",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "禹受舜禅，即位为天子，都阳城。《世本》：夏禹都阳城，避商均也。《史记·夏本纪》：禹于是遂即天子位，南面朝天下，国号曰夏后。",
+      "source": "《世本·居篇》《史记·夏本纪》"
+    },
+    {
+      "id": "evt_002",
+      "year": -2068,
+      "title": "大禹迁都阳翟",
+      "changes": [
+        {
+          "city_id": "xia_yangdi",
+          "from": "夏部落",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "禹迁都阳翟（今河南禹州），便于控制中原。《水经注》：阳翟，夏禹始封于此为夏国。",
+      "source": "《水经注》《汉书·地理志》"
+    },
+    {
+      "id": "evt_003",
+      "year": -2065,
+      "title": "大禹迁都平阳",
+      "changes": [
+        {
+          "city_id": "xia_pingyang",
+          "from": "唐国",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "禹迁都平阳（今山西临汾），加强对北方控制。《帝王世纪》：禹受禅都平阳。",
+      "source": "《帝王世纪》《初学记》"
+    },
+    {
+      "id": "evt_004",
+      "year": -2060,
+      "title": "大禹迁都安邑",
+      "changes": [
+        {
+          "city_id": "xia_anyi",
+          "from": "夏部落",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "禹晚年迁都安邑（今山西夏县），靠近夏部落祖地。《帝王世纪》：或在安邑。",
+      "source": "《帝王世纪》《史记·夏本纪正义》"
+    },
+    {
+      "id": "evt_008",
+      "year": -2040,
+      "title": "大禹崩于会稽",
+      "changes": [],
+      "note": "禹东巡至会稽而崩，葬于会稽山。《史记·夏本纪》：十年，帝禹东巡狩，至于会稽而崩。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_009",
+      "year": -1978,
+      "title": "夏启继位，都阳翟",
+      "changes": [
+        {
+          "city_id": "xia_yangdi",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "继位"
+        }
+      ],
+      "note": "禹崩后启继位，确立世袭制。《史记·夏本纪》：夏后帝启，禹之子。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_011",
+      "year": -1975,
+      "title": "钧台之享，天下咸朝",
+      "changes": [
+        {
+          "city_id": "xia_xiatai",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "会盟"
+        }
+      ],
+      "note": "启大飨诸侯于钧台，宣告王位世袭，家天下始。《左传·昭公四年》：夏启有钧台之享。",
+      "source": "《左传·昭公四年》"
+    },
+    {
+      "id": "evt_014",
+      "year": -1968,
+      "title": "武观作乱，启平之",
+      "changes": [
+        {
+          "city_id": "xia_guanguo",
+          "from": "观国",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "平叛"
+        }
+      ],
+      "note": "启子武观叛乱，启派彭伯寿讨平之。《竹书纪年》：启征西河，武观作乱。",
+      "source": "《竹书纪年》《逸周书·尝麦解》"
+    },
+    {
+      "id": "evt_015",
+      "year": -1958,
+      "title": "太康继位，迁都斟鄩",
+      "changes": [
+        {
+          "city_id": "xia_zhenxun",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "太康继启即位，迁都斟鄩。《史记·夏本纪》：太康居斟寻。",
+      "source": "《史记·夏本纪》《竹书纪年》"
+    },
+    {
+      "id": "evt_016",
+      "year": -1955,
+      "title": "太康失国，后羿入据斟鄩",
+      "changes": [
+        {
+          "city_id": "xia_zhenxun",
+          "from": "夏朝",
+          "to": "有穷氏",
+          "vassal_of": null,
+          "type": "占领"
+        },
+        {
+          "city_id": "chu",
+          "from": "有穷氏",
+          "to": "有穷氏",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "太康外出狩猎数月不归，后羿乘机入据夏都斟鄩，掌控政权。《左传·襄公四年》：后羿自鉏迁于穷石，因夏民以代夏政。",
+      "source": "《左传·襄公四年》《史记·夏本纪》"
+    },
+    {
+      "id": "evt_017",
+      "year": -1955,
+      "title": "太康流亡阳夏",
+      "changes": [
+        {
+          "city_id": "xia_yangcheng",
+          "from": "夏朝",
+          "to": "太康流亡",
+          "vassal_of": null,
+          "type": "流亡"
+        }
+      ],
+      "note": "太康被逐，流亡于阳夏（今河南太康），10年后卒于此。《竹书纪年》：太康居斟寻，畋于洛表，羿距于河。",
+      "source": "《竹书纪年》《史记·夏本纪》"
+    },
+    {
+      "id": "evt_019",
+      "year": -1952,
+      "title": "仲康继位，居斟鄩",
+      "changes": [
+        {
+          "city_id": "xia_zhenxun",
+          "from": "有穷氏",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "复都"
+        }
+      ],
+      "note": "太康崩后，后羿拥立仲康为傀儡，实权在羿。《史记·夏本纪》：仲康帝。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_020",
+      "year": -1948,
+      "title": "胤侯征羲和氏",
+      "changes": [
+        {
+          "city_id": "xia_zhenxun",
+          "from": "羲和氏",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "征讨"
+        }
+      ],
+      "note": "仲康日食，命胤侯掌六师，征讨失职的羲和氏。《尚书·胤征》：惟仲康肇位四海，胤侯命掌六师。",
+      "source": "《尚书·胤征》"
+    },
+    {
+      "id": "evt_021",
+      "year": -1946,
+      "title": "仲康崩，相继位",
+      "changes": [],
+      "note": "仲康在位约7年而崩，子相继位。《史记·夏本纪》：帝相崩。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_022",
+      "year": -1943,
+      "title": "相迁都帝丘",
+      "changes": [
+        {
+          "city_id": "xia_diqiu",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "相为避后羿，迁都帝丘，依靠斟灌、斟鄩二氏。《竹书纪年》：相居帝丘。",
+      "source": "《竹书纪年》《史记·夏本纪》"
+    },
+    {
+      "id": "evt_023",
+      "year": -1940,
+      "title": "相征畎夷、黄夷",
+      "changes": [
+        {
+          "city_id": "jiuyi_quan",
+          "from": "畎夷",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "征讨"
+        },
+        {
+          "city_id": "jiuyi_huang",
+          "from": "黄夷",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "征讨"
+        }
+      ],
+      "note": "相即位元年，征畎夷；二年征黄夷。《竹书纪年》：元年，征畎夷。二年，征黄夷。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_024",
+      "year": -1940,
+      "title": "后羿自鉏迁于穷石",
+      "changes": [
+        {
+          "city_id": "qiongshi",
+          "from": "有穷氏",
+          "to": "有穷氏",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "后羿从鉏迁于穷石，占据嵩山北麓、河伯故地。《左传·襄公四年》：后羿自鉏迁于穷石，因夏民以代夏政。",
+      "source": "《左传·襄公四年》"
+    },
+    {
+      "id": "evt_027",
+      "year": -1936,
+      "title": "寒浞杀后羿，篡有穷氏",
+      "changes": [
+        {
+          "city_id": "chu",
+          "from": "有穷氏",
+          "to": "寒国",
+          "vassal_of": null,
+          "type": "篡位"
+        },
+        {
+          "city_id": "qiongshi",
+          "from": "有穷氏",
+          "to": "寒国",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "寒浞杀后羿于桃梧，篡夺有穷氏政权，迁于穷石。《左传·襄公四年》：浞行媚于内，施赂于外，愚弄其民……因羿之室，生浇及豷。",
+      "source": "《左传·襄公四年》"
+    },
+    {
+      "id": "evt_028",
+      "year": -1935,
+      "title": "寒浞建寒国，封浇于过",
+      "changes": [
+        {
+          "city_id": "hanguo",
+          "from": "寒氏",
+          "to": "寒国",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "guoguo",
+          "from": "过国",
+          "to": "寒国",
+          "vassal_of": null,
+          "type": "分封"
+        }
+      ],
+      "note": "寒浞建立寒国，封子浇于过，封豷于戈。《左传·襄公四年》：浞因羿之室，生浇及豷。",
+      "source": "《左传·襄公四年》"
+    },
+    {
+      "id": "evt_029",
+      "year": -1934,
+      "title": "寒浞封浇于过",
+      "changes": [
+        {
+          "city_id": "guoguo",
+          "from": "过国",
+          "to": "寒国",
+          "vassal_of": null,
+          "type": "分封"
+        }
+      ],
+      "note": "寒浞建立寒国后，封长子浇于过国。《左传·襄公四年》：浞因羿之室，生浇及豷。",
+      "source": "《左传·襄公四年》"
+    },
+    {
+      "id": "evt_031",
+      "year": -1932,
+      "title": "寒浞封豷于戈",
+      "changes": [
+        {
+          "city_id": "xia_geguo",
+          "from": "戈国",
+          "to": "寒国",
+          "vassal_of": null,
+          "type": "分封"
+        }
+      ],
+      "note": "寒浞封次子豷于戈国。《左传·襄公四年》：生浇及豷。",
+      "source": "《左传·襄公四年》"
+    },
+    {
+      "id": "evt_034",
+      "year": -1928,
+      "title": "后缗逃归有仍，生少康",
+      "changes": [
+        {
+          "city_id": "youreng",
+          "from": "有仍氏",
+          "to": "有仍氏",
+          "vassal_of": null,
+          "type": "避难"
+        }
+      ],
+      "note": "相妻后缗逃归母家有仍氏，生下遗腹子少康。《左传·哀公元年》：后缗方娠，逃出自窦，归于有仍，生少康焉。",
+      "source": "《左传·哀公元年》"
+    },
+    {
+      "id": "evt_035",
+      "year": -1928,
+      "title": "靡奔有鬲氏",
+      "changes": [
+        {
+          "city_id": "youge",
+          "from": "有鬲氏",
+          "to": "有鬲氏",
+          "vassal_of": null,
+          "type": "避难"
+        }
+      ],
+      "note": "相被杀后，夏臣靡逃奔有鬲氏。《左传·襄公四年》：靡奔有鬲氏。",
+      "source": "《左传·襄公四年》"
+    },
+    {
+      "id": "evt_037",
+      "year": -1875,
+      "title": "少康生于有仍",
+      "changes": [
+        {
+          "city_id": "youreng",
+          "from": "有仍氏",
+          "to": "有仍氏",
+          "vassal_of": null,
+          "type": "出生"
+        }
+      ],
+      "note": "少康在有仍氏领地出生，为相之遗腹子。《左传·哀公元年》：生少康焉。",
+      "source": "《左传·哀公元年》"
+    },
+    {
+      "id": "evt_038",
+      "year": -1875,
+      "title": "少康为仍牧正",
+      "changes": [
+        {
+          "city_id": "youreng",
+          "from": "有仍氏",
+          "to": "有仍氏",
+          "vassal_of": null,
+          "type": "任职"
+        }
+      ],
+      "note": "少康长大后任有仍氏牧正，管理畜牧。《左传·哀公元年》：少康为仍牧正。",
+      "source": "《左传·哀公元年》"
+    },
+    {
+      "id": "evt_039",
+      "year": -1873,
+      "title": "浇使椒求少康，少康奔有虞",
+      "changes": [
+        {
+          "city_id": "youyu",
+          "from": "有虞氏",
+          "to": "有虞氏",
+          "vassal_of": null,
+          "type": "避难"
+        }
+      ],
+      "note": "浇派大臣椒寻访少康，少康闻讯逃奔有虞氏。《左传·哀公元年》：浇使椒求之，少康逃奔有虞。",
+      "source": "《左传·哀公元年》"
+    },
+    {
+      "id": "evt_040",
+      "year": -1872,
+      "title": "少康为虞庖正",
+      "changes": [
+        {
+          "city_id": "youyu",
+          "from": "有虞氏",
+          "to": "有虞氏",
+          "vassal_of": null,
+          "type": "任职"
+        }
+      ],
+      "note": "少康任有虞氏庖正（厨官），深得虞思信任。《左传·哀公元年》：虞思于是妻之以二姚。",
+      "source": "《左传·哀公元年》"
+    },
+    {
+      "id": "evt_041",
+      "year": -1870,
+      "title": "虞思封少康于纶",
+      "changes": [
+        {
+          "city_id": "xia_lun",
+          "from": "有虞氏",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "分封"
+        }
+      ],
+      "note": "虞思将两个女儿嫁给少康，并封之于纶。《左传·哀公元年》：虞思于是妻之以二姚，而邑诸纶。",
+      "source": "《左传·哀公元年》"
+    },
+    {
+      "id": "evt_042",
+      "year": -1865,
+      "title": "女艾谍浇于过",
+      "changes": [
+        {
+          "city_id": "guoguo",
+          "from": "寒国",
+          "to": "寒国",
+          "vassal_of": null,
+          "type": "谍报"
+        }
+      ],
+      "note": "少康派女艾潜入过国，刺探浇的情报。《左传·哀公元年》：使女艾谍浇。",
+      "source": "《左传·哀公元年》"
+    },
+    {
+      "id": "evt_043",
+      "year": -1863,
+      "title": "季杼诱豷于戈",
+      "changes": [
+        {
+          "city_id": "xia_geguo",
+          "from": "寒国",
+          "to": "寒国",
+          "vassal_of": null,
+          "type": "诱杀"
+        }
+      ],
+      "note": "少康派儿子季杼设计诱杀寒浞次子豷。《左传·哀公元年》：后杼灭豷于戈。",
+      "source": "《左传·哀公元年》"
+    },
+    {
+      "id": "evt_048",
+      "year": -1855,
+      "title": "少康迁都于原",
+      "changes": [
+        {
+          "city_id": "xia_yuan",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "少康复国后迁都于原，整顿朝政。《竹书纪年》：少康自纶归于夏邑。",
+      "source": "《竹书纪年》《左传·哀公元年》"
+    },
+    {
+      "id": "evt_049",
+      "year": -1855,
+      "title": "少康复设田稷之官",
+      "changes": [
+        {
+          "city_id": "xia_yuan",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "建制"
+        }
+      ],
+      "note": "少康复设田稷之官，恢复农业生产，巩固复国基础。《国语·周语上》：昔我先王世后稷，以服事虞夏。",
+      "source": "《国语·周语上》"
+    },
+    {
+      "id": "evt_051",
+      "year": -1852,
+      "title": "杼继位",
+      "changes": [],
+      "note": "少康崩，子杼继位。《史记·夏本纪》：帝予（杼）立。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_052",
+      "year": -1850,
+      "title": "杼迁都老丘",
+      "changes": [
+        {
+          "city_id": "xia_laoqiu",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "杼为巩固东方，迁都老丘，靠近东夷前线。《竹书纪年》：帝杼居原，自原迁于老丘。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_053",
+      "year": -1850,
+      "title": "少康封庶子无余于越",
+      "changes": [
+        {
+          "city_id": "xia_youtai",
+          "from": "夏朝",
+          "to": "越国",
+          "vassal_of": "夏朝",
+          "type": "分封"
+        }
+      ],
+      "note": "少康封庶子无余于越，以奉禹祀。《史记·越王勾践世家》：封于会稽，以奉守禹之祀。",
+      "source": "《史记·越王勾践世家》"
+    },
+    {
+      "id": "evt_054",
+      "year": -1848,
+      "title": "杼作甲",
+      "changes": [
+        {
+          "city_id": "xia_laoqiu",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "发明"
+        }
+      ],
+      "note": "杼发明皮甲，夏军装备升级，有效防御东夷弓箭。《竹书纪年》：帝杼作甲。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_055",
+      "year": -1847,
+      "title": "杼作矛",
+      "changes": [
+        {
+          "city_id": "xia_laoqiu",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "发明"
+        }
+      ],
+      "note": "杼发明长矛，增强夏军进攻能力。《竹书纪年》：帝杼作矛。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_058",
+      "year": -1836,
+      "title": "杼崩，报祭于杼",
+      "changes": [
+        {
+          "city_id": "xia_laoqiu",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "祭祀"
+        }
+      ],
+      "note": "夏人为杼举行报祭，赞其能帅禹者也。《国语·鲁语下》：杼能帅禹者也，夏后氏报焉。",
+      "source": "《国语·鲁语下》"
+    },
+    {
+      "id": "evt_059",
+      "year": -1833,
+      "title": "槐继位",
+      "changes": [],
+      "note": "杼崩，子槐继位。《史记·夏本纪》：帝槐立。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_060",
+      "year": -1830,
+      "title": "九夷来朝",
+      "changes": [
+        {
+          "city_id": "jiuyi_quan",
+          "from": "畎夷",
+          "to": "畎夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_yu",
+          "from": "于夷",
+          "to": "于夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_fang",
+          "from": "方夷",
+          "to": "方夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_huang",
+          "from": "黄夷",
+          "to": "黄夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_bai",
+          "from": "白夷",
+          "to": "白夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_chi",
+          "from": "赤夷",
+          "to": "赤夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_xuan",
+          "from": "玄夷",
+          "to": "玄夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_feng",
+          "from": "风夷",
+          "to": "风夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_yang",
+          "from": "阳夷",
+          "to": "阳夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        }
+      ],
+      "note": "畎夷、于夷、方夷、黄夷、白夷、赤夷、玄夷、风夷、阳夷来朝。《竹书纪年》：后芬即位，三年，九夷来御。",
+      "source": "《竹书纪年》《史记·夏本纪》"
+    },
+    {
+      "id": "evt_061",
+      "year": -1820,
+      "title": "洛伯与河伯之战",
+      "changes": [
+        {
+          "city_id": "xia_mengjin",
+          "from": "洛伯",
+          "to": "河伯",
+          "vassal_of": null,
+          "type": "战争"
+        }
+      ],
+      "note": "洛伯用与河伯冯夷在洛水、黄河之间发生冲突，发生战争。《竹书纪年》：洛伯用与河伯冯夷斗。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_062",
+      "year": -1810,
+      "title": "商侯王亥宾于有易，被杀",
+      "changes": [
+        {
+          "city_id": "youyi",
+          "from": "有易氏",
+          "to": "有易氏",
+          "vassal_of": null,
+          "type": "冲突"
+        }
+      ],
+      "note": "夏泄十二年，商侯王亥送牛羊至有易氏贸易，被有易君绵臣杀害。《竹书纪年》：殷侯子亥宾于有易，有易杀而放之。",
+      "source": "《竹书纪年·帝泄十二年》《山海经·大荒东经》"
+    },
+    {
+      "id": "evt_064",
+      "year": -1789,
+      "title": "芒继位，沉祭于河",
+      "changes": [],
+      "note": "槐崩，子芒继位。《竹书纪年》：后芒即位，元年，以玄圭宾于河。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_065",
+      "year": -1785,
+      "title": "芒东狩于海",
+      "changes": [],
+      "note": "芒率臣僚东巡至东海，捕获大鱼。《竹书纪年》：后芒即位，元年，以玄圭宾于河。乃东狩于海。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_066",
+      "year": -1770,
+      "title": "商侯冥治黄河殉职",
+      "changes": [
+        {
+          "city_id": "xia_mengjin",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "殉职"
+        }
+      ],
+      "note": "商侯冥在治理黄河时殉职，商人尊其为高祖。《国语·鲁语》：冥勤其官而水死。",
+      "source": "《国语·鲁语》《竹书纪年》"
+    },
+    {
+      "id": "evt_067",
+      "year": -1730,
+      "title": "泄继位，封九夷",
+      "changes": [
+        {
+          "city_id": "jiuyi_quan",
+          "from": "畎夷",
+          "to": "畎夷",
+          "vassal_of": "夏朝",
+          "type": "册封"
+        },
+        {
+          "city_id": "jiuyi_yu",
+          "from": "于夷",
+          "to": "于夷",
+          "vassal_of": "夏朝",
+          "type": "册封"
+        },
+        {
+          "city_id": "jiuyi_fang",
+          "from": "方夷",
+          "to": "方夷",
+          "vassal_of": "夏朝",
+          "type": "册封"
+        },
+        {
+          "city_id": "jiuyi_huang",
+          "from": "黄夷",
+          "to": "黄夷",
+          "vassal_of": "夏朝",
+          "type": "册封"
+        },
+        {
+          "city_id": "jiuyi_bai",
+          "from": "白夷",
+          "to": "白夷",
+          "vassal_of": "夏朝",
+          "type": "册封"
+        },
+        {
+          "city_id": "jiuyi_chi",
+          "from": "赤夷",
+          "to": "赤夷",
+          "vassal_of": "夏朝",
+          "type": "册封"
+        },
+        {
+          "city_id": "jiuyi_xuan",
+          "from": "玄夷",
+          "to": "玄夷",
+          "vassal_of": "夏朝",
+          "type": "册封"
+        },
+        {
+          "city_id": "jiuyi_feng",
+          "from": "风夷",
+          "to": "风夷",
+          "vassal_of": "夏朝",
+          "type": "册封"
+        },
+        {
+          "city_id": "jiuyi_yang",
+          "from": "阳夷",
+          "to": "阳夷",
+          "vassal_of": "夏朝",
+          "type": "册封"
+        }
+      ],
+      "note": "泄正式赐封九夷各部诸侯爵位，确立诸侯制雏形。《竹书纪年》：后泄即位，元年，命畎夷、白夷、赤夷、玄夷、风夷、阳夷。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_068",
+      "year": -1720,
+      "title": "六夷来朝",
+      "changes": [
+        {
+          "city_id": "jiuyi_quan",
+          "from": "畎夷",
+          "to": "畎夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_yu",
+          "from": "于夷",
+          "to": "于夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_fang",
+          "from": "方夷",
+          "to": "方夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_huang",
+          "from": "黄夷",
+          "to": "黄夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_bai",
+          "from": "白夷",
+          "to": "白夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        },
+        {
+          "city_id": "jiuyi_chi",
+          "from": "赤夷",
+          "to": "赤夷",
+          "vassal_of": "夏朝",
+          "type": "朝贡"
+        }
+      ],
+      "note": "东夷、西羌等六夷派使者朝见泄，承认夏朝统治。《竹书纪年》：六年，六夷来宾。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_069",
+      "year": -1702,
+      "title": "不降继位",
+      "changes": [],
+      "note": "泄崩，子不降继位。《史记·夏本纪》：帝不降立。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_072",
+      "year": -1644,
+      "title": "不降内禅于扃",
+      "changes": [],
+      "note": "不降在位59年，因儿子孔甲性情乖僻，禅位于弟扃。《竹书纪年》：不降即位，六十九年，逊位于弟扃。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_073",
+      "year": -1643,
+      "title": "扃继位",
+      "changes": [],
+      "note": "不降崩，弟扃继位。《史记·夏本纪》：帝扃立。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_074",
+      "year": -1622,
+      "title": "廑继位，迁都西河",
+      "changes": [
+        {
+          "city_id": "xia_xihe",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "扃崩，子廑继位，迁都西河。《竹书纪年》：帝廑即位，元年，自老丘迁于西河。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_076",
+      "year": -1612,
+      "title": "孔甲继位",
+      "changes": [],
+      "note": "廑崩，不降之子孔甲继位。《史记·夏本纪》：帝孔甲立。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_077",
+      "year": -1611,
+      "title": "伊尹入夏刺探军情",
+      "changes": [
+        {
+          "city_id": "xia_zhenxun",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "谍报"
+        }
+      ],
+      "note": "伊尹入夏都斟鄩，取得妺喜信任，刺探夏朝虚实。《史记·殷本纪》：伊尹名阿衡，负鼎俎，以滋味说汤。",
+      "source": "《史记·殷本纪》《吕氏春秋·慎大》"
+    },
+    {
+      "id": "evt_078",
+      "year": -1610,
+      "title": "孔甲好鬼神，刘累养龙",
+      "changes": [
+        {
+          "city_id": "xia_xihe",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "祭祀"
+        }
+      ],
+      "note": "孔甲获雌雄二龙，命刘累（豢龙氏）饲养。《左传·昭公二十九年》：有陶唐氏既衰，其后有刘累，学扰龙于豢龙氏。",
+      "source": "《左传·昭公二十九年》"
+    },
+    {
+      "id": "evt_079",
+      "year": -1607,
+      "title": "刘累献龙肉，惧罪逃鲁阳",
+      "changes": [
+        {
+          "city_id": "xia_xihe",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "逃亡"
+        }
+      ],
+      "note": "刘累烹死龙给孔甲吃，后惧罪逃奔鲁阳（今河南鲁山）。《左传·昭公二十九年》：龙一雌死，潜醢以食夏后，夏后飨之，既而使求之，惧而迁于鲁县。",
+      "source": "《左传·昭公二十九年》"
+    },
+    {
+      "id": "evt_081",
+      "year": -1602,
+      "title": "桀起九夷之师征商",
+      "changes": [
+        {
+          "city_id": "jiuyi_quan",
+          "from": "畎夷",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "征调"
+        },
+        {
+          "city_id": "jiuyi_yu",
+          "from": "于夷",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "征调"
+        },
+        {
+          "city_id": "jiuyi_fang",
+          "from": "方夷",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "征调"
+        }
+      ],
+      "note": "夏桀下令东夷首领调集军队，准备讨伐商汤。《竹书纪年》：桀命九夷之师伐商。",
+      "source": "《竹书纪年》《史记·殷本纪》"
+    },
+    {
+      "id": "evt_082",
+      "year": -1601,
+      "title": "皋继位，迁都渑池",
+      "changes": [
+        {
+          "city_id": "xia_mianchi",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "孔甲崩，子皋继位，迁都于渑池附近。《竹书纪年》：帝皋即位，元年，居渑池。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_083",
+      "year": -1601,
+      "title": "商汤遣使请罪，九夷罢兵",
+      "changes": [
+        {
+          "city_id": "shang_bo",
+          "from": "商部落",
+          "to": "商部落",
+          "vassal_of": "夏朝",
+          "type": "臣服"
+        }
+      ],
+      "note": "伊尹建议汤暂时臣服，遣使带贡物请罪，夏桀罢兵。《竹书纪年》：汤乃行贿于夏，桀释之。",
+      "source": "《竹书纪年》《史记·殷本纪》"
+    },
+    {
+      "id": "evt_085",
+      "year": -1600,
+      "title": "桀奔三鬷",
+      "changes": [
+        {
+          "city_id": "sanzong",
+          "from": "三鬷",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "避难"
+        }
+      ],
+      "note": "桀败走三鬷，收集残部企图再战。《史记·夏本纪》：桀走鸣条，遂放而死。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_088",
+      "year": -1600,
+      "title": "商汤在亳称王，夏朝灭亡",
+      "changes": [
+        {
+          "city_id": "shang_bo",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "shang_shen",
+          "from": "有莘氏",
+          "to": "商朝",
+          "vassal_of": "商朝",
+          "type": "建国"
+        },
+        {
+          "city_id": "geguo",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_shiwei",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_gu",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_kunwu",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "youshi",
+          "from": "有施氏",
+          "to": "商朝",
+          "vassal_of": "商朝",
+          "type": "建国"
+        },
+        {
+          "city_id": "youreng",
+          "from": "有仍氏",
+          "to": "商朝",
+          "vassal_of": "商朝",
+          "type": "建国"
+        },
+        {
+          "city_id": "youyu",
+          "from": "有虞氏",
+          "to": "商朝",
+          "vassal_of": "商朝",
+          "type": "建国"
+        },
+        {
+          "city_id": "sanzong",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "chaoguo",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_yangcheng",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_yangdi",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_pingyang",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_diqiu",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_xihe",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        }
+      ],
+      "note": "商汤在亳称王，建立商朝，所有商部落领土转为商朝。《史记·殷本纪》：汤既胜夏，欲迁其社，不可，作《夏社》。",
+      "source": "《史记·殷本纪》《尚书·汤誓》"
+    },
+    {
+      "id": "evt_089",
+      "year": -1600,
+      "title": "商汤封夏后于杞",
+      "changes": [
+        {
+          "city_id": "xia_qi",
+          "from": "夏朝",
+          "to": "杞国",
+          "vassal_of": "商朝",
+          "type": "分封"
+        }
+      ],
+      "note": "商汤建立商朝，封夏后裔于杞，以奉夏祀。《史记·陈杞世家》：周武王之时，侯伯尚千余人。及幽、厉之后，诸侯力政相并。",
+      "source": "《史记·陈杞世家》《礼记·乐记》"
+    },
+    {
+      "id": "evt_090",
+      "year": -1600,
+      "title": "夏桀败于有娀之墟",
+      "changes": [
+        {
+          "city_id": "xia_kuaiji",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "战败"
+        }
+      ],
+      "note": "桀在有娀氏旧址被商汤击败，仓皇逃窜。《竹书纪年》：桀败于有娀之墟。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_091",
+      "year": -1600,
+      "title": "商汤封禹后于越",
+      "changes": [
+        {
+          "city_id": "xia_youtai",
+          "from": "有邰氏",
+          "to": "越国",
+          "vassal_of": "商朝",
+          "type": "分封"
+        }
+      ],
+      "note": "少康庶子无余封于越，奉禹祀。《史记·越王勾践世家》：越王勾践，其先禹之苗裔，而夏后帝少康之庶子也。",
+      "source": "《史记·越王勾践世家》"
+    },
+    {
+      "id": "evt_092",
+      "year": -1599,
+      "title": "夏桀卒于亭山",
+      "changes": [
+        {
+          "city_id": "battle_nanchao",
+          "from": "夏朝",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "死亡"
+        }
+      ],
+      "note": "桀被放逐后卒于亭山（南巢附近），夏朝彻底终结。《史记·夏本纪》：桀走鸣条，遂放而死。",
+      "source": "《史记·夏本纪》《竹书纪年》"
+    },
+    {
+      "id": "evt_093",
+      "year": -1596,
+      "title": "发继位，迁回斟鄩",
+      "changes": [
+        {
+          "city_id": "xia_zhenxun",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "迁都"
+        }
+      ],
+      "note": "皋崩，子发继位，迁回斟鄩。《竹书纪年》：帝发即位，元年，诸夷宾于王门，再保庸会于上池，诸夷入舞。",
+      "source": "《竹书纪年》"
+    },
+    {
+      "id": "evt_094",
+      "year": -1593,
+      "title": "发用关龙逄为相",
+      "changes": [
+        {
+          "city_id": "xia_zhenxun",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "任职"
+        }
+      ],
+      "note": "发破格提拔养马的关龙逄为相，一度治理得井井有条。《吕氏春秋》：夏桀之时，关龙逄为相。",
+      "source": "《吕氏春秋》《韩非子》"
+    },
+    {
+      "id": "evt_095",
+      "year": -1589,
+      "title": "夏桀继位，定都斟鄩",
+      "changes": [
+        {
+          "city_id": "xia_zhenxun",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "继位"
+        }
+      ],
+      "note": "发崩，子桀继位，为夏朝末代君主。《史记·夏本纪》：帝桀之时，自孔甲以来而诸侯多畔夏。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_098",
+      "year": -1578,
+      "title": "关龙逄谏桀被杀",
+      "changes": [
+        {
+          "city_id": "xia_zhenxun",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "诛杀"
+        }
+      ],
+      "note": "关龙逄进谏桀，批评其暴政，被桀囚禁后杀害。《韩非子》：关龙逄说桀而伤其四肢。",
+      "source": "《韩非子》《吕氏春秋》"
+    },
+    {
+      "id": "evt_099",
+      "year": -1575,
+      "title": "桀囚商汤于夏台",
+      "changes": [
+        {
+          "city_id": "xia_xiatai",
+          "from": "夏朝",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "囚禁"
+        }
+      ],
+      "note": "商汤势力渐大，桀将其囚禁于夏台。《史记·夏本纪》：乃召汤而囚之夏台，已而释之。",
+      "source": "《史记·夏本纪》"
+    },
+    {
+      "id": "evt_100",
+      "year": -1573,
+      "title": "伊尹去夏适商",
+      "changes": [
+        {
+          "city_id": "shang_bo",
+          "from": "商部落",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "投奔"
+        }
+      ],
+      "note": "伊尹见桀无道，离开夏朝投奔商汤。《史记·殷本纪》：伊尹名阿衡，负鼎俎，以滋味说汤。",
+      "source": "《史记·殷本纪》"
+    }
+  ]
+}

@@ -1,0 +1,437 @@
+{
+  "events": [
+    {
+      "id": "evt_001",
+      "year": -1652,
+      "title": "夏桀即位，定都斟鄩",
+      "changes": [],
+      "note": "夏桀元年即位，初始状态"
+    },
+    {
+      "id": "evt_002",
+      "year": -1650,
+      "title": "夏桀伐有施氏，得妺喜",
+      "changes": [
+        {
+          "city_id": "youshi",
+          "from": "有施氏",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "占领"
+        }
+      ],
+      "note": "夏桀伐喜姓之国有施氏，武力征服，直接占领"
+    },
+    {
+      "id": "evt_003",
+      "year": -1648,
+      "title": "夏桀伐岷山氏，得琬琰",
+      "changes": [
+        {
+          "city_id": "minshan",
+          "from": "岷山氏",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "占领"
+        }
+      ],
+      "note": "古本《纪年》载桀伐岷山氏，武力征服，直接占领"
+    },
+    {
+      "id": "evt_004",
+      "year": -1645,
+      "title": "夏桀为仍之会，有缗叛之",
+      "changes": [
+        {
+          "city_id": "youmin",
+          "from": "有缗氏",
+          "to": "夏朝",
+          "vassal_of": null,
+          "type": "占领"
+        }
+      ],
+      "note": "《左传》定公四年记载，夏桀为仍之会，有缗叛之，桀灭有缗，武力征服"
+    },
+    {
+      "id": "evt_005",
+      "year": -1630,
+      "title": "商汤灭葛国",
+      "changes": [
+        {
+          "city_id": "geguo",
+          "from": "葛国",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        }
+      ],
+      "note": "商汤十一征之始，先灭葛国，武力征服，直接占领"
+    },
+    {
+      "id": "evt_006",
+      "year": -1625,
+      "title": "商汤灭豕韦",
+      "changes": [
+        {
+          "city_id": "xia_shiwei",
+          "from": "豕韦",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        }
+      ],
+      "note": "商汤剪除夏桀羽翼，先灭豕韦，武力征服，直接占领"
+    },
+    {
+      "id": "evt_007",
+      "year": -1624,
+      "title": "商汤灭顾国",
+      "changes": [
+        {
+          "city_id": "xia_gu",
+          "from": "顾国",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        }
+      ],
+      "note": "豕韦灭后，顾国势单，商汤乘胜灭顾，武力征服"
+    },
+    {
+      "id": "evt_008",
+      "year": -1622,
+      "title": "商汤击败昆吾",
+      "changes": [
+        {
+          "city_id": "xia_kunwu",
+          "from": "昆吾",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        }
+      ],
+      "note": "三蘖尽除，夏桀失去东部屏障，武力征服"
+    },
+    {
+      "id": "evt_009",
+      "year": -1620,
+      "title": "夏桀囚禁商汤于夏台",
+      "changes": [],
+      "note": "夏桀召商汤入朝，囚禁于夏台"
+    },
+    {
+      "id": "evt_010",
+      "year": -1619,
+      "title": "商汤获释，有施氏叛夏归商",
+      "changes": [
+        {
+          "city_id": "youshi",
+          "from": "夏朝",
+          "to": "有施氏",
+          "vassal_of": "商部落",
+          "type": "联盟"
+        }
+      ],
+      "note": "伊尹、仲虺献珍宝美女，商汤获释。有施氏反感夏桀，主动归附商部落，附庸关系"
+    },
+    {
+      "id": "evt_011",
+      "year": -1610,
+      "title": "伊尹入夏刺探军情",
+      "changes": [],
+      "note": "伊尹入夏都斟鄩，取得妺喜信任，刺探夏朝虚实"
+    },
+    {
+      "id": "evt_012",
+      "year": -1605,
+      "title": "商汤联络东方方国",
+      "changes": [
+        {
+          "city_id": "youreng",
+          "from": "有仍氏",
+          "to": "有仍氏",
+          "vassal_of": "商部落",
+          "type": "联盟"
+        },
+        {
+          "city_id": "youyu",
+          "from": "有虞氏",
+          "to": "有虞氏",
+          "vassal_of": "商部落",
+          "type": "联盟"
+        }
+      ],
+      "note": "商汤联络有仍氏、有虞氏等东方方国，主动归附商部落，附庸关系"
+    },
+    {
+      "id": "evt_013",
+      "year": -1602,
+      "title": "夏桀起九夷之师征商",
+      "changes": [],
+      "note": "夏桀下令东夷首领调集军队，准备讨伐商汤"
+    },
+    {
+      "id": "evt_014",
+      "year": -1601,
+      "title": "商汤暂时臣服，遣使请罪",
+      "changes": [],
+      "note": "伊尹建议汤暂时臣服，遣使带贡物请罪，夏桀罢兵"
+    },
+    {
+      "id": "evt_015",
+      "year": -1600,
+      "title": "鸣条之战，商汤大败夏桀",
+      "changes": [
+        {
+          "city_id": "xia_zhenxun",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        },
+        {
+          "city_id": "xia_xiatai",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        },
+        {
+          "city_id": "xia_anyi",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        },
+        {
+          "city_id": "xia_yuan",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        },
+        {
+          "city_id": "xia_laoqiu",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        },
+        {
+          "city_id": "xia_zhenguan",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        },
+        {
+          "city_id": "battle_mingtiao",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        },
+        {
+          "city_id": "battle_lishan",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        },
+        {
+          "city_id": "yangcheng",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+          },
+          {
+          "city_id": "yangdi",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+          },
+          {
+          "city_id": "pingyang",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+          },
+          {
+          "city_id": "diqiu",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+          },
+          {
+          "city_id": "xihe",
+          "from": "夏朝",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+          }
+      ],
+      "note": "鸣条之战，夏师败绩，商汤武力征服夏朝核心区域"
+    },
+    {
+      "id": "evt_016",
+      "year": -1600,
+      "title": "夏桀逃奔三鬷",
+      "changes": [],
+      "note": "夏桀败退投奔属国三鬷（山东定陶）"
+    },
+    {
+      "id": "evt_017",
+      "year": -1600,
+      "title": "商汤灭三鬷，夏桀被俘",
+      "changes": [
+        {
+          "city_id": "sanzong",
+          "from": "三鬷",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        }
+      ],
+      "note": "商汤追击至三鬷，灭之，活捉夏桀，武力征服"
+    },
+    {
+      "id": "evt_018",
+      "year": -1600,
+      "title": "商汤放逐夏桀于南巢",
+      "changes": [
+        {
+          "city_id": "chaoguo",
+          "from": "巢国",
+          "to": "商部落",
+          "vassal_of": null,
+          "type": "占领"
+        }
+      ],
+      "note": "夏桀被流放南巢，巢国被商武力征服"
+    },
+    {
+      "id": "evt_019",
+      "year": -1600,
+      "title": "商汤在亳称王，夏朝灭亡",
+      "changes": [
+        {
+          "city_id": "shang_bo",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "shang_shen",
+          "from": "有莘氏",
+          "to": "商朝",
+          "vassal_of": "商朝",
+          "type": "建国"
+        },
+        {
+          "city_id": "geguo",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_shiwei",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_gu",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xia_kunwu",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "youshi",
+          "from": "有施氏",
+          "to": "商朝",
+          "vassal_of": "商朝",
+          "type": "建国"
+        },
+        {
+          "city_id": "youreng",
+          "from": "有仍氏",
+          "to": "商朝",
+          "vassal_of": "商朝",
+          "type": "建国"
+        },
+        {
+          "city_id": "youyu",
+          "from": "有虞氏",
+          "to": "商朝",
+          "vassal_of": "商朝",
+          "type": "建国"
+        },
+        {
+          "city_id": "sanzong",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "chaoguo",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "yangcheng",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "yangdi",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "pingyang",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "diqiu",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        },
+        {
+          "city_id": "xihe",
+          "from": "商部落",
+          "to": "商朝",
+          "vassal_of": null,
+          "type": "建国"
+        }
+      ],
+      "note": "商汤在亳称王，建立商朝。所有商部落领土转为商朝，附庸关系宗主从商部落变为商朝"
+    }
+  ]
+}

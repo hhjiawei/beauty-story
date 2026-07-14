@@ -21,14 +21,6 @@ china_adm3.geojson 是预处理后的中国县级行政区划边界数据，从 
 坐标系	WGS84（EPSG:4326，经纬度）
 关键字段	county_idx（整数索引 0~N-1）、shapeName（拼音名称）、geometry（边界多边形）
 
-
-
-
-
-
-
-
-
 """
 
 import json
