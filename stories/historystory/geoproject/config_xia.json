@@ -1,0 +1,36 @@
+{
+  "_comment": "朝代通用配置文件 - 修改此文件即可切换不同朝代",
+  "dynasty": {
+    "name": "夏朝",
+    "period": "约前2070年 — 前1600年",
+    "subtitle": "夏商之际 · 桀纣相传",
+    "focusPeriod": "夏桀时期"
+  },
+  "map": {
+    "initialCenter": [113.5, 34.5],
+    "initialZoom": 5,
+    "maxZoom": 12,
+    "minZoom": 3
+  },
+  "tileServer": "http://localhost:8000/tiles/china_dem/{z}/{x}/{y}.png",
+  "dataPaths": {
+    "outputDir": "./output",
+    "cityJson": "./data/city_xia.json",
+    "eventsJson": "./data/events_xia.json",
+    "colorMapJson": "./data/color_map_xia.json"
+  },
+  "style": {
+    "theme": "song",
+    "rasterOpacity": 0.4,
+    "rasterBrightnessMin": 0.1,
+    "rasterBrightnessMax": 0.5,
+    "rasterSaturation": -0.9,
+    "rasterContrast": 0.05,
+    "overlayColor": "#3d2b1f",
+    "overlayOpacity": 0.2
+  },
+  "playback": {
+    "interval": 2000,
+    "transitionDuration": 800
+  }
+}
