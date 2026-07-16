@@ -1,7 +1,7 @@
 {
   "events": [
     {
-      "id": "evt_005",
+      "id": "evt_001",
       "year": -2055,
       "title": "禹征三苗",
       "changes": [
@@ -10,14 +10,14 @@
           "from": "三苗",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "禹奉舜命征讨三苗，三苗溃败南迁。《尚书·禹贡》：三苗丕叙。《墨子·非攻》：禹征有苗。",
       "source": "《尚书·禹贡》《墨子·非攻》"
     },
     {
-      "id": "evt_006",
+      "id": "evt_002",
       "year": -2050,
       "title": "禹会诸侯于涂山",
       "changes": [
@@ -33,7 +33,7 @@
       "source": "《左传·哀公七年》"
     },
     {
-      "id": "evt_007",
+      "id": "evt_003",
       "year": -2048,
       "title": "禹戮防风氏",
       "changes": [
@@ -42,30 +42,14 @@
           "from": "防风氏",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "禹会诸侯于会稽，防风氏后至，禹戮之。《国语·鲁语下》：禹致群神于会稽之山，防风氏后至，禹杀而戮之。",
       "source": "《国语·鲁语下》"
     },
     {
-      "id": "evt_010",
-      "year": -1978,
-      "title": "启攻益之战，益避于箕山",
-      "changes": [
-        {
-          "city_id": "xia_yangcheng",
-          "from": "益",
-          "to": "夏朝",
-          "vassal_of": null,
-          "type": "占领"
-        }
-      ],
-      "note": "启与益争夺帝位，益战败避于箕山之阴。《竹书纪年》：益干启位，启杀之。《孟子》：益避启于箕山之阴。",
-      "source": "《竹书纪年》《孟子·万章上》"
-    },
-    {
-      "id": "evt_012",
+      "id": "evt_005",
       "year": -1973,
       "title": "甘之战，启灭有扈氏",
       "changes": [
@@ -74,21 +58,14 @@
           "from": "有扈氏",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
-        },
-        {
-          "city_id": "battle_gan",
-          "from": "有扈氏",
-          "to": "夏朝",
-          "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "有扈氏不服启世袭，启伐之，战于甘，作《甘誓》，遂灭有扈氏。《史记·夏本纪》：有扈氏不服，启伐之，大战于甘……遂灭有扈氏，天下咸朝。",
       "source": "《史记·夏本纪》《尚书·甘誓》"
     },
     {
-      "id": "evt_013",
+      "id": "evt_006",
       "year": -1970,
       "title": "启征西河",
       "changes": [
@@ -97,14 +74,14 @@
           "from": "西河部落",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "启西征河洛之间，扩大夏朝西部疆域。《竹书纪年》：启征西河。",
       "source": "《竹书纪年》"
     },
     {
-      "id": "evt_025",
+      "id": "evt_007",
       "year": -1939,
       "title": "后羿灭洛伯、河伯",
       "changes": [
@@ -113,14 +90,14 @@
           "from": "夏部落",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "后羿攻灭洛伯、河伯等夏后属国，占据河洛之间。《竹书纪年》：后羿灭洛伯、河伯。",
       "source": "《竹书纪年》"
     },
     {
-      "id": "evt_026",
+      "id": "evt_008",
       "year": -1938,
       "title": "于夷来宾",
       "changes": [
@@ -136,7 +113,7 @@
       "source": "《竹书纪年》"
     },
     {
-      "id": "evt_030",
+      "id": "evt_009",
       "year": -1933,
       "title": "浇灭斟灌",
       "changes": [
@@ -145,14 +122,14 @@
           "from": "斟灌氏",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "寒浞命浇攻灭斟灌氏，削弱夏后氏羽翼。《左传·襄公四年》：浇使椒求少康……灭斟灌。",
       "source": "《左传·襄公四年》"
     },
     {
-      "id": "evt_032",
+      "id": "evt_010",
       "year": -1931,
       "title": "浇灭斟寻",
       "changes": [
@@ -161,14 +138,14 @@
           "from": "斟寻氏",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "浇攻灭斟寻氏，夏后氏宗庙被毁。《左传·襄公四年》：灭斟寻氏。",
       "source": "《左传·襄公四年》"
     },
     {
-      "id": "evt_036",
+      "id": "evt_011",
       "year": -1925,
       "title": "寒浞代夏，统治中原",
       "changes": [
@@ -177,28 +154,28 @@
           "from": "有穷氏",
           "to": "寒国",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_yangcheng",
           "from": "夏朝",
           "to": "寒国",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_yangdi",
           "from": "夏朝",
           "to": "寒国",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "寒浞篡夏位，统治约40年，夏朝名存实亡。《左传·襄公四年》：浞行媚于内……因羿之室。",
       "source": "《左传·襄公四年》"
     },
     {
-      "id": "evt_044",
+      "id": "evt_012",
       "year": -1862,
       "title": "靡收二斟之众",
       "changes": [
@@ -228,7 +205,7 @@
       "source": "《左传·襄公四年》"
     },
     {
-      "id": "evt_045",
+      "id": "evt_013",
       "year": -1860,
       "title": "少康灭浇于过",
       "changes": [
@@ -237,14 +214,14 @@
           "from": "寒国",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "少康攻灭浇，诛杀寒浞长子，夺回过国。《左传·哀公元年》：少康灭浇于过。",
       "source": "《左传·哀公元年》"
     },
     {
-      "id": "evt_046",
+      "id": "evt_014",
       "year": -1858,
       "title": "季杼灭豷于戈",
       "changes": [
@@ -253,14 +230,14 @@
           "from": "寒国",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "季杼攻灭豷，寒浞二子皆亡。《左传·哀公元年》：后杼灭豷于戈。",
       "source": "《左传·哀公元年》"
     },
     {
-      "id": "evt_047",
+      "id": "evt_015",
       "year": -1855,
       "title": "少康灭寒浞，夏朝复国",
       "changes": [
@@ -269,35 +246,35 @@
           "from": "寒国",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "hanguo",
           "from": "寒国",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_zhenxun",
           "from": "寒国",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_diqiu",
           "from": "寒国",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "少康攻灭寒浞，斩尽杀绝，中断40年的夏朝复国。《左传·哀公元年》：靡自有鬲氏，收二国之烬，以灭浞而立少康。",
       "source": "《左传·哀公元年》"
     },
     {
-      "id": "evt_050",
+      "id": "evt_016",
       "year": -1852,
       "title": "方夷来宾",
       "changes": [
@@ -313,7 +290,7 @@
       "source": "《竹书纪年》"
     },
     {
-      "id": "evt_056",
+      "id": "evt_017",
       "year": -1845,
       "title": "杼征东夷，至于东海",
       "changes": [
@@ -322,70 +299,70 @@
           "from": "畎夷",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "jiuyi_yu",
           "from": "于夷",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "jiuyi_fang",
           "from": "方夷",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "jiuyi_huang",
           "from": "黄夷",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "jiuyi_bai",
           "from": "白夷",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "jiuyi_chi",
           "from": "赤夷",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "jiuyi_xuan",
           "from": "玄夷",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "jiuyi_feng",
           "from": "风夷",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "jiuyi_yang",
           "from": "阳夷",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "杼大举征讨东夷，军抵达东海之滨，九夷尽服。《竹书纪年》：杼征于东海，伐三寿。",
       "source": "《竹书纪年》《国语·鲁语下》"
     },
     {
-      "id": "evt_057",
+      "id": "evt_018",
       "year": -1843,
       "title": "杼征东海，伐三寿",
       "changes": [
@@ -394,14 +371,14 @@
           "from": "玄夷",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "杼军抵达东海之滨，伐三寿，夏朝版图扩至黄海。《竹书纪年》：杼征于东海，伐三寿。",
       "source": "《竹书纪年》"
     },
     {
-      "id": "evt_063",
+      "id": "evt_019",
       "year": -1806,
       "title": "上甲微伐有易氏，灭之",
       "changes": [
@@ -410,14 +387,14 @@
           "from": "有易氏",
           "to": "商部落",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "王亥之子上甲微联合河伯氏讨伐有易氏，杀其君绵臣。《竹书纪年》：上甲微借师于河伯，以伐有易，灭之。",
       "source": "《竹书纪年·帝泄十六年》《山海经·大荒东经》"
     },
     {
-      "id": "evt_070",
+      "id": "evt_020",
       "year": -1696,
       "title": "不降伐九苑",
       "changes": [
@@ -426,14 +403,14 @@
           "from": "九苑",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "不降即位第六年，征讨西方九苑方国，开疆拓土。《竹书纪年》：不降即位，六年，伐九苑。",
       "source": "《竹书纪年》"
     },
     {
-      "id": "evt_071",
+      "id": "evt_021",
       "year": -1645,
       "title": "桀为仍之会，有缗叛之，桀灭有缗",
       "changes": [
@@ -442,14 +419,14 @@
           "from": "有缗氏",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "《左传》定公四年：夏桀为仍之会，有缗叛之，桀灭有缗。《左传·昭公十一年》：桀克有缗以丧其国。",
       "source": "《左传·定公四年》《左传·昭公十一年》"
     },
     {
-      "id": "evt_075",
+      "id": "evt_022",
       "year": -1619,
       "title": "有施氏叛夏归商",
       "changes": [
@@ -465,7 +442,7 @@
       "source": "《竹书纪年》《史记·殷本纪》"
     },
     {
-      "id": "evt_080",
+      "id": "evt_023",
       "year": -1602,
       "title": "商汤联络东方方国",
       "changes": [
@@ -488,7 +465,7 @@
       "source": "《史记·殷本纪》"
     },
     {
-      "id": "evt_084",
+      "id": "evt_024",
       "year": -1600,
       "title": "鸣条之战，商汤大败夏桀",
       "changes": [
@@ -497,91 +474,91 @@
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_xiatai",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_anyi",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_yuan",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_laoqiu",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_zhenguan",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "battle_mingtiao",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_yangcheng",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_yangdi",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_pingyang",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_diqiu",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         },
         {
           "city_id": "xia_xihe",
           "from": "夏朝",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "商汤率诸侯与桀大战于鸣条，夏师败绩。《尚书·汤誓》：有夏多罪，天命殛之……尔尚辅予一人，致天之罚。",
       "source": "《尚书·汤誓》《史记·殷本纪》"
     },
     {
-      "id": "evt_086",
+      "id": "evt_025",
       "year": -1600,
       "title": "商汤灭三鬷，夏桀被俘",
       "changes": [
@@ -590,14 +567,14 @@
           "from": "三鬷",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "商汤追击至三鬷，灭之，活捉夏桀。《竹书纪年》：商师征三鬷，战于郕，获桀。",
       "source": "《竹书纪年》《史记·殷本纪》"
     },
     {
-      "id": "evt_087",
+      "id": "evt_026",
       "year": -1600,
       "title": "商汤放逐夏桀于南巢",
       "changes": [
@@ -606,14 +583,14 @@
           "from": "巢国",
           "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "夏桀被流放南巢，巢国被商武力征服。《尚书·仲虺之诰》：成汤放桀于南巢。",
       "source": "《尚书·仲虺之诰》《史记·夏本纪》"
     },
     {
-      "id": "evt_096",
+      "id": "evt_027",
       "year": -1585,
       "title": "桀伐有施氏，得妺喜",
       "changes": [
@@ -622,14 +599,14 @@
           "from": "有施氏",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "桀征讨有施氏，有施氏献美女妺喜求和。《国语·晋语一》：昔夏桀伐有施，有施人以妺喜女焉。",
       "source": "《国语·晋语一》《竹书纪年》"
     },
     {
-      "id": "evt_097",
+      "id": "evt_028",
       "year": -1580,
       "title": "桀伐岷山氏，得琬琰",
       "changes": [
@@ -638,14 +615,14 @@
           "from": "岷山氏",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "古本《纪年》载桀伐岷山氏，得琬琰二女。《竹书纪年》：桀伐岷山，岷山女于桀二人，曰琬、曰琰。",
       "source": "《竹书纪年》（古本）"
     },
     {
-      "id": "evt_101",
+      "id": "evt_029",
       "year": -1570,
       "title": "商汤灭葛国",
       "changes": [
@@ -654,14 +631,14 @@
           "from": "葛国",
           "to": "商部落",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "商汤以葛伯不祀为由，攻灭葛国，开始剪除夏朝羽翼。《孟子·滕文公下》：汤居亳，与葛为邻，葛伯放而不祀，汤使人问之。",
       "source": "《孟子·滕文公下》"
     },
     {
-      "id": "evt_102",
+      "id": "evt_030",
       "year": -1568,
       "title": "商汤灭豕韦",
       "changes": [
@@ -670,14 +647,14 @@
           "from": "豕韦",
           "to": "商部落",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "商汤剪除夏桀羽翼，先灭豕韦。《诗经·商颂》：韦顾既伐，昆吾夏桀。",
       "source": "《诗经·商颂·长发》"
     },
     {
-      "id": "evt_103",
+      "id": "evt_031",
       "year": -1567,
       "title": "商汤灭顾国",
       "changes": [
@@ -686,30 +663,30 @@
           "from": "顾国",
           "to": "商部落",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "豕韦灭后，顾国势单，商汤乘胜灭顾。《诗经·商颂》：韦顾既伐，昆吾夏桀。",
       "source": "《诗经·商颂·长发》"
     },
     {
-      "id": "evt_104",
+      "id": "evt_032",
       "year": -1565,
       "title": "商汤灭昆吾",
       "changes": [
         {
           "city_id": "xia_kunwu",
           "from": "昆吾",
-          "to": "商部落",
+          "to": "商朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "商汤攻灭夏朝重要方国昆吾，夏桀震恐。《诗经·商颂》：韦顾既伐，昆吾夏桀。",
       "source": "《诗经·商颂·长发》"
     },
     {
-      "id": "evt_105",
+      "id": "evt_033",
       "year": -1563,
       "title": "桀伐有缗氏",
       "changes": [
@@ -718,7 +695,7 @@
           "from": "有缗氏",
           "to": "夏朝",
           "vassal_of": null,
-          "type": "占领"
+          "type": "灭国"
         }
       ],
       "note": "桀讨伐有缗氏，虽胜犹败，进一步耗尽国力。《左传·昭公十一年》：桀克有缗以丧其国。",

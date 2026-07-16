@@ -16,7 +16,7 @@
   "dataPaths": {
     "outputDir": "./output",
     "cityJson": "./data/city_xia.json",
-    "eventsJson": "./data/events_xia.json",
+    "eventsJson": "./data/events/category1_territory.json",
     "colorMapJson": "./data/color_map_xia.json"
   },
   "style": {

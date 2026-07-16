@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>夏朝疆域变化 - 历史疆域动态渲染</title>
+
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <style>
+        /* ==================== 宋式美学基础 ==================== */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&display=swap');
+
+        :root {
+            --paper: #f5f0e8;
+            --ink: #2c2c2c;
+            --ink-light: #5a5a5a;
+            --cinnabar: #8B2500;
+            --cinnabar-light: #C5927F;
+            --indigo: #1B4F72;
+            --indigo-light: #8DA7B8;
+            --gold: #c9b896;
+            --gold-dark: #a08b5f;
+            --border: rgba(201, 184, 150, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "Noto Serif SC", "Microsoft YaHei", "SimSun", serif;
+            background: #1a1510;
+            overflow: hidden;
+            color: var(--paper);
+        }
+
+        #map { width: 100vw; height: 100vh; position: relative; }
+
+        /* ==================== 标题栏 ==================== */
+        .title-bar {
+            position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; text-align: center; pointer-events: none;
+            animation: fadeInDown 1s ease-out;
+        }
+        .title-bar h1 {
+            color: var(--paper); font-size: 32px; font-weight: 900;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8), 0 0 20px rgba(201,184,150,0.2);
+            letter-spacing: 8px; margin-bottom: 8px;
+            font-family: "Noto Serif SC", serif;
+        }
+        .title-bar .subtitle {
+            color: var(--gold); font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            letter-spacing: 4px; font-weight: 400;
+        }
+        .title-bar .divider {
+            width: 60px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 10px auto;
+        }
+
+        /* ==================== 时间轴控制器 ==================== */
+        .time-controller {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; background: rgba(26, 20, 14, 0.92);
+            border: 1px solid var(--border); border-radius: 16px;
+            padding: 24px 36px; min-width: 480px; backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+        .time-display { text-align: center; margin-bottom: 18px; }
+        .time-display .year {
+            color: var(--paper); font-size: 36px; font-weight: 700; letter-spacing: 6px;
+            text-shadow: 0 0 16px rgba(232, 213, 181, 0.3);
+            font-family: "Noto Serif SC", serif;
+        }
+        .time-display .event-title {
+            color: var(--gold); font-size: 18px; margin-top: 10px; letter-spacing: 2px;
+            font-weight: 600;
+        }
+        .time-display .event-type {
+            display: inline-block; padding: 2px 10px; border-radius: 4px;
+            font-size: 11px; letter-spacing: 2px; margin-top: 8px;
+            text-transform: uppercase; font-weight: 600;
+        }
+        .time-display .event-desc {
+            color: #8a7e6b; font-size: 13px; margin-top: 8px; max-width: 400px;
+            line-height: 1.6; font-style: italic;
+        }
+
+        /* 事件类型标签颜色 */
+        .type-占领 { background: rgba(139, 37, 0, 0.3); color: #e8a090; border: 1px solid rgba(139, 37, 0, 0.5); }
+        .type-灭国 { background: rgba(180, 0, 0, 0.4); color: #ff9999; border: 1px solid rgba(180, 0, 0, 0.6); }
+        .type-联盟 { background: rgba(27, 79, 114, 0.3); color: #90c0e0; border: 1px solid rgba(27, 79, 114, 0.5); }
+        .type-反叛 { background: rgba(180, 100, 0, 0.3); color: #e0c080; border: 1px solid rgba(180, 100, 0, 0.5); }
+        .type-归附 { background: rgba(100, 140, 80, 0.3); color: #b0d0a0; border: 1px solid rgba(100, 140, 80, 0.5); }
+        .type-initial { background: rgba(100, 100, 100, 0.3); color: #ccc; border: 1px solid rgba(100, 100, 100, 0.5); }
+
+        .progress-bar {
+            width: 100%; height: 4px; background: rgba(201, 184, 150, 0.15);
+            border-radius: 2px; margin: 18px 0; position: relative; cursor: pointer;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--paper));
+            border-radius: 2px; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); width: 0%;
+            box-shadow: 0 0 8px rgba(201, 184, 150, 0.4);
+        }
+        .progress-dot {
+            position: absolute; top: 50%; transform: translate(-50%, -50%);
+            width: 12px; height: 12px; background: var(--paper); border-radius: 50%;
+            box-shadow: 0 0 10px rgba(232, 213, 181, 0.6), 0 0 20px rgba(232, 213, 181, 0.3);
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid var(--gold-dark);
+        }
+
+        .controls { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 14px; }
+        .btn {
+            background: rgba(201, 184, 150, 0.1); border: 1px solid var(--border);
+            color: var(--gold); padding: 8px 18px; border-radius: 8px; cursor: pointer;
+            font-family: inherit; font-size: 13px; transition: all 0.25s; letter-spacing: 2px;
+            backdrop-filter: blur(4px);
+        }
+        .btn:hover { background: rgba(201, 184, 150, 0.25); border-color: var(--gold); color: var(--paper); transform: translateY(-1px); }
+        .btn:active { transform: scale(0.95) translateY(0); }
+        .btn-play {
+            background: rgba(139, 37, 0, 0.25); border-color: rgba(139, 37, 0, 0.5);
+            color: var(--paper); font-size: 15px; padding: 10px 28px; font-weight: 600;
+        }
+        .btn-play:hover { background: rgba(139, 37, 0, 0.45); box-shadow: 0 0 16px rgba(139, 37, 0, 0.3); }
+        .btn-play.playing { background: rgba(27, 79, 114, 0.3); border-color: rgba(27, 79, 114, 0.5); }
+        .counter { color: #8a7e6b; font-size: 12px; letter-spacing: 1px; margin-left: 8px; }
+
+        /* ==================== 图例 ==================== */
+        .legend {
+            position: absolute; top: 90px; right: 24px; z-index: 1000;
+            background: rgba(26, 20, 14, 0.9); border: 1px solid var(--border);
+            border-radius: 12px; padding: 18px; backdrop-filter: blur(10px); max-width: 220px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4); animation: fadeInRight 1s ease-out 0.5s both;
+        }
+        .legend-title { color: var(--gold); font-size: 15px; font-weight: 700; margin-bottom: 12px; letter-spacing: 3px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 12px; color: #a09582; }
+        .legend-color { width: 18px; height: 14px; border-radius: 3px; margin-right: 10px; border: 1px solid rgba(255,255,255,0.15); }
+        .legend-label { flex: 1; }
+        .legend-note { font-size: 10px; color: #6b5f4f; margin-left: 28px; margin-bottom: 8px; }
+
+        /* ==================== 加载遮罩 ==================== */
+        .loading-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1a1510; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 2000;
+            transition: opacity 0.6s ease;
+        }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .loading-text { color: var(--gold); font-size: 20px; letter-spacing: 6px; margin-top: 24px; font-family: "Noto Serif SC", serif; }
+        .loading-sub { color: #6b5f4f; font-size: 13px; margin-top: 12px; letter-spacing: 2px; }
+        .loading-spinner {
+            width: 48px; height: 48px; border: 3px solid rgba(201, 184, 150, 0.15);
+            border-top-color: var(--gold); border-radius: 50%; animation: spin 1.2s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ==================== 错误遮罩 ==================== */
+        .error-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1a1510; display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 3000;
+        }
+        .error-overlay.show { display: flex; }
+        .error-text { color: #ff6b6b; font-size: 16px; margin-top: 20px; max-width: 600px; text-align: center; line-height: 1.6; }
+        .error-hint { color: #8a7e6b; font-size: 13px; margin-top: 15px; }
+
+        /* ==================== 事件弹窗（中央） ==================== */
+        .event-popup {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 1500; background: rgba(26, 20, 14, 0.95);
+            border: 1px solid var(--border); border-radius: 16px;
+            padding: 28px 36px; max-width: 420px; text-align: center;
+            backdrop-filter: blur(16px); box-shadow: 0 12px 48px rgba(0,0,0,0.7);
+            opacity: 0; pointer-events: none; transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .event-popup.show {
+            opacity: 1; pointer-events: auto;
+            animation: eventPopupIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes eventPopupIn {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8) translateY(20px); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1) translateY(0); }
+        }
+        .event-popup .popup-year { color: var(--gold); font-size: 14px; letter-spacing: 4px; margin-bottom: 8px; }
+        .event-popup .popup-title { color: var(--paper); font-size: 22px; font-weight: 700; letter-spacing: 3px; margin-bottom: 12px; }
+        .event-popup .popup-type { display: inline-block; padding: 3px 12px; border-radius: 4px; font-size: 11px; margin-bottom: 12px; }
+        .event-popup .popup-desc { color: #a09582; font-size: 13px; line-height: 1.7; font-style: italic; }
+        .event-popup .popup-source { color: #6b5f4f; font-size: 11px; margin-top: 12px; }
+
+        /* ==================== 快捷键提示 ==================== */
+        .shortcuts {
+            position: absolute; bottom: 20px; right: 20px; z-index: 1000;
+            color: #6b5f4f; font-size: 11px; text-align: right; line-height: 1.8;
+        }
+        .shortcuts kbd {
+            background: rgba(201, 184, 150, 0.12); border: 1px solid rgba(201, 184, 150, 0.25);
+            border-radius: 4px; padding: 2px 8px; font-family: inherit; color: #a09582; font-size: 10px;
+        }
+
+        /* ==================== 动画定义 ==================== */
+        @keyframes fadeInDown { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        @keyframes fadeInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.5); opacity: 0; } 100% { transform: scale(1); opacity: 0; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
+        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes orbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 屏幕震动效果 */
+        .screen-shake { animation: screenShake 0.4s ease; }
+        @keyframes screenShake { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-3px, 2px); } 40% { transform: translate(3px, -2px); } 60% { transform: translate(-2px, -1px); } 80% { transform: translate(2px, 1px); } }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loading-text">正在加载历史疆域数据...</div>
+        <div class="loading-sub">夏禹开国 · 商汤革命</div>
+    </div>
+
+    <!-- 错误遮罩 -->
+    <div class="error-overlay" id="error-overlay">
+        <div class="loading-spinner" style="border-top-color: #ff6b6b;"></div>
+        <div class="error-text" id="error-text">数据加载失败</div>
+        <div class="error-hint" id="error-hint"></div>
+    </div>
+
+    <!-- 事件中央弹窗 -->
+    <div class="event-popup" id="event-popup">
+        <div class="popup-year" id="popup-year"></div>
+        <div class="popup-title" id="popup-title"></div>
+        <div class="popup-type" id="popup-type"></div>
+        <div class="popup-desc" id="popup-desc"></div>
+        <div class="popup-source" id="popup-source"></div>
+    </div>
+
+    <!-- 地图容器 -->
+    <div id="map"></div>
+
+    <!-- 标题 -->
+    <div class="title-bar">
+        <h1>夏朝疆域变化</h1>
+        <div class="divider"></div>
+        <div class="subtitle">公元前2070年 — 公元前1597年 · 禹启开国至商汤革命</div>
+    </div>
+
+    <!-- 图例 -->
+    <div class="legend" id="legend">
+        <div class="legend-title">势力图例</div>
+        <div id="legend-content"></div>
+    </div>
+
+    <!-- 时间轴控制器 -->
+    <div class="time-controller" id="time-controller" style="display:none;">
+        <div class="time-display">
+            <div class="year" id="year-display">前2070年</div>
+            <div class="event-title" id="event-title">大禹都阳城</div>
+            <div class="event-type" id="event-type">占领</div>
+            <div class="event-desc" id="event-desc">禹受舜禅，即位为天子，国号曰夏后</div>
+        </div>
+
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+            <div class="progress-dot" id="progress-dot" style="left: 0%"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="btn-first">⏮ 首</button>
+            <button class="btn" id="btn-prev">← 上</button>
+            <button class="btn btn-play" id="btn-play">▶ 播放</button>
+            <button class="btn" id="btn-next">下 →</button>
+            <button class="btn" id="btn-last">末 ⏭</button>
+            <span class="counter" id="counter">1 / 61</span>
+        </div>
+    </div>
+
+    <!-- 快捷键提示 -->
+    <div class="shortcuts">
+        <kbd>←</kbd> <kbd>→</kbd> 切换事件<br>
+        <kbd>Space</kbd> 播放/暂停<br>
+        <kbd>Home</kbd> <kbd>End</kbd> 首尾
+    </div>
+
+    <script>
+        // ==================== 配置 ====================
+        const CONFIG = {
+            outputDir: './output',
+            tileServer: 'http://localhost:8000/tiles/china_dem/{z}/{x}/{y}.png',
+            initialCenter: [113.5, 34.5],
+            initialZoom: 5,
+            playInterval: 3000,  // 播放间隔，留足看动效的时间
+            popupDuration: 2000, // 事件弹窗显示时长
+        };
+
+        // ==================== 全局状态 ====================
+        let map;
+        let sliceIndex = [];
+        let animationEvents = [];
+        let currentIndex = 0;
+        let isPlaying = false;
+        let playTimer = null;
+        let citiesData = {};
+        let dataLoaded = false;
+        let currentTerritoryData = null;  // 当前疆域数据
+        let transitionInProgress = false;
+
+        // 势力颜色映射（用于城市点）
+        const POWER_COLORS = {
+            '夏朝': '#8B2500',
+            '夏部落': '#A0522D',
+            '商部落': '#1B4F72',
+            '商朝': '#1B4F72',
+            '有扈氏': '#D35400',
+            '后羿': '#6C3483',
+            '寒浞': '#4A235A',
+            '九夷': '#708090',
+            '三苗': '#2E7D32',
+            '防风氏': '#5D4037',
+            '涂山氏': '#8D6E63',
+            '有施氏': '#C0392B',
+            '有缗氏': '#E67E22',
+            '岷山氏': '#16A085',
+            '葛国': '#F39C12',
+            '豕韦': '#E74C3C',
+            '顾国': '#9B59B6',
+            '昆吾': '#3498DB',
+            '益': '#27AE60',
+            '唐国': '#D4AC0D',
+            '有仍氏': '#A569BD',
+            '有虞氏': '#48C9B0',
+            '夏朝遗脉': '#A93226',
+            '九苑': '#7D6608',
+            '羲和氏': '#1ABC9C',
+            '三鬷': '#B03A2E',
+            '南巢': '#2E86AB',
+            'neutral': '#7F8C8D',
+        };
+
+        // ==================== 错误处理 ====================
+        function showError(message, hint) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error-text').textContent = message;
+            document.getElementById('error-hint').textContent = hint || '';
+            document.getElementById('error-overlay').classList.add('show');
+            console.error(message);
+        }
+
+        // ==================== 初始化地图 ====================
+        function initMap() {
+            map = new maplibregl.Map({
+                container: 'map',
+                style: {
+                    version: 8,
+                    sources: {
+                        'local-tiles': {
+                            type: 'raster',
+                            tiles: [CONFIG.tileServer],
+                            tileSize: 256,
+                        }
+                    },
+                    layers: [
+                        {
+                            id: 'background',
+                            type: 'background',
+                            paint: { 'background-color': '#1a1510' }
+                        },
+                        {
+                            id: 'local-tiles',
+                            type: 'raster',
+                            source: 'local-tiles',
+                            paint: {
+                                'raster-opacity': 0.45,
+                                'raster-brightness-min': 0.1,
+                                'raster-brightness-max': 0.45,
+                                'raster-saturation': -0.85,
+                                'raster-contrast': 0.05,
+                            }
+                        },
+                        {
+                            id: 'vintage-overlay',
+                            type: 'background',
+                            paint: {
+                                'background-color': '#3d2b1f',
+                                'background-opacity': 0.2
+                            }
+                        }
+                    ]
+                },
+                center: CONFIG.initialCenter,
+                zoom: CONFIG.initialZoom,
+                maxZoom: 12,
+                minZoom: 3,
+            });
+
+            map.addControl(new maplibregl.NavigationControl(), 'top-left');
+
+            map.on('load', async () => {
+                try {
+                    await loadData();
+                    if (!dataLoaded) return;
+
+                    initLayers();
+                    initControls();
+                    updateDisplay();
+                    generateLegend();
+
+                    document.getElementById('time-controller').style.display = 'block';
+                    document.getElementById('loading').classList.add('hidden');
+                } catch (e) {
+                    showError('地图初始化失败: ' + e.message, '请检查控制台详细错误信息');
+                }
+            });
+
+            map.on('error', (e) => {
+                console.warn('Map error:', e);
+            });
+        }
+
+        // ==================== 加载数据 ====================
+        async function loadData() {
+            try {
+                // 1. 加载时间索引
+                const indexUrl = `${CONFIG.outputDir}/slice_index.json`;
+                console.log('加载索引:', indexUrl);
+
+                const indexRes = await fetch(indexUrl);
+                if (!indexRes.ok) {
+                    throw new Error(`索引文件加载失败: ${indexRes.status} ${indexRes.statusText}\n路径: ${indexUrl}`);
+                }
+                sliceIndex = await indexRes.json();
+
+                if (!Array.isArray(sliceIndex) || sliceIndex.length === 0) {
+                    throw new Error('slice_index.json 为空或格式错误');
+                }
+
+                // 2. 加载动画事件数据
+                try {
+                    const animRes = await fetch(`${CONFIG.outputDir}/animation_events.json`);
+                    if (animRes.ok) {
+                        animationEvents = await animRes.json();
+                        console.log(`加载动画事件: ${animationEvents.length} 个`);
+                    }
+                } catch (e) {
+                    console.warn('动画事件数据加载失败（可选）:', e);
+                }
+
+                // 3. 尝试加载城池数据
+                try {
+                    const citiesRes = await fetch('data/city_with_idx.json');
+                    if (citiesRes.ok) {
+                        const citiesJson = await citiesRes.json();
+                        if (citiesJson && Array.isArray(citiesJson.cities)) {
+                            citiesJson.cities.forEach(c => { citiesData[c.id] = c; });
+                        }
+                    }
+                } catch (e) {
+                    console.warn('城池数据加载失败（可选）:', e);
+                }
+
+                dataLoaded = true;
+                console.log(`加载完成: ${sliceIndex.length} 个时间断面, ${Object.keys(citiesData).length} 个城池`);
+
+            } catch (e) {
+                const hint = `可能原因：
+1. 未启动本地 HTTP 服务器（请用 python -m http.server 或 live-server 运行）
+2. outputDir 路径错误（当前设置: "${CONFIG.outputDir}"）
+3. slice_index.json 文件不存在
+4. 瓦片服务器未启动（localhost:8000）
+
+请确保文件结构如下：
+项目目录/
+  ├── xia_territory.html  (本文件)
+  ├── output/
+  │   ├── slice_index.json
+  │   ├── animation_events.json
+  │   ├── time_slice_initial.geojson
+  │   └── ...其他 geojson
+  └── data/
+      └── city_with_idx.json (可选)`;
+                showError(e.message, hint);
+                throw e;
+            }
+        }
+
+        // ==================== 初始化图层 ====================
+        function initLayers() {
+            // 初始疆域数据
+            const initialFile = sliceIndex[0]?.file || 'time_slice_initial.geojson';
+            const initialUrl = `${CONFIG.outputDir}/${initialFile}`;
+
+            // 疆域面源（用于切换）
+            map.addSource('territory', {
+                type: 'geojson',
+                data: initialUrl
+            });
+
+            // 旧疆域面（用于渐变过渡）
+            map.addSource('territory-old', {
+                type: 'geojson',
+                data: initialUrl
+            });
+
+            // 城市点源
+            map.addSource('cities', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] }
+            });
+
+            // 脉冲动画源
+            map.addSource('pulses', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] }
+            });
+
+            // 旧疆域填充（底层，用于渐变淡出）
+            map.addLayer({
+                id: 'territory-fill-old',
+                type: 'fill',
+                source: 'territory-old',
+                paint: {
+                    'fill-color': ['get', 'fill'],
+                    'fill-opacity': ['get', 'fill_opacity'],
+                    'fill-outline-color': ['get', 'stroke']
+                }
+            });
+
+            // 新疆域填充（顶层，用于渐变淡入）
+            map.addLayer({
+                id: 'territory-fill',
+                type: 'fill',
+                source: 'territory',
+                paint: {
+                    'fill-color': ['get', 'fill'],
+                    'fill-opacity': 0,  // 初始透明，渐变动画
+                    'fill-outline-color': ['get', 'stroke']
+                }
+            });
+
+            // 疆域边界线
+            map.addLayer({
+                id: 'territory-border',
+                type: 'line',
+                source: 'territory',
+                filter: ['!=', ['get', 'owner'], 'neutral'],
+                paint: {
+                    'line-color': ['get', 'stroke'],
+                    'line-width': ['get', 'stroke_width'],
+                    'line-opacity': 0.8
+                }
+            });
+
+            // 城市点（基础）
+            map.addLayer({
+                id: 'cities-circle',
+                type: 'circle',
+                source: 'cities',
+                paint: {
+                    'circle-radius': 6,
+                    'circle-color': ['get', 'color'],
+                    'circle-opacity': 0.9,
+                    'circle-stroke-color': '#f5f0e8',
+                    'circle-stroke-width': 1.5,
+                    'circle-stroke-opacity': 0.8
+                }
+            });
+
+            // 城市标签
+            map.addLayer({
+                id: 'cities-label',
+                type: 'symbol',
+                source: 'cities',
+                layout: {
+                    'text-field': ['get', 'name'],
+                    'text-font': ['Noto Sans Regular'],
+                    'text-size': 11,
+                    'text-offset': [0, 1.2],
+                    'text-anchor': 'top'
+                },
+                paint: {
+                    'text-color': '#e8d5b5',
+                    'text-halo-color': '#1a1510',
+                    'text-halo-width': 2
+                }
+            });
+
+            // 脉冲圆环（动画层）
+            map.addLayer({
+                id: 'pulses-circle',
+                type: 'circle',
+                source: 'pulses',
+                paint: {
+                    'circle-radius': ['get', 'radius'],
+                    'circle-color': ['get', 'color'],
+                    'circle-opacity': ['get', 'opacity'],
+                    'circle-stroke-width': 0
+                }
+            });
+
+            // 点击交互
+            map.on('click', 'cities-circle', (e) => {
+                if (e.features.length > 0) {
+                    const props = e.features[0].properties;
+                    showCityPopup(e.lngLat, props);
+                }
+            });
+
+            map.on('mouseenter', 'cities-circle', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'cities-circle', () => {
+                map.getCanvas().style.cursor = '';
+            });
+        }
+
+        // ==================== 城市变化动效系统 ====================
+
+        // 更新城市点数据
+        function updateCities(citiesState) {
+            const features = [];
+            for (const [cid, city] of Object.entries(citiesState)) {
+                if (city.county_idx < 0) continue;
+                const color = POWER_COLORS[city.owner] || POWER_COLORS['neutral'];
+                features.push({
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [city.lon, city.lat]
+                    },
+                    properties: {
+                        id: cid,
+                        name: city.ancient_name || city.name || cid,
+                        color: color,
+                        owner: city.owner,
+                        type: city.type || '城池'
+                    }
+                });
+            }
+            map.getSource('cities').setData({
+                type: 'FeatureCollection',
+                features: features
+            });
+        }
+
+        // 创建脉冲动画
+        function createPulseEffect(lng, lat, color, type) {
+            const pulses = [];
+            const now = Date.now();
+
+            if (type === '灭国') {
+                // 灭国：强烈脉冲，3层圆环
+                for (let i = 0; i < 3; i++) {
+                    pulses.push({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [lng, lat] },
+                        properties: {
+                            radius: 8 + i * 6,
+                            color: color,
+                            opacity: 0.6 - i * 0.15,
+                            startTime: now + i * 200,
+                            duration: 1200,
+                            maxRadius: 40 + i * 15
+                        }
+                    });
+                }
+            } else if (type === '联盟') {
+                // 联盟：柔和光环，旋转效果用 CSS 模拟
+                pulses.push({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [lng, lat] },
+                    properties: {
+                        radius: 12,
+                        color: color,
+                        opacity: 0.4,
+                        startTime: now,
+                        duration: 2000,
+                        maxRadius: 25
+                    }
+                });
+            } else if (type === '反叛') {
+                // 反叛：急促脉冲
+                for (let i = 0; i < 4; i++) {
+                    pulses.push({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [lng, lat] },
+                        properties: {
+                            radius: 6,
+                            color: '#ff4444',
+                            opacity: 0.7,
+                            startTime: now + i * 150,
+                            duration: 800,
+                            maxRadius: 20
+                        }
+                    });
+                }
+            } else if (type === '归附') {
+                // 归附：扩散光环
+                pulses.push({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [lng, lat] },
+                    properties: {
+                        radius: 8,
+                        color: color,
+                        opacity: 0.5,
+                        startTime: now,
+                        duration: 1500,
+                        maxRadius: 35
+                    }
+                });
+            } else {
+                // 占领：标准脉冲
+                pulses.push({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [lng, lat] },
+                    properties: {
+                        radius: 6,
+                        color: color,
+                        opacity: 0.6,
+                        startTime: now,
+                        duration: 1000,
+                        maxRadius: 22
+                    }
+                });
+            }
+
+            return pulses;
+        }
+
+        // 运行动画帧
+        let pulseAnimationId = null;
+        let activePulses = [];
+
+        function startPulseAnimation() {
+            if (pulseAnimationId) return;
+
+            function animate() {
+                const now = Date.now();
+                const updatedPulses = [];
+
+                for (const pulse of activePulses) {
+                    const props = pulse.properties;
+                    const elapsed = now - props.startTime;
+
+                    if (elapsed < 0) {
+                        updatedPulses.push(pulse);
+                        continue;
+                    }
+
+                    const progress = Math.min(elapsed / props.duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+
+                    props.radius = 6 + (props.maxRadius - 6) * eased;
+                    props.opacity = props.opacity * (1 - progress);
+
+                    if (progress < 1) {
+                        updatedPulses.push(pulse);
+                    }
+                }
+
+                activePulses = updatedPulses;
+
+                map.getSource('pulses').setData({
+                    type: 'FeatureCollection',
+                    features: activePulses
+                });
+
+                if (activePulses.length > 0) {
+                    pulseAnimationId = requestAnimationFrame(animate);
+                } else {
+                    pulseAnimationId = null;
+                }
+            }
+
+            animate();
+        }
+
+        // 触发城市变化动效
+        function triggerCityAnimations(changedCities) {
+            if (!changedCities || changedCities.length === 0) return;
+
+            for (const change of changedCities) {
+                const city = citiesData[change.city_id];
+                if (!city || city.county_idx < 0) continue;
+
+                const newColor = POWER_COLORS[change.to] || POWER_COLORS['neutral'];
+                const pulses = createPulseEffect(city.lon, city.lat, newColor, change.type);
+                activePulses.push(...pulses);
+            }
+
+            startPulseAnimation();
+        }
+
+        // 领土渐变过渡动画
+        async function transitionTerritory(newUrl, duration = 800) {
+            if (transitionInProgress) return;
+            transitionInProgress = true;
+
+            // 获取当前数据作为旧数据
+            const currentData = map.getSource('territory')._data;
+            if (currentData) {
+                map.getSource('territory-old').setData(currentData);
+            }
+
+            // 新数据先透明
+            map.setPaintProperty('territory-fill', 'fill-opacity', 0);
+
+            // 加载新数据
+            try {
+                const res = await fetch(newUrl);
+                const newData = await res.json();
+                map.getSource('territory').setData(newData);
+                currentTerritoryData = newData;
+
+                // 渐变动画
+                const startTime = Date.now();
+                const startOpacity = 0;
+                const endOpacity = 1; // 最终由数据中的 fill_opacity 决定，这里先整体淡入
+
+                function fadeIn() {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+
+                    // 旧数据淡出
+                    map.setPaintProperty('territory-fill-old', 'fill-opacity',
+                        ['*', ['get', 'fill_opacity'], 1 - eased]);
+
+                    // 新数据淡入
+                    map.setPaintProperty('territory-fill', 'fill-opacity',
+                        ['*', ['get', 'fill_opacity'], eased]);
+
+                    if (progress < 1) {
+                        requestAnimationFrame(fadeIn);
+                    } else {
+                        // 动画结束，重置旧数据
+                        map.getSource('territory-old').setData(newData);
+                        map.setPaintProperty('territory-fill-old', 'fill-opacity',
+                            ['get', 'fill_opacity']);
+                        transitionInProgress = false;
+                    }
+                }
+
+                fadeIn();
+
+            } catch (e) {
+                console.error('过渡动画失败:', e);
+                transitionInProgress = false;
+            }
+        }
+
+        // ==================== 切换时间断面 ====================
+        async function switchTimeSlice(index) {
+            if (!dataLoaded || sliceIndex.length === 0) return;
+            if (index < 0 || index >= sliceIndex.length) return;
+            if (transitionInProgress) return;
+
+            currentIndex = index;
+            const slice = sliceIndex[index];
+            const animEvent = animationEvents[index];
+
+            // 更新疆域（带动画）
+            const fileUrl = `${CONFIG.outputDir}/${slice.file}`;
+            await transitionTerritory(fileUrl, 600);
+
+            // 更新边界线
+            map.getSource('territory-border')?.setData && map.getSource('territory-border').setData(fileUrl);
+
+            // 触发城市动效
+            if (animEvent && animEvent.changed_cities) {
+                triggerCityAnimations(animEvent.changed_cities);
+            }
+
+            // 更新城市点（根据当前事件后的状态）
+            if (animEvent) {
+                updateCitiesFromEvent(animEvent);
+            }
+
+            // 显示事件弹窗
+            showEventPopup(slice, animEvent);
+
+            updateDisplay();
+            preloadAdjacent(index);
+        }
+
+        // 根据事件更新城市状态
+        function updateCitiesFromEvent(animEvent) {
+            // 这里简化处理：假设 citiesData 已经被后端更新
+            // 实际应用中，应该维护一个前端城市状态对象
+            // 为了演示效果，我们根据 changed_cities 临时更新颜色
+            if (!animEvent.changed_cities) return;
+
+            for (const change of animEvent.changed_cities) {
+                if (citiesData[change.city_id]) {
+                    citiesData[change.city_id].owner = change.to;
+                }
+            }
+
+            // 重新渲染城市点
+            const features = [];
+            for (const [cid, city] of Object.entries(citiesData)) {
+                if (city.county_idx < 0) continue;
+                const color = POWER_COLORS[city.owner] || POWER_COLORS['neutral'];
+                features.push({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [city.lon, city.lat] },
+                    properties: {
+                        id: cid,
+                        name: city.ancient_name || city.name || cid,
+                        color: color,
+                        owner: city.owner,
+                        type: city.type || '城池'
+                    }
+                });
+            }
+            map.getSource('cities').setData({
+                type: 'FeatureCollection',
+                features: features
+            });
+        }
+
+        // ==================== 事件弹窗 ====================
+        let popupTimer = null;
+
+        function showEventPopup(slice, animEvent) {
+            const popup = document.getElementById('event-popup');
+            const yearText = slice.year < 0 ? `前${Math.abs(slice.year)}年` : `${slice.year}年`;
+            const eventType = slice.type || '占领';
+
+            document.getElementById('popup-year').textContent = yearText;
+            document.getElementById('popup-title').textContent = slice.title || '初始状态';
+            document.getElementById('popup-type').textContent = eventType;
+            document.getElementById('popup-type').className = `popup-type type-${eventType}`;
+            document.getElementById('popup-desc').textContent = animEvent?.note || '';
+            document.getElementById('popup-source').textContent = animEvent?.source ? `出处：${animEvent.source}` : '';
+
+            popup.classList.add('show');
+
+            // 特殊效果
+            if (eventType === '灭国') {
+                document.body.classList.add('screen-shake');
+                setTimeout(() => document.body.classList.remove('screen-shake'), 400);
+            }
+
+            clearTimeout(popupTimer);
+            popupTimer = setTimeout(() => {
+                popup.classList.remove('show');
+            }, CONFIG.popupDuration);
+        }
+
+        // ==================== 显示更新 ====================
+        function updateDisplay() {
+            if (!dataLoaded || sliceIndex.length === 0) return;
+
+            const slice = sliceIndex[currentIndex] || { year: -2070, title: '初始状态', event_id: 'initial', type: 'initial' };
+
+            const yearText = slice.year < 0 ? `前${Math.abs(slice.year)}年` : `${slice.year}年`;
+            document.getElementById('year-display').textContent = yearText;
+            document.getElementById('event-title').textContent = slice.title || '初始状态';
+
+            const eventType = slice.type || '占领';
+            const typeEl = document.getElementById('event-type');
+            typeEl.textContent = eventType;
+            typeEl.className = `event-type type-${eventType}`;
+
+            const animEvent = animationEvents[currentIndex];
+            document.getElementById('event-desc').textContent = animEvent?.note?.substring(0, 60) + '...' || '';
+
+            const progress = sliceIndex.length > 1
+                ? (currentIndex / (sliceIndex.length - 1)) * 100
+                : 0;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+            document.getElementById('progress-dot').style.left = `${progress}%`;
+
+            document.getElementById('counter').textContent = `${currentIndex + 1} / ${sliceIndex.length}`;
+        }
+
+        // ==================== 预加载 ====================
+        function preloadAdjacent(index) {
+            for (let i = -2; i <= 2; i++) {
+                const idx = index + i;
+                if (idx >= 0 && idx < sliceIndex.length && idx !== index) {
+                    fetch(`${CONFIG.outputDir}/${sliceIndex[idx].file}`).catch(() => {});
+                }
+            }
+        }
+
+        // ==================== 播放控制 ====================
+        function togglePlay() {
+            if (isPlaying) pause(); else play();
+        }
+
+        function play() {
+            if (!dataLoaded || sliceIndex.length === 0) return;
+            isPlaying = true;
+            document.getElementById('btn-play').textContent = '⏸ 暂停';
+            document.getElementById('btn-play').classList.add('playing');
+
+            playTimer = setInterval(() => {
+                if (currentIndex >= sliceIndex.length - 1) {
+                    pause();
+                    return;
+                }
+                switchTimeSlice(currentIndex + 1);
+            }, CONFIG.playInterval);
+        }
+
+        function pause() {
+            isPlaying = false;
+            document.getElementById('btn-play').textContent = '▶ 播放';
+            document.getElementById('btn-play').classList.remove('playing');
+            clearInterval(playTimer);
+        }
+
+        // ==================== 控件初始化 ====================
+        function initControls() {
+            document.getElementById('btn-first').addEventListener('click', () => {
+                pause();
+                switchTimeSlice(0);
+            });
+
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                pause();
+                switchTimeSlice(currentIndex - 1);
+            });
+
+            document.getElementById('btn-play').addEventListener('click', togglePlay);
+
+            document.getElementById('btn-next').addEventListener('click', () => {
+                pause();
+                switchTimeSlice(currentIndex + 1);
+            });
+
+            document.getElementById('btn-last').addEventListener('click', () => {
+                pause();
+                switchTimeSlice(sliceIndex.length - 1);
+            });
+
+            document.getElementById('progress-bar').addEventListener('click', (e) => {
+                if (!dataLoaded || sliceIndex.length === 0) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const ratio = x / rect.width;
+                const index = Math.round(ratio * (sliceIndex.length - 1));
+                pause();
+                switchTimeSlice(index);
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (!dataLoaded) return;
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        pause();
+                        switchTimeSlice(currentIndex - 1);
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        pause();
+                        switchTimeSlice(currentIndex + 1);
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        togglePlay();
+                        break;
+                    case 'Home':
+                        e.preventDefault();
+                        pause();
+                        switchTimeSlice(0);
+                        break;
+                    case 'End':
+                        e.preventDefault();
+                        pause();
+                        switchTimeSlice(sliceIndex.length - 1);
+                        break;
+                }
+            });
+        }
+
+        // ==================== 生成图例 ====================
+        function generateLegend() {
+            const legendData = [
+                { name: '夏朝', color: '#8B2500', note: '核心王朝' },
+                { name: '夏朝附庸', color: '#C5927F', note: '姒姓诸侯' },
+                { name: '商部落/商朝', color: '#1B4F72', note: '商族势力' },
+                { name: '商朝附庸', color: '#8DA7B8', note: '联盟方国' },
+                { name: '独立方国', color: '#D35400', note: '各方势力' },
+                { name: '九夷', color: '#6C3483', note: '东夷各部' },
+                { name: '北方部族', color: '#708090', note: '鬼方/土方等' },
+                { name: '无人控制', color: '#7F8C8D', note: 'neutral' },
+            ];
+
+            const container = document.getElementById('legend-content');
+            container.innerHTML = '';
+            legendData.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'legend-item';
+                div.innerHTML = `
+                    <div class="legend-color" style="background: ${item.color}; opacity: 0.8;"></div>
+                    <div class="legend-label">${item.name}</div>
+                `;
+                container.appendChild(div);
+
+                if (item.note) {
+                    const note = document.createElement('div');
+                    note.className = 'legend-note';
+                    note.textContent = item.note;
+                    container.appendChild(note);
+                }
+            });
+        }
+
+        // ==================== 城池弹窗 ====================
+        function showCityPopup(lngLat, props) {
+            const popup = new maplibregl.Popup({
+                closeButton: true,
+                closeOnClick: true,
+                className: 'city-popup-custom'
+            })
+            .setLngLat(lngLat)
+            .setHTML(`
+                <div style="font-family: 'Noto Serif SC', serif; padding: 8px;">
+                    <div style="font-size: 16px; font-weight: 700; color: #c9b896; margin-bottom: 6px;">${props.name}</div>
+                    <div style="font-size: 12px; color: #8a7e6b;">归属：${props.owner}</div>
+                    <div style="font-size: 11px; color: #6b5f4f; margin-top: 4px;">${props.type}</div>
+                </div>
+            `)
+            .addTo(map);
+        }
+
+        // ==================== 启动 ====================
+        initMap();
+    </script>
+</body>
+</html>

@@ -14,7 +14,6 @@
            宋式美学 CSS 变量与基础样式
            ============================================ */
         :root {
-            /* 宋式色谱 */
             --song-paper: #f5f0e8;
             --song-paper-dark: #e8e0d0;
             --song-ink: #2c2c2c;
@@ -26,17 +25,9 @@
             --song-jade: #4a7c59;
             --song-border: rgba(201, 184, 150, 0.35);
             --song-shadow: rgba(44, 44, 44, 0.15);
-
-            /* 动态覆盖 */
-            --overlay-color: #3d2b1f;
-            --overlay-opacity: 0.2;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", "STSong", serif;
@@ -45,617 +36,166 @@
             color: var(--song-ink);
         }
 
-        #map {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-        }
+        #map { width: 100vw; height: 100vh; position: relative; }
 
-        /* ============================================
-           加载遮罩 - 宋式卷轴风
-           ============================================ */
+        /* 加载遮罩 */
         .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, #e8e0d0 0%, #f5f0e8 50%, #e8e0d0 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            transition: opacity 0.8s ease;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 2000; transition: opacity 0.8s ease;
         }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .loading-scroll { width: 200px; height: 6px; background: rgba(201, 184, 150, 0.3); border-radius: 3px; overflow: hidden; margin-top: 24px; }
+        .loading-scroll-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--song-cinnabar), var(--song-cinnabar-light)); border-radius: 3px; animation: scrollFill 2s ease-in-out infinite; }
+        @keyframes scrollFill { 0% { width: 0%; margin-left: 0; } 50% { width: 70%; margin-left: 15%; } 100% { width: 0%; margin-left: 100%; } }
+        .loading-text { color: var(--song-ink-light); font-size: 16px; letter-spacing: 8px; margin-top: 20px; font-weight: 400; }
+        .loading-subtext { color: var(--song-gold); font-size: 12px; letter-spacing: 4px; margin-top: 10px; }
 
-        .loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loading-scroll {
-            width: 200px;
-            height: 6px;
-            background: rgba(201, 184, 150, 0.3);
-            border-radius: 3px;
-            overflow: hidden;
-            margin-top: 24px;
-        }
-
-        .loading-scroll-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--song-cinnabar), var(--song-cinnabar-light));
-            border-radius: 3px;
-            animation: scrollFill 2s ease-in-out infinite;
-        }
-
-        @keyframes scrollFill {
-            0% { width: 0%; margin-left: 0; }
-            50% { width: 70%; margin-left: 15%; }
-            100% { width: 0%; margin-left: 100%; }
-        }
-
-        .loading-text {
-            color: var(--song-ink-light);
-            font-size: 16px;
-            letter-spacing: 8px;
-            margin-top: 20px;
-            font-weight: 400;
-        }
-
-        .loading-subtext {
-            color: var(--song-gold);
-            font-size: 12px;
-            letter-spacing: 4px;
-            margin-top: 10px;
-        }
-
-        /* ============================================
-           错误遮罩
-           ============================================ */
+        /* 错误遮罩 */
         .error-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--song-paper);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 3000;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--song-paper); display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 3000;
         }
+        .error-overlay.show { display: flex; }
+        .error-seal { width: 60px; height: 60px; border: 2px solid var(--song-cinnabar); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--song-cinnabar); font-size: 28px; font-weight: bold; margin-bottom: 20px; }
+        .error-text { color: var(--song-cinnabar); font-size: 16px; max-width: 500px; text-align: center; line-height: 1.8; letter-spacing: 2px; }
+        .error-hint { color: var(--song-ink-light); font-size: 13px; margin-top: 15px; max-width: 550px; text-align: center; line-height: 1.8; }
 
-        .error-overlay.show {
-            display: flex;
-        }
-
-        .error-seal {
-            width: 60px;
-            height: 60px;
-            border: 2px solid var(--song-cinnabar);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--song-cinnabar);
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        .error-text {
-            color: var(--song-cinnabar);
-            font-size: 16px;
-            max-width: 500px;
-            text-align: center;
-            line-height: 1.8;
-            letter-spacing: 2px;
-        }
-
-        .error-hint {
-            color: var(--song-ink-light);
-            font-size: 13px;
-            margin-top: 15px;
-            max-width: 550px;
-            text-align: center;
-            line-height: 1.8;
-        }
-
-        /* ============================================
-           标题栏 - 宋式匾额风
-           ============================================ */
+        /* 标题栏 */
         .title-bar {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            text-align: center;
-            pointer-events: none;
-            background: rgba(245, 240, 232, 0.88);
-            border: 1px solid var(--song-border);
-            border-radius: 4px;
-            padding: 16px 40px;
-            backdrop-filter: blur(8px);
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; text-align: center; pointer-events: none;
+            background: rgba(245, 240, 232, 0.88); border: 1px solid var(--song-border);
+            border-radius: 4px; padding: 16px 40px; backdrop-filter: blur(8px);
             box-shadow: 0 2px 12px var(--song-shadow);
         }
+        .title-bar h1 { color: var(--song-ink); font-size: 26px; font-weight: 700; letter-spacing: 6px; margin-bottom: 6px; font-family: "Noto Serif SC", "Source Han Serif SC", serif; }
+        .title-bar .subtitle { color: var(--song-ink-light); font-size: 13px; letter-spacing: 3px; }
+        .title-bar .period { color: var(--song-cinnabar); font-size: 11px; letter-spacing: 2px; margin-top: 4px; opacity: 0.8; }
 
-        .title-bar h1 {
-            color: var(--song-ink);
-            font-size: 26px;
-            font-weight: 700;
-            letter-spacing: 6px;
-            margin-bottom: 6px;
-            font-family: "Noto Serif SC", "Source Han Serif SC", serif;
-        }
-
-        .title-bar .subtitle {
-            color: var(--song-ink-light);
-            font-size: 13px;
-            letter-spacing: 3px;
-        }
-
-        .title-bar .period {
-            color: var(--song-cinnabar);
-            font-size: 11px;
-            letter-spacing: 2px;
-            margin-top: 4px;
-            opacity: 0.8;
-        }
-
-        /* ============================================
-           图例 - 简素卡片
-           ============================================ */
+        /* 图例 */
         .legend {
-            position: absolute;
-            top: 90px;
-            right: 20px;
-            z-index: 1000;
-            background: rgba(245, 240, 232, 0.9);
-            border: 1px solid var(--song-border);
-            border-radius: 4px;
-            padding: 16px;
-            backdrop-filter: blur(8px);
-            max-width: 180px;
-            box-shadow: 0 2px 10px var(--song-shadow);
-            transition: opacity 0.3s;
+            position: absolute; top: 90px; right: 20px; z-index: 1000;
+            background: rgba(245, 240, 232, 0.9); border: 1px solid var(--song-border);
+            border-radius: 4px; padding: 16px; backdrop-filter: blur(8px);
+            max-width: 180px; box-shadow: 0 2px 10px var(--song-shadow); transition: opacity 0.3s;
         }
+        .legend-title { color: var(--song-ink); font-size: 14px; font-weight: 700; margin-bottom: 12px; letter-spacing: 4px; border-bottom: 1px solid var(--song-border); padding-bottom: 8px; text-align: center; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 7px; font-size: 12px; color: var(--song-ink-light); transition: transform 0.15s; }
+        .legend-item:hover { transform: translateX(-2px); }
+        .legend-color { width: 14px; height: 10px; border-radius: 2px; margin-right: 8px; border: 1px solid rgba(0, 0, 0, 0.15); flex-shrink: 0; }
+        .legend-label { flex: 1; letter-spacing: 1px; }
+        .legend-vassal-tag { font-size: 9px; color: var(--song-gold); margin-left: 4px; }
 
-        .legend-title {
-            color: var(--song-ink);
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            letter-spacing: 4px;
-            border-bottom: 1px solid var(--song-border);
-            padding-bottom: 8px;
-            text-align: center;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 7px;
-            font-size: 12px;
-            color: var(--song-ink-light);
-            transition: transform 0.15s;
-        }
-
-        .legend-item:hover {
-            transform: translateX(-2px);
-        }
-
-        .legend-color {
-            width: 14px;
-            height: 10px;
-            border-radius: 2px;
-            margin-right: 8px;
-            border: 1px solid rgba(0, 0, 0, 0.15);
-            flex-shrink: 0;
-        }
-
-        .legend-label {
-            flex: 1;
-            letter-spacing: 1px;
-        }
-
-        .legend-vassal-tag {
-            font-size: 9px;
-            color: var(--song-gold);
-            margin-left: 4px;
-        }
-
-        /* ============================================
-           时间轴控制器 - 宋式刻度尺风
-           ============================================ */
+        /* 时间轴控制器 */
         .time-controller {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: rgba(245, 240, 232, 0.92);
-            border: 1px solid var(--song-border);
-            border-radius: 4px;
-            padding: 20px 32px;
-            min-width: 460px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px var(--song-shadow);
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; background: rgba(245, 240, 232, 0.92); border: 1px solid var(--song-border);
+            border-radius: 4px; padding: 20px 32px; min-width: 460px;
+            backdrop-filter: blur(10px); box-shadow: 0 4px 20px var(--song-shadow);
         }
+        .time-display { text-align: center; margin-bottom: 16px; }
+        .time-display .year { color: var(--song-cinnabar); font-size: 34px; font-weight: 700; letter-spacing: 4px; text-shadow: 0 0 12px rgba(139, 37, 0, 0.15); font-family: "Noto Serif SC", serif; }
+        .time-display .event-title { color: var(--song-ink); font-size: 16px; margin-top: 8px; letter-spacing: 2px; font-weight: 600; }
+        .time-display .event-desc { color: var(--song-ink-light); font-size: 12px; margin-top: 6px; max-width: 380px; line-height: 1.6; margin-left: auto; margin-right: auto; }
 
-        .time-display {
-            text-align: center;
-            margin-bottom: 16px;
-        }
+        .progress-bar { width: 100%; height: 4px; background: rgba(201, 184, 150, 0.25); border-radius: 2px; margin: 16px 0; position: relative; cursor: pointer; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--song-cinnabar), var(--song-cinnabar-light)); border-radius: 2px; transition: width 0.4s ease; width: 0%; }
+        .progress-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; background: var(--song-cinnabar); border: 2px solid var(--song-paper); border-radius: 50%; box-shadow: 0 0 8px rgba(139, 37, 0, 0.4); transition: left 0.4s ease; }
+        .progress-ticks { display: flex; justify-content: space-between; margin-top: 4px; padding: 0 2px; }
+        .progress-tick { width: 1px; height: 6px; background: var(--song-gold); opacity: 0.5; }
 
-        .time-display .year {
-            color: var(--song-cinnabar);
-            font-size: 34px;
-            font-weight: 700;
-            letter-spacing: 4px;
-            text-shadow: 0 0 12px rgba(139, 37, 0, 0.15);
-            font-family: "Noto Serif SC", serif;
-        }
+        .controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 12px; }
+        .btn { background: transparent; border: 1px solid var(--song-border); color: var(--song-ink-light); padding: 7px 16px; border-radius: 3px; cursor: pointer; font-family: inherit; font-size: 13px; transition: all 0.2s; letter-spacing: 2px; }
+        .btn:hover { background: rgba(201, 184, 150, 0.2); border-color: var(--song-gold); color: var(--song-ink); }
+        .btn:active { transform: scale(0.96); }
+        .btn-play { background: rgba(139, 37, 0, 0.08); border-color: rgba(139, 37, 0, 0.4); color: var(--song-cinnabar); font-size: 14px; padding: 7px 22px; }
+        .btn-play:hover { background: rgba(139, 37, 0, 0.18); border-color: var(--song-cinnabar); }
+        .btn-play.playing { background: rgba(74, 124, 89, 0.1); border-color: rgba(74, 124, 89, 0.4); color: var(--song-jade); }
+        .counter { color: var(--song-gold); font-size: 11px; letter-spacing: 2px; margin-left: 8px; }
 
-        .time-display .event-title {
-            color: var(--song-ink);
-            font-size: 16px;
-            margin-top: 8px;
-            letter-spacing: 2px;
-            font-weight: 600;
-        }
-
-        .time-display .event-desc {
-            color: var(--song-ink-light);
-            font-size: 12px;
-            margin-top: 6px;
-            max-width: 380px;
-            line-height: 1.6;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* 进度条 - 仿古刻度 */
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: rgba(201, 184, 150, 0.25);
-            border-radius: 2px;
-            margin: 16px 0;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--song-cinnabar), var(--song-cinnabar-light));
-            border-radius: 2px;
-            transition: width 0.4s ease;
-            width: 0%;
-        }
-
-        .progress-dot {
-            position: absolute;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 10px;
-            height: 10px;
-            background: var(--song-cinnabar);
-            border: 2px solid var(--song-paper);
-            border-radius: 50%;
-            box-shadow: 0 0 8px rgba(139, 37, 0, 0.4);
-            transition: left 0.4s ease;
-        }
-
-        .progress-ticks {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 4px;
-            padding: 0 2px;
-        }
-
-        .progress-tick {
-            width: 1px;
-            height: 6px;
-            background: var(--song-gold);
-            opacity: 0.5;
-        }
-
-        /* 控制按钮 */
-        .controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .btn {
-            background: transparent;
-            border: 1px solid var(--song-border);
-            color: var(--song-ink-light);
-            padding: 7px 16px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 13px;
-            transition: all 0.2s;
-            letter-spacing: 2px;
-        }
-
-        .btn:hover {
-            background: rgba(201, 184, 150, 0.2);
-            border-color: var(--song-gold);
-            color: var(--song-ink);
-        }
-
-        .btn:active {
-            transform: scale(0.96);
-        }
-
-        .btn-play {
-            background: rgba(139, 37, 0, 0.08);
-            border-color: rgba(139, 37, 0, 0.4);
-            color: var(--song-cinnabar);
-            font-size: 14px;
-            padding: 7px 22px;
-        }
-
-        .btn-play:hover {
-            background: rgba(139, 37, 0, 0.18);
-            border-color: var(--song-cinnabar);
-        }
-
-        .btn-play.playing {
-            background: rgba(74, 124, 89, 0.1);
-            border-color: rgba(74, 124, 89, 0.4);
-            color: var(--song-jade);
-        }
-
-        .counter {
-            color: var(--song-gold);
-            font-size: 11px;
-            letter-spacing: 2px;
-            margin-left: 8px;
-        }
-
-        /* ============================================
-           事件通知 - 信笺弹窗
-           ============================================ */
+        /* 事件通知 */
         .event-notification {
-            position: absolute;
-            top: 90px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-30px);
-            z-index: 1001;
-            background: rgba(245, 240, 232, 0.95);
-            border: 1px solid var(--song-cinnabar);
-            border-radius: 4px;
-            padding: 14px 28px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(139, 37, 0, 0.15);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.5s ease;
-            text-align: center;
-            max-width: 400px;
+            position: absolute; top: 90px; left: 50%; transform: translateX(-50%) translateY(-30px);
+            z-index: 1001; background: rgba(245, 240, 232, 0.95); border: 1px solid var(--song-cinnabar);
+            border-radius: 4px; padding: 14px 28px; backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(139, 37, 0, 0.15); opacity: 0; pointer-events: none;
+            transition: all 0.5s ease; text-align: center; max-width: 400px;
         }
+        .event-notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .event-notification .notif-type { color: var(--song-cinnabar); font-size: 11px; letter-spacing: 3px; margin-bottom: 4px; }
+        .event-notification .notif-title { color: var(--song-ink); font-size: 15px; font-weight: 600; letter-spacing: 2px; }
 
-        .event-notification.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .event-notification .notif-type {
-            color: var(--song-cinnabar);
-            font-size: 11px;
-            letter-spacing: 3px;
-            margin-bottom: 4px;
-        }
-
-        .event-notification .notif-title {
-            color: var(--song-ink);
-            font-size: 15px;
-            font-weight: 600;
-            letter-spacing: 2px;
-        }
-
-        /* ============================================
-           城池脉冲图层样式 (MapLibre)
-           ============================================ */
-        .city-pulse-ring {
-            animation: pulseRing 2s ease-out infinite;
-        }
-
-        @keyframes pulseRing {
-            0% {
-                transform: scale(0.5);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(2.5);
-                opacity: 0;
-            }
-        }
-
-        /* ============================================
-           城池信息弹窗 - 信笺风
-           ============================================ */
+        /* 城池弹窗 */
         .city-popup {
-            position: absolute;
-            z-index: 1000;
-            background: rgba(245, 240, 232, 0.96);
-            border: 1px solid var(--song-border);
-            border-radius: 4px;
-            padding: 14px 18px;
-            color: var(--song-ink);
-            font-size: 13px;
-            pointer-events: none;
-            display: none;
-            max-width: 260px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 16px var(--song-shadow);
+            position: absolute; z-index: 1000; background: rgba(245, 240, 232, 0.96);
+            border: 1px solid var(--song-border); border-radius: 4px; padding: 14px 18px;
+            color: var(--song-ink); font-size: 13px; pointer-events: none; display: none;
+            max-width: 260px; backdrop-filter: blur(10px); box-shadow: 0 4px 16px var(--song-shadow);
         }
+        .city-popup::before { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%) rotate(45deg); width: 10px; height: 10px; background: rgba(245, 240, 232, 0.96); border-left: 1px solid var(--song-border); border-top: 1px solid var(--song-border); }
+        .city-popup .popup-name { font-size: 16px; font-weight: 700; color: var(--song-ink); margin-bottom: 6px; letter-spacing: 2px; border-bottom: 1px solid var(--song-border); padding-bottom: 6px; }
+        .city-popup .popup-owner { color: var(--song-cinnabar); font-size: 12px; letter-spacing: 1px; }
+        .city-popup .popup-type { color: var(--song-gold); font-size: 11px; margin-top: 3px; }
+        .city-popup .popup-note { color: var(--song-ink-light); font-size: 11px; margin-top: 6px; line-height: 1.5; }
 
-        .city-popup::before {
-            content: '';
-            position: absolute;
-            top: -6px;
-            left: 50%;
-            transform: translateX(-50%) rotate(45deg);
-            width: 10px;
-            height: 10px;
-            background: rgba(245, 240, 232, 0.96);
-            border-left: 1px solid var(--song-border);
-            border-top: 1px solid var(--song-border);
-        }
+        /* 快捷键 */
+        .shortcuts { position: absolute; bottom: 16px; right: 16px; z-index: 1000; color: var(--song-gold); font-size: 10px; text-align: right; line-height: 1.8; letter-spacing: 1px; opacity: 0.7; }
+        .shortcuts kbd { background: rgba(245, 240, 232, 0.6); border: 1px solid var(--song-border); border-radius: 2px; padding: 1px 5px; font-family: inherit; color: var(--song-ink-light); font-size: 10px; }
 
-        .city-popup .popup-name {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--song-ink);
-            margin-bottom: 6px;
-            letter-spacing: 2px;
-            border-bottom: 1px solid var(--song-border);
-            padding-bottom: 6px;
-        }
-
-        .city-popup .popup-owner {
-            color: var(--song-cinnabar);
-            font-size: 12px;
-            letter-spacing: 1px;
-        }
-
-        .city-popup .popup-type {
-            color: var(--song-gold);
-            font-size: 11px;
-            margin-top: 3px;
-        }
-
-        .city-popup .popup-note {
-            color: var(--song-ink-light);
-            font-size: 11px;
-            margin-top: 6px;
-            line-height: 1.5;
-        }
-
-        /* ============================================
-           快捷键提示
-           ============================================ */
-        .shortcuts {
-            position: absolute;
-            bottom: 16px;
-            right: 16px;
-            z-index: 1000;
-            color: var(--song-gold);
-            font-size: 10px;
-            text-align: right;
-            line-height: 1.8;
-            letter-spacing: 1px;
-            opacity: 0.7;
-        }
-
-        .shortcuts kbd {
-            background: rgba(245, 240, 232, 0.6);
-            border: 1px solid var(--song-border);
-            border-radius: 2px;
-            padding: 1px 5px;
-            font-family: inherit;
-            color: var(--song-ink-light);
-            font-size: 10px;
-        }
-
-        /* ============================================
-           疆域变化过渡动画辅助
-           ============================================ */
-        .territory-transition {
-            transition: opacity 0.6s ease;
-        }
-
-        /* ============================================
-           响应式
-           ============================================ */
+        /* 响应式 */
         @media (max-width: 768px) {
-            .time-controller {
-                min-width: 90vw;
-                padding: 14px 16px;
-            }
-
-            .title-bar {
-                padding: 10px 20px;
-            }
-
-            .title-bar h1 {
-                font-size: 18px;
-            }
-
-            .legend {
-                top: 70px;
-                right: 10px;
-                max-width: 140px;
-                padding: 10px;
-            }
+            .time-controller { min-width: 90vw; padding: 14px 16px; }
+            .title-bar { padding: 10px 20px; }
+            .title-bar h1 { font-size: 18px; }
+            .legend { top: 70px; right: 10px; max-width: 140px; padding: 10px; }
         }
     </style>
-<base target="_blank">
 </head>
 <body>
-    <!-- 加载遮罩 -->
     <div class="loading-overlay" id="loading">
         <div class="loading-text" id="loading-text">载史入图</div>
-        <div class="loading-scroll">
-            <div class="loading-scroll-fill"></div>
-        </div>
+        <div class="loading-scroll"><div class="loading-scroll-fill"></div></div>
         <div class="loading-subtext" id="loading-subtext">正在加载疆域数据...</div>
     </div>
 
-    <!-- 错误遮罩 -->
     <div class="error-overlay" id="error-overlay">
         <div class="error-seal">误</div>
         <div class="error-text" id="error-text">数据加载失败</div>
         <div class="error-hint" id="error-hint"></div>
     </div>
 
-    <!-- 地图容器 -->
     <div id="map"></div>
 
-    <!-- 标题 -->
     <div class="title-bar" id="title-bar" style="display:none;">
         <h1 id="dynasty-name">历史疆域</h1>
         <div class="subtitle" id="dynasty-subtitle">请配置朝代数据</div>
         <div class="period" id="dynasty-period"></div>
     </div>
 
-    <!-- 事件通知 -->
     <div class="event-notification" id="event-notification">
         <div class="notif-type" id="notif-type">领土变更</div>
         <div class="notif-title" id="notif-title"></div>
     </div>
 
-    <!-- 图例 -->
     <div class="legend" id="legend" style="display:none;">
         <div class="legend-title">势力图例</div>
         <div id="legend-content"></div>
     </div>
 
-    <!-- 时间轴控制器 -->
     <div class="time-controller" id="time-controller" style="display:none;">
         <div class="time-display">
             <div class="year" id="year-display">——</div>
             <div class="event-title" id="event-title">初始状态</div>
             <div class="event-desc" id="event-desc"></div>
         </div>
-
         <div class="progress-bar" id="progress-bar">
             <div class="progress-fill" id="progress-fill"></div>
             <div class="progress-dot" id="progress-dot" style="left: 0%"></div>
         </div>
         <div class="progress-ticks" id="progress-ticks"></div>
-
         <div class="controls">
             <button class="btn" id="btn-first" title="首个事件">⏮ 首</button>
             <button class="btn" id="btn-prev" title="上一个">← 上</button>
@@ -666,14 +206,12 @@
         </div>
     </div>
 
-    <!-- 快捷键提示 -->
     <div class="shortcuts">
         <kbd>←</kbd> <kbd>→</kbd> 切换 &nbsp;
         <kbd>空格</kbd> 播放 &nbsp;
         <kbd>Home</kbd> <kbd>End</kbd> 首尾
     </div>
 
-    <!-- 城池弹窗 -->
     <div class="city-popup" id="city-popup">
         <div class="popup-name" id="popup-name"></div>
         <div class="popup-owner" id="popup-owner"></div>
@@ -682,7 +220,6 @@
     </div>
 
     <script>
-        // ==================== 全局配置与状态 ====================
         let CONFIG = {};
         let sliceIndex = [];
         let currentIndex = 0;
@@ -693,8 +230,6 @@
         let colorMapData = {};
         let map;
         let dataLoaded = false;
-
-        // ==================== 工具函数 ====================
 
         function showError(message, hint) {
             document.getElementById('loading').classList.add('hidden');
@@ -712,25 +247,17 @@
         async function fetchJson(url, label) {
             console.log(`[加载] ${label}: ${url}`);
             const res = await fetch(url);
-            if (!res.ok) {
-                throw new Error(`${label} 加载失败: HTTP ${res.status} - ${url}`);
-            }
+            if (!res.ok) throw new Error(`${label} 加载失败: HTTP ${res.status} - ${url}`);
             return await res.json();
         }
 
-        // ==================== 配置加载 ====================
-
         async function loadConfig() {
-            // 支持通过 URL 参数指定配置文件，如 ?config=config_shang.json
             const urlParams = new URLSearchParams(window.location.search);
             const configFile = urlParams.get('config') || 'config_xia.json';
-
             document.getElementById('loading-subtext').textContent = `正在加载配置: ${configFile}...`;
 
             try {
                 const config = await fetchJson(configFile, '配置文件');
-
-                // 合并配置
                 CONFIG = {
                     outputDir: config.dataPaths?.outputDir || './output',
                     tileServer: config.tileServer || 'http://localhost:8000/tiles/china_dem/{z}/{x}/{y}.png',
@@ -744,134 +271,94 @@
                     style: config.style || {},
                     dataPaths: config.dataPaths || {},
                 };
-
                 console.log('[配置] 加载完成:', CONFIG);
                 return true;
             } catch (e) {
-                showError(
-                    `配置文件加载失败: ${e.message}`,
-                    `请确保 ${configFile} 存在，或通过 URL 参数指定配置，如: ?config=config_shang.json`
-                );
+                showError(`配置文件加载失败: ${e.message}`, `请确保 ${configFile} 存在，或通过 URL 参数指定配置，如: ?config=config_shang.json`);
                 return false;
             }
         }
 
-        // ==================== 数据加载 ====================
-
         async function loadAllData() {
             try {
-                // 1. 加载时间断面索引
                 const indexUrl = `${CONFIG.outputDir}/slice_index.json`;
                 document.getElementById('loading-subtext').textContent = '正在加载时间断面索引...';
                 sliceIndex = await fetchJson(indexUrl, '时间断面索引');
+                if (!Array.isArray(sliceIndex) || sliceIndex.length === 0) throw new Error('slice_index.json 为空或格式错误');
 
-                if (!Array.isArray(sliceIndex) || sliceIndex.length === 0) {
-                    throw new Error('slice_index.json 为空或格式错误');
-                }
-
-                // 2. 加载城池数据
                 try {
                     const cityPath = CONFIG.dataPaths.cityJson;
                     if (cityPath) {
                         document.getElementById('loading-subtext').textContent = '正在加载城池数据...';
                         const cityJson = await fetchJson(cityPath, '城池数据');
-                        if (cityJson && Array.isArray(cityJson.cities)) {
-                            cityJson.cities.forEach(c => { citiesData[c.id] = c; });
-                        }
+                        if (cityJson && Array.isArray(cityJson.cities)) cityJson.cities.forEach(c => { citiesData[c.id] = c; });
                     }
-                } catch (e) {
-                    console.warn('[可选] 城池数据加载失败:', e.message);
-                }
+                } catch (e) { console.warn('[可选] 城池数据加载失败:', e.message); }
 
-                // 3. 加载事件数据
                 try {
                     const eventsPath = CONFIG.dataPaths.eventsJson;
                     if (eventsPath) {
                         document.getElementById('loading-subtext').textContent = '正在加载事件数据...';
                         const evJson = await fetchJson(eventsPath, '事件数据');
-                        if (evJson && Array.isArray(evJson.events)) {
-                            evJson.events.forEach(e => { eventsData[e.id] = e; });
-                        }
+                        if (evJson && Array.isArray(evJson.events)) evJson.events.forEach(e => { eventsData[e.id] = e; });
                     }
-                } catch (e) {
-                    console.warn('[可选] 事件数据加载失败:', e.message);
-                }
+                } catch (e) { console.warn('[可选] 事件数据加载失败:', e.message); }
 
-                // 4. 加载颜色映射
                 try {
                     const colorPath = CONFIG.dataPaths.colorMapJson;
                     if (colorPath) {
                         document.getElementById('loading-subtext').textContent = '正在加载颜色映射...';
                         colorMapData = await fetchJson(colorPath, '颜色映射');
                     }
-                } catch (e) {
-                    console.warn('[可选] 颜色映射加载失败:', e.message);
-                }
+                } catch (e) { console.warn('[可选] 颜色映射加载失败:', e.message); }
 
                 dataLoaded = true;
                 console.log(`[加载完成] ${sliceIndex.length} 个时间断面, ${Object.keys(citiesData).length} 个城池, ${Object.keys(eventsData).length} 个事件`);
                 return true;
-
             } catch (e) {
-                const hint = `可能原因：\n1. Python pipeline 未运行，未生成 output 目录下的 GeoJSON 文件\n2. outputDir 路径错误（当前: "${CONFIG.outputDir}"）\n3. HTTP 服务器未启动（请用 python -m http.server 运行）\n\n文件结构示例：\n项目目录/\n  ├── dynasty_territory.html\n  ├── config_xia.json\n  ├── data/\n  │   ├── city_xia.json\n  │   ├── events_xia.json\n  │   └── color_map_xia.json\n  └── output/\n      ├── slice_index.json\n      ├── time_slice_initial.geojson\n      └── ...`;
+                const hint = `可能原因：\n1. Python pipeline 未运行，未生成 output 目录下的 GeoJSON 文件\n2. outputDir 路径错误（当前: "${CONFIG.outputDir}"）\n3. HTTP 服务器未启动（请用 python -m http.server 运行）`;
                 showError(e.message, hint);
                 return false;
             }
         }
 
-        // ==================== 标题与 UI 初始化 ====================
-
         function initTitle() {
             const d = CONFIG.dynasty || {};
-            document.getElementById('dynasty-name').textContent =
-                (d.name || '历史疆域') + '疆域变化';
-            document.getElementById('dynasty-subtitle').textContent =
-                d.period || '';
-            document.getElementById('dynasty-period').textContent =
-                d.focusPeriod || d.subtitle || '';
+            document.getElementById('dynasty-name').textContent = (d.name || '历史疆域') + '疆域变化';
+            document.getElementById('dynasty-subtitle').textContent = d.period || '';
+            document.getElementById('dynasty-period').textContent = d.focusPeriod || d.subtitle || '';
             document.getElementById('title-bar').style.display = 'block';
         }
 
-        // ==================== 地图初始化 ====================
-
         function initMap() {
             const style = CONFIG.style || {};
+            let tileUrls = [CONFIG.tileServer];
+            const fallbackTiles = ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'];
 
             map = new maplibregl.Map({
                 container: 'map',
                 style: {
                     version: 8,
                     sources: {
-                        'local-tiles': {
-                            type: 'raster',
-                            tiles: [CONFIG.tileServer],
-                            tileSize: 256,
-                        }
+                        'map-tiles': { type: 'raster', tiles: tileUrls, tileSize: 256 }
                     },
                     layers: [
+                        { id: 'background', type: 'background', paint: { 'background-color': '#e8e0d0' } },
                         {
-                            id: 'background',
-                            type: 'background',
-                            paint: { 'background-color': '#e8e0d0' }
-                        },
-                        {
-                            id: 'local-tiles',
-                            type: 'raster',
-                            source: 'local-tiles',
+                            id: 'map-tiles', type: 'raster', source: 'map-tiles',
                             paint: {
-                                'raster-opacity': style.rasterOpacity ?? 0.4,
-                                'raster-brightness-min': style.rasterBrightnessMin ?? 0.1,
-                                'raster-brightness-max': style.rasterBrightnessMax ?? 0.5,
-                                'raster-saturation': style.rasterSaturation ?? -0.9,
-                                'raster-contrast': style.rasterContrast ?? 0.05,
+                                'raster-opacity': style.rasterOpacity ?? 0.5,
+                                'raster-brightness-min': style.rasterBrightnessMin ?? 0.25,
+                                'raster-brightness-max': style.rasterBrightnessMax ?? 0.65,
+                                'raster-saturation': style.rasterSaturation ?? -0.8,
+                                'raster-contrast': style.rasterContrast ?? -0.15,
                             }
                         },
                         {
-                            id: 'vintage-overlay',
-                            type: 'background',
+                            id: 'vintage-overlay', type: 'background',
                             paint: {
-                                'background-color': style.overlayColor || '#3d2b1f',
-                                'background-opacity': style.overlayOpacity ?? 0.2
+                                'background-color': style.overlayColor || '#c9b896',
+                                'background-opacity': style.overlayOpacity ?? 0.12
                             }
                         }
                     ]
@@ -884,46 +371,37 @@
 
             map.addControl(new maplibregl.NavigationControl(), 'top-left');
 
-            map.on('load', async () => {
-                try {
-                    const configOk = await loadConfig();
-                    if (!configOk) return;
-
-                    const dataOk = await loadAllData();
-                    if (!dataOk) return;
-
-                    initTitle();
-                    initLayers();
-                    initCityLayer();
-                    initControls();
-                    generateLegend();
-                    updateDisplay();
-
-                    document.getElementById('time-controller').style.display = 'block';
-                    document.getElementById('legend').style.display = 'block';
-                    document.getElementById('loading').classList.add('hidden');
-                } catch (e) {
-                    showError('地图初始化失败: ' + e.message);
-                    console.error(e);
+            let tileErrorCount = 0;
+            map.on('error', (e) => {
+                console.warn('[Map 错误]', e);
+                if (e.error && e.error.status === 404 && tileErrorCount < 3) {
+                    tileErrorCount++;
+                    try {
+                        map.removeLayer('map-tiles');
+                        map.removeSource('map-tiles');
+                        map.addSource('map-tiles', { type: 'raster', tiles: fallbackTiles, tileSize: 256 });
+                        map.addLayer({
+                            id: 'map-tiles', type: 'raster', source: 'map-tiles',
+                            paint: {
+                                'raster-opacity': style.rasterOpacity ?? 0.5,
+                                'raster-brightness-min': style.rasterBrightnessMin ?? 0.25,
+                                'raster-brightness-max': style.rasterBrightnessMax ?? 0.65,
+                                'raster-saturation': style.rasterSaturation ?? -0.8,
+                                'raster-contrast': style.rasterContrast ?? -0.15,
+                            }
+                        }, 'vintage-overlay');
+                    } catch (switchErr) { console.error('[Map] 切换底图失败:', switchErr); }
                 }
             });
-
-            map.on('error', (e) => {
-                console.warn('[Map]', e);
-            });
+            return map;
         }
-
-        // ==================== 疆域图层初始化 ====================
 
         function initLayers() {
             const initialFile = sliceIndex[0]?.file || 'time_slice_initial.geojson';
             const initialUrl = `${CONFIG.outputDir}/${initialFile}`;
 
             // 疆域填充面
-            map.addSource('territory', {
-                type: 'geojson',
-                data: initialUrl
-            });
+            map.addSource('territory', { type: 'geojson', data: initialUrl });
 
             map.addLayer({
                 id: 'territory-fill',
@@ -931,17 +409,12 @@
                 source: 'territory',
                 paint: {
                     'fill-color': ['get', 'fill'],
-                    'fill-opacity': [
-                        'case',
-                        ['boolean', ['get', 'is_vassal'], false],
-                        ['get', 'fill_opacity'],
-                        ['get', 'fill_opacity']
-                    ],
+                    'fill-opacity': ['get', 'fill_opacity'],
                     'fill-outline-color': ['get', 'stroke']
                 }
             });
 
-            // 疆域边界线
+            // 边界线隐藏
             map.addLayer({
                 id: 'territory-border',
                 type: 'line',
@@ -950,34 +423,45 @@
                 paint: {
                     'line-color': ['get', 'stroke'],
                     'line-width': ['get', 'stroke_width'],
-                    'line-opacity': 0.8
+                    'line-opacity': 0
                 }
             });
 
-            // hover 效果
+            // 势力名称标签 —— 强制显示在疆域中心，不避让
+            map.addLayer({
+                id: 'territory-label',
+                type: 'symbol',
+                source: 'territory',
+                layout: {
+                    'text-field': ['coalesce', ['get', 'country'], ['get', 'owner'], ['get', 'name'], ['get', 'id'], ''],
+                    'text-size': 14,
+                    'text-anchor': 'center',
+                    'text-allow-overlap': true,
+                    'text-ignore-placement': true,
+                    'text-font': ['Noto Sans Regular'],
+                    'text-padding': 2,
+                    'text-max-width': 8,
+                    'symbol-placement': 'point'
+                },
+                paint: {
+                    'text-color': '#2c2c2c',
+                    'text-halo-color': 'rgba(245, 240, 232, 0.95)',
+                    'text-halo-width': 2.5,
+                    'text-opacity': 0.95
+                }
+            });
+
             map.on('mousemove', 'territory-fill', (e) => {
-                if (e.features.length > 0) {
-                    map.getCanvas().style.cursor = 'pointer';
-                    const owner = e.features[0].properties.owner;
-                    const county = e.features[0].properties.county_count || 0;
-                    // 可在此添加 tooltip
-                }
+                if (e.features.length > 0) map.getCanvas().style.cursor = 'pointer';
             });
-
-            map.on('mouseleave', 'territory-fill', () => {
-                map.getCanvas().style.cursor = '';
-            });
-
-            // 点击疆域面显示信息
+            map.on('mouseleave', 'territory-fill', () => { map.getCanvas().style.cursor = ''; });
             map.on('click', 'territory-fill', (e) => {
                 if (e.features.length > 0) {
                     const props = e.features[0].properties;
-                    showNotification('疆域信息', `${props.country || props.owner} · 辖${props.county_count || 0}县`);
+                    showNotification('疆域信息', `${props.country || props.owner || props.name || '未知'} · 辖${props.county_count || 0}县`);
                 }
             });
         }
-
-        // ==================== 颜色工具 ====================
 
         function getOwnerColor(owner, defaultColor = '#2c2c2c') {
             const colors = colorMapData.colors || colorMapData;
@@ -988,19 +472,15 @@
             return defaultColor;
         }
 
-        // ==================== 城池图层初始化 ====================
-
         function initCityLayer() {
             const cities = Object.values(citiesData);
             if (cities.length === 0) return;
 
-            // 构建 GeoJSON，添加动态颜色属性
             const cityGeoJson = {
                 type: 'FeatureCollection',
                 features: cities.map(c => {
                     const owner = c.initial_owner || c.owner || 'unknown';
                     const color = getOwnerColor(owner);
-                    const isCapital = (c.type === '都城');
                     return {
                         type: 'Feature',
                         geometry: { type: 'Point', coordinates: [c.lon, c.lat] },
@@ -1013,28 +493,22 @@
                             note: c.note || '',
                             modern_name: c.modern_name || '',
                             color: color,
-                            is_capital: isCapital
+                            is_capital: (c.type === '都城')
                         }
                     };
                 })
             };
 
-            map.addSource('cities', {
-                type: 'geojson',
-                data: cityGeoJson
-            });
+            map.addSource('cities', { type: 'geojson', data: cityGeoJson });
 
-            // 城池脉冲外圈（事件触发时显示）
+            // 脉冲外圈
             map.addLayer({
                 id: 'city-pulse',
                 type: 'circle',
                 source: 'cities',
-                filter: ['==', ['get', 'id'], ''], // 初始不显示
+                filter: ['==', ['get', 'id'], ''],
                 paint: {
-                    'circle-radius': [
-                        'interpolate', ['linear'], ['zoom'],
-                        3, 6, 5, 12, 8, 20, 12, 30
-                    ],
+                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 6, 5, 12, 8, 20, 12, 30],
                     'circle-color': ['get', 'color'],
                     'circle-opacity': 0.15,
                     'circle-stroke-width': 1,
@@ -1043,17 +517,14 @@
                 }
             });
 
-            // 城池主点 - 普通城池
+            // 普通城池
             map.addLayer({
                 id: 'city-dot',
                 type: 'circle',
                 source: 'cities',
                 filter: ['!=', ['get', 'type'], '都城'],
                 paint: {
-                    'circle-radius': [
-                        'interpolate', ['linear'], ['zoom'],
-                        3, 2, 5, 4, 8, 6, 12, 9
-                    ],
+                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 2, 5, 4, 8, 6, 12, 9],
                     'circle-color': ['get', 'color'],
                     'circle-opacity': 0.85,
                     'circle-stroke-width': 1.5,
@@ -1061,17 +532,14 @@
                 }
             });
 
-            // 都城特殊标记 - 更大更醒目
+            // 都城（已缩小）
             map.addLayer({
                 id: 'city-capital',
                 type: 'circle',
                 source: 'cities',
                 filter: ['==', ['get', 'type'], '都城'],
                 paint: {
-                    'circle-radius': [
-                        'interpolate', ['linear'], ['zoom'],
-                        3, 4, 5, 7, 8, 11, 12, 15
-                    ],
+                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 3, 5, 5, 8, 7, 12, 9],
                     'circle-color': ['get', 'color'],
                     'circle-opacity': 0.95,
                     'circle-stroke-width': 2,
@@ -1079,80 +547,44 @@
                 }
             });
 
-            // 都城星形标记（内圈高光）
+            // 都城高光
             map.addLayer({
                 id: 'city-capital-glow',
                 type: 'circle',
                 source: 'cities',
                 filter: ['==', ['get', 'type'], '都城'],
                 paint: {
-                    'circle-radius': [
-                        'interpolate', ['linear'], ['zoom'],
-                        3, 2, 5, 3.5, 8, 5.5, 12, 7
-                    ],
+                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 1.5, 5, 2.5, 8, 3.5, 12, 4.5],
                     'circle-color': '#f5f0e8',
                     'circle-opacity': 0.6
                 }
             });
 
-            // 城池标签
-            map.addLayer({
-                id: 'city-label',
-                type: 'symbol',
-                source: 'cities',
-                minzoom: 5,
-                layout: {
-                    'text-field': ['get', 'name'],
-                    'text-size': 11,
-                    'text-offset': [0, 1.2],
-                    'text-anchor': 'top',
-                    'text-font': ['Noto Sans Regular'],
-                },
-                paint: {
-                    'text-color': '#2c2c2c',
-                    'text-halo-color': 'rgba(245, 240, 232, 0.9)',
-                    'text-halo-width': 2
-                }
-            });
+            // 注意：此处已移除 city-label 图层，不再显示城市名称
 
-            // 城池交互
             const cityLayers = ['city-dot', 'city-capital', 'city-capital-glow'];
-
             cityLayers.forEach(layerId => {
                 map.on('mouseenter', layerId, (e) => {
                     map.getCanvas().style.cursor = 'pointer';
                     if (e.features.length > 0) showCityPopup(e.features[0]);
                 });
-                map.on('mousemove', layerId, (e) => {
-                    updatePopupPosition(e);
-                });
-                map.on('mouseleave', layerId, () => {
-                    map.getCanvas().style.cursor = '';
-                    hideCityPopup();
-                });
+                map.on('mousemove', layerId, (e) => { updatePopupPosition(e); });
+                map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; hideCityPopup(); });
             });
         }
-
-        // ==================== 城池弹窗 ====================
 
         function showCityPopup(feature) {
             const p = feature.properties;
             const popup = document.getElementById('city-popup');
-
             document.getElementById('popup-name').textContent = p.name;
-
             let ownerText = p.owner;
             if (p.vassal_of) ownerText += `（${p.vassal_of}附庸）`;
             document.getElementById('popup-owner').textContent = `归属：${ownerText}`;
-
             document.getElementById('popup-type').textContent = p.type;
-
             let note = '';
             if (p.modern_name) note += `今${p.modern_name}`;
             if (p.note) note += (note ? ' · ' : '') + p.note;
             document.getElementById('popup-note').textContent = note;
-
-            // 位置
             const coords = feature.geometry.coordinates;
             const point = map.project(coords);
             popup.style.left = (point.x + 15) + 'px';
@@ -1168,11 +600,7 @@
             }
         }
 
-        function hideCityPopup() {
-            document.getElementById('city-popup').style.display = 'none';
-        }
-
-        // ==================== 时间断面切换 ====================
+        function hideCityPopup() { document.getElementById('city-popup').style.display = 'none'; }
 
         function switchTimeSlice(index) {
             if (!dataLoaded || sliceIndex.length === 0) return;
@@ -1182,103 +610,64 @@
             const slice = sliceIndex[index];
             const fileUrl = `${CONFIG.outputDir}/${slice.file}`;
 
-            // 检测事件
             const event = eventsData[slice.event_id];
             const hasTerritoryChange = event && event.changes && event.changes.some(c => c.to !== undefined);
 
             if (hasTerritoryChange && CONFIG.transitionDuration > 0) {
-                // 有领土变化时使用过渡动画
                 transitionTerritory(fileUrl, event);
             } else {
-                // 直接切换
                 map.getSource('territory').setData(fileUrl);
             }
 
-            // 显示事件通知
             if (event) {
                 showEventNotification(event);
                 highlightEventCities(event);
             }
-
             updateDisplay();
             preloadAdjacent(index);
         }
 
         function transitionTerritory(fileUrl, event) {
             const duration = CONFIG.transitionDuration || 800;
+            const fadeOut = Math.floor(duration * 0.45);
+            const fadeIn = Math.floor(duration * 0.45);
 
-            // 先淡出
-            map.setPaintProperty('territory-fill', 'fill-opacity', 0.15);
-            map.setPaintProperty('territory-border', 'line-opacity', 0.2);
+            map.style.transition = { duration: fadeOut, delay: 0 };
+            map.setPaintProperty('territory-fill', 'fill-opacity', 0);
+            map.setPaintProperty('territory-border', 'line-opacity', 0);
+            map.setPaintProperty('territory-label', 'text-opacity', 0);
 
             setTimeout(() => {
-                // 更新数据
                 map.getSource('territory').setData(fileUrl);
-
-                // 淡入
-                map.setPaintProperty('territory-fill', 'fill-opacity', [
-                    'case',
-                    ['boolean', ['get', 'is_vassal'], false],
-                    ['get', 'fill_opacity'],
-                    ['get', 'fill_opacity']
-                ]);
-                map.setPaintProperty('territory-border', 'line-opacity', 0.8);
-            }, duration * 0.4);
+                map.style.transition = { duration: fadeIn, delay: 0 };
+                map.setPaintProperty('territory-fill', 'fill-opacity', ['get', 'fill_opacity']);
+                map.setPaintProperty('territory-border', 'line-opacity', 0);
+                map.setPaintProperty('territory-label', 'text-opacity', 0.95);
+            }, fadeOut);
         }
 
         function updateDisplay() {
             if (!dataLoaded || sliceIndex.length === 0) return;
-
             const slice = sliceIndex[currentIndex] || {};
-
-            // 年份
-            const yearText = slice.year !== undefined ? formatYear(slice.year) : '——';
-            document.getElementById('year-display').textContent = yearText;
-
-            // 事件标题
+            document.getElementById('year-display').textContent = slice.year !== undefined ? formatYear(slice.year) : '——';
             document.getElementById('event-title').textContent = slice.title || '初始状态';
-
-            // 事件描述（从 events.json 动态获取）
             const event = eventsData[slice.event_id];
-            const desc = event?.description || event?.desc || '';
-            document.getElementById('event-desc').textContent = desc;
-
-            // 进度条
-            const progress = sliceIndex.length > 1
-                ? (currentIndex / (sliceIndex.length - 1)) * 100
-                : 0;
+            document.getElementById('event-desc').textContent = event?.description || event?.desc || '';
+            const progress = sliceIndex.length > 1 ? (currentIndex / (sliceIndex.length - 1)) * 100 : 0;
             document.getElementById('progress-fill').style.width = `${progress}%`;
             document.getElementById('progress-dot').style.left = `${progress}%`;
-
-            // 计数器
-            document.getElementById('counter').textContent =
-                `${currentIndex + 1} / ${sliceIndex.length}`;
+            document.getElementById('counter').textContent = `${currentIndex + 1} / ${sliceIndex.length}`;
         }
-
-        // ==================== 事件通知 ====================
 
         function showEventNotification(event) {
             const notif = document.getElementById('event-notification');
-            const typeEl = document.getElementById('notif-type');
-            const titleEl = document.getElementById('notif-title');
-
-            // 判断事件类型
             let typeText = '历史事件';
             const changes = event.changes || [];
-            if (changes.length > 0) {
-                const hasTerritory = changes.some(c => c.to !== undefined);
-                if (hasTerritory) typeText = '领土变更';
-            }
-
-            typeEl.textContent = typeText;
-            titleEl.textContent = event.title || '';
-
+            if (changes.length > 0 && changes.some(c => c.to !== undefined)) typeText = '领土变更';
+            document.getElementById('notif-type').textContent = typeText;
+            document.getElementById('notif-title').textContent = event.title || '';
             notif.classList.add('show');
-
-            // 3秒后自动隐藏
-            setTimeout(() => {
-                notif.classList.remove('show');
-            }, 3000);
+            setTimeout(() => { notif.classList.remove('show'); }, 3000);
         }
 
         function showNotification(title, message) {
@@ -1286,61 +675,40 @@
             document.getElementById('notif-type').textContent = title;
             document.getElementById('notif-title').textContent = message;
             notif.classList.add('show');
-            setTimeout(() => {
-                notif.classList.remove('show');
-            }, 2500);
+            setTimeout(() => { notif.classList.remove('show'); }, 2500);
         }
-
-        // ==================== 城池高亮脉冲 ====================
 
         function highlightEventCities(event) {
             const changes = event.changes || [];
             if (changes.length === 0) return;
-
-            // 获取涉及的城市ID
             const cityIds = changes.map(c => c.city_id).filter(Boolean);
             if (cityIds.length === 0) return;
 
-            // 使用 city-pulse 图层显示脉冲效果
             if (map.getLayer('city-pulse')) {
-                // 设置 filter 只显示事件相关的城池
                 map.setFilter('city-pulse', ['in', ['get', 'id'], ['literal', cityIds]]);
-
-                // 脉冲动画：周期性改变透明度和半径
                 let pulseCount = 0;
                 const maxPulse = 8;
-
-                // 清除之前的动画
                 if (window._pulseInterval) clearInterval(window._pulseInterval);
-
                 window._pulseInterval = setInterval(() => {
                     pulseCount++;
                     if (pulseCount >= maxPulse) {
-                        clearInterval(window._pulseInterval);
-                        window._pulseInterval = null;
-                        // 恢复不显示
+                        clearInterval(window._pulseInterval); window._pulseInterval = null;
                         map.setFilter('city-pulse', ['==', ['get', 'id'], '']);
                         return;
                     }
-
-                    // 计算脉冲进度 (0→1→0)
                     const progress = pulseCount / maxPulse;
-                    const wave = Math.sin(progress * Math.PI * 4); // 两次脉冲
+                    const wave = Math.sin(progress * Math.PI * 4);
                     const opacity = 0.05 + Math.abs(wave) * 0.2;
                     const radiusScale = 1 + Math.abs(wave) * 0.8;
-
                     map.setPaintProperty('city-pulse', 'circle-opacity', opacity);
                     map.setPaintProperty('city-pulse', 'circle-radius', [
                         'interpolate', ['linear'], ['zoom'],
-                        3, 6 * radiusScale, 5, 12 * radiusScale,
-                        8, 20 * radiusScale, 12, 30 * radiusScale
+                        3, 6 * radiusScale, 5, 12 * radiusScale, 8, 20 * radiusScale, 12, 30 * radiusScale
                     ]);
                 }, 350);
             }
 
-            // 同时高亮中心点（放大效果）
             if (map.getLayer('city-dot')) {
-                // 临时放大事件相关城池
                 const enlargedRadius = [
                     'case',
                     ['in', ['get', 'id'], ['literal', cityIds]],
@@ -1348,26 +716,17 @@
                     ['interpolate', ['linear'], ['zoom'], 3, 2, 5, 4, 8, 6, 12, 9]
                 ];
                 map.setPaintProperty('city-dot', 'circle-radius', enlargedRadius);
-
-                // 3秒后恢复
                 setTimeout(() => {
-                    map.setPaintProperty('city-dot', 'circle-radius', [
-                        'interpolate', ['linear'], ['zoom'],
-                        3, 2, 5, 4, 8, 6, 12, 9
-                    ]);
+                    map.setPaintProperty('city-dot', 'circle-radius', ['interpolate', ['linear'], ['zoom'], 3, 2, 5, 4, 8, 6, 12, 9]);
                 }, 3000);
             }
         }
 
-        // ==================== 图例生成 ====================
-
         function generateLegend() {
             const container = document.getElementById('legend-content');
             container.innerHTML = '';
-
             const colors = colorMapData.colors || colorMapData;
             if (!colors || Object.keys(colors).length === 0) {
-                // 使用默认图例
                 const defaultLegend = [
                     { name: '核心王朝', color: '#8B2500', isVassal: false },
                     { name: '核心附庸', color: '#C5927F', isVassal: true },
@@ -1378,14 +737,10 @@
                 defaultLegend.forEach(item => addLegendItem(item.name, item.color, item.isVassal));
                 return;
             }
-
-            // 从 color_map.json 动态生成
             Object.entries(colors).forEach(([name, colorConfig]) => {
                 if (typeof colorConfig === 'object') {
                     addLegendItem(name, colorConfig.fill || '#CCCCCC', false);
-                    if (colorConfig.vassal_fill) {
-                        addLegendItem(name, colorConfig.vassal_fill, true);
-                    }
+                    if (colorConfig.vassal_fill) addLegendItem(name, colorConfig.vassal_fill, true);
                 } else if (typeof colorConfig === 'string') {
                     addLegendItem(name, colorConfig, false);
                 }
@@ -1394,25 +749,17 @@
 
         function addLegendItem(name, color, isVassal) {
             const container = document.getElementById('legend-content');
-
             const div = document.createElement('div');
             div.className = 'legend-item';
-            div.innerHTML = `
-                <div class="legend-color" style="background: ${color}; opacity: 0.85;"></div>
-                <div class="legend-label">${name}${isVassal ? '·附' : ''}</div>
-            `;
+            div.innerHTML = `<div class="legend-color" style="background: ${color}; opacity: 0.85;"></div><div class="legend-label">${name}${isVassal ? '·附' : ''}</div>`;
             container.appendChild(div);
         }
-
-        // ==================== 进度条刻度生成 ====================
 
         function generateProgressTicks() {
             const container = document.getElementById('progress-ticks');
             container.innerHTML = '';
             const total = sliceIndex.length;
-            const maxTicks = 30; // 最多显示30个刻度
-            const step = Math.max(1, Math.floor(total / maxTicks));
-
+            const step = Math.max(1, Math.floor(total / 30));
             for (let i = 0; i < total; i += step) {
                 const tick = document.createElement('div');
                 tick.className = 'progress-tick';
@@ -1420,34 +767,24 @@
             }
         }
 
-        // ==================== 预加载优化 ====================
-
         function preloadAdjacent(index) {
             for (let i = -2; i <= 2; i++) {
                 const idx = index + i;
                 if (idx >= 0 && idx < sliceIndex.length && idx !== index) {
-                    fetch(`${CONFIG.outputDir}/${sliceIndex[idx].file}`).catch(() => { });
+                    fetch(`${CONFIG.outputDir}/${sliceIndex[idx].file}`).catch(() => {});
                 }
             }
         }
 
-        // ==================== 播放控制 ====================
-
-        function togglePlay() {
-            if (isPlaying) pause(); else play();
-        }
+        function togglePlay() { if (isPlaying) pause(); else play(); }
 
         function play() {
             if (!dataLoaded || sliceIndex.length === 0) return;
             isPlaying = true;
             document.getElementById('btn-play').textContent = '⏸ 暂停';
             document.getElementById('btn-play').classList.add('playing');
-
             playTimer = setInterval(() => {
-                if (currentIndex >= sliceIndex.length - 1) {
-                    pause();
-                    return;
-                }
+                if (currentIndex >= sliceIndex.length - 1) { pause(); return; }
                 switchTimeSlice(currentIndex + 1);
             }, CONFIG.playInterval);
         }
@@ -1459,32 +796,13 @@
             clearInterval(playTimer);
         }
 
-        // ==================== 控件初始化 ====================
-
         function initControls() {
-            document.getElementById('btn-first').addEventListener('click', () => {
-                pause();
-                switchTimeSlice(0);
-            });
-
-            document.getElementById('btn-prev').addEventListener('click', () => {
-                pause();
-                switchTimeSlice(currentIndex - 1);
-            });
-
+            document.getElementById('btn-first').addEventListener('click', () => { pause(); switchTimeSlice(0); });
+            document.getElementById('btn-prev').addEventListener('click', () => { pause(); switchTimeSlice(currentIndex - 1); });
             document.getElementById('btn-play').addEventListener('click', togglePlay);
+            document.getElementById('btn-next').addEventListener('click', () => { pause(); switchTimeSlice(currentIndex + 1); });
+            document.getElementById('btn-last').addEventListener('click', () => { pause(); switchTimeSlice(sliceIndex.length - 1); });
 
-            document.getElementById('btn-next').addEventListener('click', () => {
-                pause();
-                switchTimeSlice(currentIndex + 1);
-            });
-
-            document.getElementById('btn-last').addEventListener('click', () => {
-                pause();
-                switchTimeSlice(sliceIndex.length - 1);
-            });
-
-            // 进度条点击跳转
             document.getElementById('progress-bar').addEventListener('click', (e) => {
                 if (!dataLoaded || sliceIndex.length === 0) return;
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -1495,44 +813,67 @@
                 switchTimeSlice(Math.max(0, Math.min(index, sliceIndex.length - 1)));
             });
 
-            // 键盘控制
             document.addEventListener('keydown', (e) => {
                 if (!dataLoaded) return;
                 switch (e.key) {
-                    case 'ArrowLeft':
-                        e.preventDefault();
-                        pause();
-                        switchTimeSlice(currentIndex - 1);
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        pause();
-                        switchTimeSlice(currentIndex + 1);
-                        break;
+                    case 'ArrowLeft': e.preventDefault(); pause(); switchTimeSlice(currentIndex - 1); break;
+                    case 'ArrowRight': e.preventDefault(); pause(); switchTimeSlice(currentIndex + 1); break;
                     case ' ':
-                    case 'Spacebar':
-                        e.preventDefault();
-                        togglePlay();
-                        break;
-                    case 'Home':
-                        e.preventDefault();
-                        pause();
-                        switchTimeSlice(0);
-                        break;
-                    case 'End':
-                        e.preventDefault();
-                        pause();
-                        switchTimeSlice(sliceIndex.length - 1);
-                        break;
+                    case 'Spacebar': e.preventDefault(); togglePlay(); break;
+                    case 'Home': e.preventDefault(); pause(); switchTimeSlice(0); break;
+                    case 'End': e.preventDefault(); pause(); switchTimeSlice(sliceIndex.length - 1); break;
                 }
             });
-
-            // 生成进度条刻度
             generateProgressTicks();
         }
 
-        // ==================== 启动 ====================
-        initMap();
+        async function safeStartup() {
+            document.getElementById('loading-subtext').textContent = '正在读取配置...';
+            const configOk = await loadConfig();
+            if (!configOk) return;
+
+            document.getElementById('loading-subtext').textContent = '正在初始化地图引擎...';
+            const MAP_LOAD_TIMEOUT = 10000;
+            const timeoutTimer = setTimeout(() => {
+                showError('地图初始化超时', '可能原因：\n1. 瓦片服务器未启动（localhost:8000）\n2. 网络连接问题\n3. 配置文件中的 tileServer 地址错误');
+            }, MAP_LOAD_TIMEOUT);
+
+            try {
+                initMap();
+                await new Promise((resolve) => {
+                    map.on('load', resolve);
+                    map.on('error', (e) => { console.warn('[Map 错误]', e); });
+                });
+                clearTimeout(timeoutTimer);
+                console.log('[地图] load 事件已触发');
+
+                map.style.transition = { duration: 400, delay: 0 };
+
+                document.getElementById('loading-subtext').textContent = '正在加载数据...';
+                const dataOk = await loadAllData();
+                if (!dataOk) return;
+
+                document.getElementById('loading-subtext').textContent = '正在渲染图层...';
+                initTitle();
+                initLayers();
+                initCityLayer();
+                initControls();
+                generateLegend();
+                updateDisplay();
+
+                document.getElementById('time-controller').style.display = 'block';
+                document.getElementById('legend').style.display = 'block';
+                document.getElementById('loading').classList.add('hidden');
+
+                console.log('[系统] 全部初始化完成');
+            } catch (e) {
+                clearTimeout(timeoutTimer);
+                showError('初始化失败: ' + e.message);
+                console.error(e);
+            }
+        }
+
+        safeStartup();
     </script>
 </body>
 </html>

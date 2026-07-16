@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>夏朝疆域推演 · 3D 古战场沙盘 V2</title>
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f5f0e8;
+      --ink: #3d3229;
+      --cinnabar: #c45c3e;
+      --jade: #8ba89a;
+      --border: #d4c9b8;
+      --shadow: rgba(61, 50, 41, 0.12);
+      --xia: #c45c3e;
+      --shang: #2c3e50;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Noto Serif SC", "SimSun", serif; background: var(--paper); overflow: hidden; }
+
+    #map { position: absolute; inset: 0; }
+
+    /* ---------- 加载 ---------- */
+    .loading-screen {
+      position: fixed; inset: 0; z-index: 100;
+      background: var(--paper);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 1s ease;
+    }
+    .loading-screen.hidden { opacity: 0; pointer-events: none; }
+    .loading-title { font-size: 32px; color: var(--ink); letter-spacing: 10px; margin-bottom: 12px; font-weight: 900; }
+    .loading-sub { font-size: 14px; color: #8c7e6e; letter-spacing: 2px; }
+    .loading-bar { width: 240px; height: 3px; background: var(--border); margin-top: 24px; position: relative; overflow: hidden; border-radius: 2px; }
+    .loading-bar::after {
+      content: ''; position: absolute; left: -40%; top: 0; width: 40%; height: 100%;
+      background: var(--cinnabar); animation: loadSlide 1.2s infinite ease-in-out;
+    }
+    @keyframes loadSlide { 0% { left: -40%; } 100% { left: 100%; } }
+
+    /* ---------- 顶部标题 ---------- */
+    .main-title {
+      position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10;
+      background: rgba(250, 246, 240, 0.95); padding: 16px 36px;
+      border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: 0 4px 24px var(--shadow); text-align: center;
+      backdrop-filter: blur(8px);
+    }
+    .main-title h1 { font-size: 22px; color: var(--ink); letter-spacing: 8px; font-weight: 900; }
+    .main-title p { font-size: 12px; color: #8c7e6e; margin-top: 6px; letter-spacing: 1px; }
+
+    /* ---------- 左侧事件列表 ---------- */
+    .event-list {
+      position: absolute; top: 100px; left: 20px; z-index: 10;
+      width: 280px; max-height: calc(100vh - 200px);
+      background: rgba(250, 246, 240, 0.96);
+      border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: 0 8px 32px var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    .list-header { padding: 16px 18px; border-bottom: 1px solid var(--border); font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: 2px; }
+    .list-items { flex: 1; overflow-y: auto; }
+    .list-item {
+      padding: 14px 18px; cursor: pointer; border-bottom: 1px solid rgba(212,201,184,0.35);
+      transition: all 0.3s; position: relative;
+    }
+    .list-item:hover { background: rgba(196,92,62,0.04); }
+    .list-item.active { background: rgba(196,92,62,0.1); border-left: 4px solid var(--cinnabar); }
+    .list-item .item-year { font-size: 11px; color: var(--cinnabar); letter-spacing: 1px; font-weight: 700; }
+    .list-item .item-title { font-size: 14px; color: var(--ink); margin-top: 4px; font-weight: 700; }
+    .list-item .item-loc { font-size: 11px; color: #8c7e6e; margin-top: 3px; }
+    .list-item .item-badge {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      width: 8px; height: 8px; border-radius: 50%; background: var(--border);
+      transition: all 0.3s;
+    }
+    .list-item.active .item-badge { background: var(--cinnabar); box-shadow: 0 0 8px var(--cinnabar); }
+
+    /* ---------- 右侧卷轴面板 ---------- */
+    .event-scroll {
+      position: absolute; top: 100px; right: 20px; z-index: 10;
+      width: 340px; max-height: calc(100vh - 200px);
+      background: rgba(250, 246, 240, 0.97);
+      border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: 0 8px 32px var(--shadow);
+      backdrop-filter: blur(10px);
+      transform: translateX(120%); transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    .event-scroll.show { transform: translateX(0); }
+    .scroll-header {
+      padding: 20px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(196,92,62,0.07) 0%, transparent 100%);
+    }
+    .scroll-year { font-size: 13px; color: var(--cinnabar); letter-spacing: 2px; font-weight: 700; }
+    .scroll-title { font-size: 18px; color: var(--ink); margin-top: 8px; font-weight: 900; letter-spacing: 1px; }
+    .scroll-body { padding: 20px; font-size: 14px; color: #5a5046; line-height: 2; flex: 1; overflow-y: auto; }
+    .scroll-meta { display: flex; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); flex-wrap: wrap; }
+    .meta-tag {
+      font-size: 12px; padding: 4px 12px; border-radius: 4px;
+      background: rgba(139,168,154,0.12); color: #5a7a6a; border: 1px solid rgba(139,168,154,0.3);
+    }
+    .meta-tag.attack { background: rgba(196,92,62,0.1); color: var(--cinnabar); border-color: rgba(196,92,62,0.25); }
+
+    /* ---------- 底部控制栏 ---------- */
+    .control-bar {
+      position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 10;
+      background: rgba(250, 246, 240, 0.97);
+      border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: 0 8px 32px var(--shadow);
+      padding: 16px 28px; display: flex; align-items: center; gap: 24px;
+      backdrop-filter: blur(10px);
+    }
+    .ctrl-btn {
+      width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--border);
+      background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.3s; color: var(--ink); font-size: 18px;
+    }
+    .ctrl-btn:hover { background: rgba(196,92,62,0.08); border-color: var(--cinnabar); color: var(--cinnabar); }
+    .ctrl-btn.playing { background: var(--cinnabar); color: #fff; border-color: var(--cinnabar); }
+    .progress-wrap { width: 220px; position: relative; }
+    .progress-track { width: 100%; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--cinnabar); width: 0%; transition: width 0.4s ease; }
+    .progress-text { font-size: 12px; color: #8c7e6e; text-align: center; margin-top: 6px; font-weight: 700; }
+    .speed-select {
+      font-family: inherit; font-size: 12px; padding: 5px 12px;
+      border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer;
+    }
+
+    /* ---------- 特效 Canvas ---------- */
+    #fx-canvas {
+      position: absolute; inset: 0; z-index: 5; pointer-events: none;
+    }
+
+    /* ---------- 城市 Marker（古风城池标签） ---------- */
+    .city-marker {
+      position: relative; display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; z-index: 9;
+    }
+    .city-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2.5px solid #fff;
+      box-shadow: 0 0 0 2px currentColor, 0 2px 8px rgba(0,0,0,0.25);
+      position: relative;
+    }
+    .city-pulse {
+      position: absolute; width: 40px; height: 40px; border-radius: 50%;
+      left: 50%; top: 50%; transform: translate(-50%, -50%);
+      border: 2px solid currentColor; opacity: 0;
+      animation: cityPulse 2s ease-out infinite;
+    }
+    @keyframes cityPulse {
+      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.7; }
+      100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+    }
+    .city-label {
+      margin-top: 6px; padding: 3px 10px;
+      background: rgba(250, 246, 240, 0.95); border: 1px solid var(--border);
+      border-radius: 4px; font-size: 12px; font-weight: 700; color: var(--ink);
+      white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      letter-spacing: 1px;
+    }
+    .city-faction {
+      font-size: 10px; color: #8c7e6e; margin-top: 2px; font-weight: 400;
+    }
+
+    /* ---------- 骑兵 Marker（SVG 绝对显示） ---------- */
+    .army-marker {
+      width: 56px; height: 56px; position: relative; z-index: 15;
+      filter: drop-shadow(0 3px 8px rgba(0,0,0,0.35));
+      transition: transform 0.05s linear;
+    }
+    .army-svg {
+      width: 100%; height: 100%;
+      animation: horseBob 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes horseBob { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+    .army-flag {
+      position: absolute; top: -4px; right: -2px; font-size: 16px;
+      animation: flagWave 0.8s ease-in-out infinite;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+    }
+    @keyframes flagWave { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+
+    /* ---------- 占领旗帜 ---------- */
+    .occupy-marker {
+      position: relative; z-index: 12; transform-origin: bottom center;
+      animation: flagRaise 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes flagRaise {
+      from { transform: scale(0) translateY(15px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .occupy-pulse-ring {
+      position: absolute; width: 80px; height: 80px; border-radius: 50%;
+      left: 50%; top: 50%; transform: translate(-50%, -50%);
+      border: 2px solid var(--cinnabar); opacity: 0;
+      animation: pulseRing 2.5s ease-out infinite; z-index: 6; pointer-events: none;
+    }
+    @keyframes pulseRing {
+      0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.6; }
+      100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+    }
+
+    /* ---------- 当前事件提示条 ---------- */
+    .event-toast {
+      position: absolute; top: 90px; left: 50%; transform: translateX(-50%) translateY(-20px); z-index: 20;
+      background: rgba(196, 92, 62, 0.95); color: #fff;
+      padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 700;
+      letter-spacing: 2px; opacity: 0; transition: all 0.5s ease;
+      box-shadow: 0 4px 16px rgba(196,92,62,0.3);
+      pointer-events: none;
+    }
+    .event-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-title">夏朝疆域推演</div>
+    <div class="loading-sub">3D 古战场沙盘 · 加载地形与城池数据</div>
+    <div class="loading-bar"></div>
+  </div>
+
+  <div id="map"></div>
+  <canvas id="fx-canvas"></canvas>
+
+  <div class="main-title">
+    <h1>夏朝疆域推演</h1>
+    <p>3D 古战场沙盘 · 事件驱动的历史可视化</p>
+  </div>
+
+  <div class="event-toast" id="eventToast"></div>
+
+  <div class="event-list" id="eventList">
+    <div class="list-header">事件列表</div>
+    <div class="list-items" id="listItems"></div>
+  </div>
+
+  <div class="event-scroll" id="eventScroll">
+    <div class="scroll-header">
+      <div class="scroll-year" id="scrollYear">约前1600年</div>
+      <div class="scroll-title" id="scrollTitle">事件标题</div>
+    </div>
+    <div class="scroll-body">
+      <div id="scrollDesc">事件描述...</div>
+      <div class="scroll-meta" id="scrollMeta"></div>
+    </div>
+  </div>
+
+  <div class="control-bar">
+    <button class="ctrl-btn" id="btnPrev" title="上一个">❮</button>
+    <button class="ctrl-btn" id="btnPlay" title="播放/暂停">▶</button>
+    <button class="ctrl-btn" id="btnNext" title="下一个">❯</button>
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0 / 0</div>
+    </div>
+    <select class="speed-select" id="speedSelect">
+      <option value="1">1.0x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2" selected>2.0x</option>
+    </select>
+  </div>
+
+<script>
+// ==================== 配置 ====================
+// 替换为你本地的瓦片地址：
+const DEM_URL = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+const RELIEF_URL = 'https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png';
+const CHINA_BOUNDS = [110, 33, 116, 36];
+
+const EVENTS = [
+  {
+    id: 'evt_001',
+    year: '约前1600年',
+    title: '夏桀征伐有施氏',
+    type: 'military',
+    from: { name: '开封（老丘）', coords: [114.307, 34.797], faction: '夏朝' },
+    to: { name: '洛阳（斟鄩）', coords: [112.434, 34.618], faction: '有施氏' },
+    description: '夏桀为巩固东部统治，自都城老丘发兵，沿古汴河向西行进。大军压境至斟鄩附近，与有施氏展开对峙。此役夏朝获胜，有施氏被迫归附纳贡。',
+    faction: '夏朝',
+    targetFaction: '有施氏',
+    result: 'occupation',
+    route: [[114.307,34.797], [114.0,34.78], [113.5,34.72], [113.0,34.68], [112.6,34.64], [112.434,34.618]]
+  },
+  {
+    id: 'evt_002',
+    year: '约前1595年',
+    title: '商汤灭葛国',
+    type: 'battle',
+    from: { name: '亳（商丘）', coords: [115.65, 34.45], faction: '商国' },
+    to: { name: '葛国（宁陵）', coords: [115.33, 34.45], faction: '葛国' },
+    description: '商汤以"葛伯不祀"为名，自亳都出兵东向，一举攻灭葛国。此战为商汤剪除夏朝羽翼之始，揭开了灭夏战争的序幕。',
+    faction: '商国',
+    targetFaction: '葛国',
+    result: 'occupation',
+    route: [[115.65,34.45], [115.5,34.45], [115.33,34.45]]
+  },
+  {
+    id: 'evt_003',
+    year: '约前1556年',
+    title: '鸣条之战',
+    type: 'battle',
+    from: { name: '商汤西亳', coords: [112.47, 34.68], faction: '商国' },
+    to: { name: '鸣条（夏县）', coords: [111.22, 35.14], faction: '夏朝' },
+    description: '商汤率战车七十乘、敢死士六千人，自西亳出发，沿黄河古道北上。两军决战于鸣条之野，夏师败绩，夏桀奔逃。此战宣告夏朝灭亡。',
+    faction: '商国',
+    targetFaction: '夏朝',
+    result: 'defeat',
+    route: [[112.47,34.68], [112.2,34.75], [111.8,34.85], [111.5,34.95], [111.22,35.14]]
+  }
+];
+
+const FACTION_COLORS = {
+  '夏朝': '#c45c3e',
+  '商国': '#2c3e50',
+  '有施氏': '#7a8b5e',
+  '葛国': '#8b7a5e',
+  'default': '#8c7e6e'
+};
+
+// ==================== 地图初始化 ====================
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      dem: {
+        type: 'raster-dem',
+        tiles: [DEM_URL],
+        tileSize: 256,
+        encoding: 'terrarium',
+        minzoom: 6,
+        maxzoom: 12
+      },
+      relief: {
+        type: 'raster',
+        tiles: [RELIEF_URL],
+        tileSize: 256,
+        minzoom: 0,
+        maxzoom: 18
+      }
+    },
+    layers: [
+      { id: 'relief', type: 'raster', source: 'relief', paint: { 'raster-opacity': 0.85 } }
+    ],
+    terrain: { source: 'dem', exaggeration: 12 },
+    sky: {
+      'sky-type': 'atmosphere',
+      'sky-atmosphere-sun': [0, 90],
+      'sky-atmosphere-sun-intensity': 15
+    },
+    fog: { 'range': [0.5, 8], 'color': '#f0e8d8', 'horizon-blend': 0.15 }
+  },
+  center: [114.0, 34.5],
+  zoom: 7.5,
+  pitch: 65,
+  bearing: -20,
+  minZoom: 6,
+  maxZoom: 12,
+  maxPitch: 80
+});
+
+map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+// ==================== 状态 ====================
+let currentIndex = -1;
+let isPlaying = false;
+let playTimer = null;
+let speed = 2;
+let currentArmyMarker = null;
+let cityMarkers = [];
+let occupyEffects = [];
+let isAnimating = false;
+
+// ==================== UI 初始化 ====================
+function initUI() {
+  const listContainer = document.getElementById('listItems');
+  EVENTS.forEach((evt, i) => {
+    const div = document.createElement('div');
+    div.className = 'list-item';
+    div.dataset.index = i;
+    div.innerHTML = `
+      <div class="item-year">${evt.year}</div>
+      <div class="item-title">${evt.title}</div>
+      <div class="item-loc">${evt.from.name} → ${evt.to.name}</div>
+      <div class="item-badge"></div>
+    `;
+    div.onclick = () => { stopAutoPlay(); playEvent(i); };
+    listContainer.appendChild(div);
+  });
+  updateProgress();
+}
+
+function updateProgress() {
+  const pct = currentIndex >= 0 ? ((currentIndex + 1) / EVENTS.length) * 100 : 0;
+  document.getElementById('progressFill').style.width = `${pct}%`;
+  document.getElementById('progressText').textContent = `${Math.max(0, currentIndex + 1)} / ${EVENTS.length}`;
+}
+
+function highlightList(idx) {
+  document.querySelectorAll('.list-item').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.index) === idx);
+  });
+}
+
+function showToast(text) {
+  const toast = document.getElementById('eventToast');
+  toast.textContent = text;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ==================== 城市显示（核心修复） ====================
+function createCityMarker(city, isActive = false) {
+  const color = FACTION_COLORS[city.faction] || FACTION_COLORS.default;
+  const el = document.createElement('div');
+  el.className = 'city-marker';
+  el.innerHTML = `
+    <div style="position:relative;">
+      <div class="city-pulse" style="color:${color}; ${isActive ? '' : 'animation:none;opacity:0;'}"></div>
+      <div class="city-dot" style="background:${color}; color:${color};"></div>
+    </div>
+    <div class="city-label">${city.name}</div>
+    <div class="city-faction">${city.faction}</div>
+  `;
+  return new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -6] }).setLngLat(city.coords);
+}
+
+function initAllCities() {
+  // 收集所有城市去重
+  const cityMap = new Map();
+  EVENTS.forEach(evt => {
+    if (!cityMap.has(evt.from.name)) cityMap.set(evt.from.name, evt.from);
+    if (!cityMap.has(evt.to.name)) cityMap.set(evt.to.name, evt.to);
+  });
+  cityMap.forEach(city => {
+    const marker = createCityMarker(city);
+    marker.addTo(map);
+    cityMarkers.push(marker);
+  });
+}
+
+function highlightCity(cityName, active) {
+  cityMarkers.forEach(m => {
+    const label = m.getElement().querySelector('.city-label');
+    if (label && label.textContent === cityName) {
+      const pulse = m.getElement().querySelector('.city-pulse');
+      pulse.style.animation = active ? 'cityPulse 2s ease-out infinite' : 'none';
+      pulse.style.opacity = active ? '' : '0';
+    }
+  });
+}
+
+// ==================== 卷轴面板 ====================
+function showEventPanel(evt) {
+  const panel = document.getElementById('eventScroll');
+  document.getElementById('scrollYear').textContent = evt.year;
+  document.getElementById('scrollTitle').textContent = evt.title;
+  document.getElementById('scrollDesc').textContent = evt.description;
+
+  const meta = document.getElementById('scrollMeta');
+  const resultMap = { occupation: '占领', defeat: '击溃', retreat: '撤退', alliance: '结盟' };
+  meta.innerHTML = `
+    <span class="meta-tag attack">${evt.faction}</span>
+    <span class="meta-tag">VS ${evt.targetFaction}</span>
+    <span class="meta-tag">${resultMap[evt.result] || evt.result}</span>
+  `;
+  panel.classList.add('show');
+}
+
+function hideEventPanel() {
+  document.getElementById('eventScroll').classList.remove('show');
+}
+
+// ==================== 核心动画引擎（重制） ====================
+
+async function playEvent(index) {
+  if (index < 0 || index >= EVENTS.length) {
+    if (isPlaying) stopAutoPlay();
+    return;
+  }
+  if (isAnimating && currentIndex === index) return;
+
+  isAnimating = true;
+  currentIndex = index;
+  const evt = EVENTS[index];
+  highlightList(index);
+  updateProgress();
+
+  cleanupEvent(false);
+  showToast(`▶ ${evt.title}`);
+
+  // 1. 相机飞移：俯瞰全局 → 聚焦出发城
+  await flyTo([evt.from.coords[0], evt.from.coords[1] - 0.15], 7, 55, 1200 / speed);
+  await flyTo(evt.from.coords, 9.5, 72, 1500 / speed);
+
+  // 2. 出发城高亮
+  highlightCity(evt.from.name, true);
+  await sleep(600 / speed);
+
+  // 3. 绘制行军路线（双层：实线底 + 流动虚线）
+  await drawRoute(evt.route, evt.faction, 2500 / speed);
+
+  // 4. 骑兵行军（SVG 绝对显示）
+  await animateArmy(evt.route, 3500 / speed, evt.faction);
+
+  // 5. 到达 → 战斗特效
+  highlightCity(evt.from.name, false);
+  highlightCity(evt.to.name, true);
+  await sleep(400 / speed);
+  await playBattle(evt.to.coords, 1800 / speed);
+
+  // 6. 占领/击溃效果
+  showOccupation(evt.to.coords, evt.result === 'occupation' ? FACTION_COLORS[evt.faction] : '#8c7e6e', evt.faction);
+
+  // 7. 显示卷轴
+  showEventPanel(evt);
+
+  // 8. 相机环绕战场
+  await orbitCamera(evt.to.coords, 9, 2000 / speed);
+
+  isAnimating = false;
+
+  // 9. 自动下一个
+  if (isPlaying) {
+    playTimer = setTimeout(() => playEvent(currentIndex + 1), 5000 / speed);
+  }
+}
+
+function flyTo(coords, zoom, pitch, duration) {
+  return new Promise(resolve => {
+    map.flyTo({ center: coords, zoom, pitch, bearing: Math.random() * 30 - 15, duration, essential: true });
+    setTimeout(resolve, duration + 300);
+  });
+}
+
+function orbitCamera(center, zoom, duration) {
+  return new Promise(resolve => {
+    const start = performance.now();
+    const startBearing = map.getBearing();
+    function orbit(now) {
+      const p = Math.min((now - start) / duration, 1);
+      map.easeTo({ center, zoom, bearing: startBearing + p * 40, duration: 50, essential: true });
+      if (p < 1) requestAnimationFrame(orbit);
+      else resolve();
+    }
+    requestAnimationFrame(orbit);
+  });
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// ==================== 路线绘制（双层可见） ====================
+function drawRoute(route, faction, duration) {
+  return new Promise(resolve => {
+    const color = FACTION_COLORS[faction] || FACTION_COLORS.default;
+
+    // 准备 GeoJSON
+    const fullGeojson = { type: 'Feature', geometry: { type: 'LineString', coordinates: route } };
+
+    // 添加/更新源
+    if (!map.getSource('route-base')) {
+      map.addSource('route-base', { type: 'geojson', data: fullGeojson });
+      map.addSource('route-flow', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [route[0], route[0]] } }});
+
+      // 底层实线（深，粗）
+      map.addLayer({
+        id: 'route-base-line',
+        type: 'line',
+        source: 'route-base',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-width': 6,
+          'line-color': color,
+          'line-opacity': 0.25
+        }
+      });
+
+      // 流动虚线（亮，细，蚂蚁线效果）
+      map.addLayer({
+        id: 'route-flow-line',
+        type: 'line',
+        source: 'route-flow',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-width': 3,
+          'line-color': color,
+          'line-opacity': 0.9,
+          'line-dasharray': [0.5, 1.5]
+        }
+      });
+    } else {
+      map.getSource('route-base').setData(fullGeojson);
+      map.getSource('route-flow').setData({ type: 'Feature', geometry: { type: 'LineString', coordinates: [route[0], route[0]] } });
+    }
+
+    // 生长动画
+    const start = performance.now();
+    function grow(now) {
+      const p = Math.min((now - start) / duration, 1);
+      const currentCoords = interpolateRoute(route, p);
+      map.getSource('route-flow').setData({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: currentCoords }
+      });
+      if (p < 1) requestAnimationFrame(grow);
+      else resolve();
+    }
+    requestAnimationFrame(grow);
+  });
+}
+
+function interpolateRoute(route, progress) {
+  if (progress >= 1) return route;
+  const total = route.length - 1;
+  const idx = Math.floor(progress * total);
+  const t = (progress * total) - idx;
+  const a = route[idx];
+  const b = route[Math.min(idx + 1, total)];
+  const interp = [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t];
+  return route.slice(0, idx + 1).concat([interp]);
+}
+
+// ==================== 骑兵行军（SVG 图标，绝对显示） ====================
+function animateArmy(route, duration, faction) {
+  return new Promise(resolve => {
+    const color = FACTION_COLORS[faction] || FACTION_COLORS.default;
+    const flagColor = faction === '夏朝' ? '#c45c3e' : '#2c3e50';
+
+    const el = document.createElement('div');
+    el.className = 'army-marker';
+    // 使用内嵌 SVG 骑兵图标，确保所有平台显示
+    el.innerHTML = `
+      <svg class="army-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- 马 -->
+        <path d="M12 44c-2-4 2-10 6-12 4-2 8-2 12 0 4 2 8 6 10 10 2 4 0 8-4 8s-8-2-12-2-8 2-10 0-2-4-2-4z" fill="${color}" opacity="0.9"/>
+        <path d="M18 32c2-6 6-10 12-10s10 4 12 8c2 4 0 8-4 8" stroke="${color}" stroke-width="2.5" fill="none"/>
+        <circle cx="42" cy="24" r="4" fill="${color}"/>
+        <path d="M44 20l4-6 2 4-4 4z" fill="${color}"/>
+        <path d="M14 44l-4 8M20 44l-2 8M46 40l2 8M50 38l4 6" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <!-- 骑手 -->
+        <circle cx="38" cy="18" r="3" fill="${color}"/>
+        <path d="M36 20l-2 8 4 2" stroke="${color}" stroke-width="2" fill="none"/>
+      </svg>
+      <div class="army-flag" style="color:${flagColor};">▶</div>
+    `;
+
+    currentArmyMarker = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -4] }).addTo(map);
+
+    const start = performance.now();
+    function march(now) {
+      const p = Math.min((now - start) / duration, 1);
+      const pos = interpolateRoute(route, p);
+      const current = pos[pos.length - 1];
+      currentArmyMarker.setLngLat(current);
+
+      // 相机轻微跟随
+      if (p < 1) {
+        map.easeTo({ center: [current[0], current[1] - 0.02], duration: 80, essential: true });
+      }
+
+      if (p < 1) requestAnimationFrame(march);
+      else resolve();
+    }
+    requestAnimationFrame(march);
+  });
+}
+
+// ==================== 战斗特效（Canvas 粒子） ====================
+function playBattle(coords, duration) {
+  return new Promise(resolve => {
+    const canvas = document.getElementById('fx-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    const point = map.project(coords);
+    const particles = [];
+    for (let i = 0; i < 50; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 5 + 2;
+      particles.push({
+        x: point.x, y: point.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 3,
+        life: 1, size: Math.random() * 5 + 2,
+        color: Math.random() > 0.4 ? '#c45c3e' : (Math.random() > 0.5 ? '#ff6600' : '#ffcc00')
+      });
+    }
+
+    const start = performance.now();
+    function render(now) {
+      const elapsed = now - start;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.15;
+        p.life -= 0.02;
+        ctx.globalAlpha = Math.max(p.life, 0);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 屏幕闪红
+      if (elapsed < 400) {
+        ctx.globalAlpha = 0.2 * (1 - elapsed / 400);
+        ctx.fillStyle = '#c45c3e';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      ctx.globalAlpha = 1;
+      if (elapsed < duration) requestAnimationFrame(render);
+      else { ctx.clearRect(0,0,canvas.width,canvas.height); resolve(); }
+    }
+    requestAnimationFrame(render);
+  });
+}
+
+// ==================== 占领效果 ====================
+function showOccupation(coords, color, faction) {
+  // 脉冲圈
+  const pulseEl = document.createElement('div');
+  pulseEl.className = 'occupy-pulse-ring';
+  pulseEl.style.borderColor = color;
+  new maplibregl.Marker({ element: pulseEl, anchor: 'center' }).setLngLat(coords).addTo(map);
+  occupyEffects.push(pulseEl);
+
+  // 旗帜
+  const flagEl = document.createElement('div');
+  flagEl.className = 'occupy-marker';
+  flagEl.innerHTML = `
+    <svg width="32" height="48" viewBox="0 0 32 48">
+      <line x1="4" y1="4" x2="4" y2="44" stroke="#5a5046" stroke-width="2"/>
+      <path d="M4 4l22 8-22 8z" fill="${color}"/>
+      <text x="16" y="46" text-anchor="middle" font-size="8" fill="#5a5046" font-family="Noto Serif SC">${faction}</text>
+    </svg>
+  `;
+  new maplibregl.Marker({ element: flagEl, anchor: 'bottom', offset: [0, -6] }).setLngLat(coords).addTo(map);
+  occupyEffects.push(flagEl);
+}
+
+// ==================== 清理 ====================
+function cleanupEvent(full = true) {
+  if (currentArmyMarker) { currentArmyMarker.remove(); currentArmyMarker = null; }
+  occupyEffects.forEach(el => el.remove?.());
+  occupyEffects = [];
+
+  if (map.getSource('route-base')) {
+    map.getSource('route-base').setData({ type: 'Feature', geometry: { type: 'LineString', coordinates: [] } });
+    map.getSource('route-flow').setData({ type: 'Feature', geometry: { type: 'LineString', coordinates: [] } });
+  }
+
+  if (full) hideEventPanel();
+
+  // 关闭所有城市脉冲
+  cityMarkers.forEach(m => {
+    const pulse = m.getElement().querySelector('.city-pulse');
+    if (pulse) { pulse.style.animation = 'none'; pulse.style.opacity = '0'; }
+  });
+}
+
+function stopAutoPlay() {
+  isPlaying = false;
+  clearTimeout(playTimer);
+  document.getElementById('btnPlay').textContent = '▶';
+  document.getElementById('btnPlay').classList.remove('playing');
+}
+
+// ==================== 控制按钮 ====================
+document.getElementById('btnPlay').onclick = () => {
+  if (isPlaying) {
+    stopAutoPlay();
+  } else {
+    isPlaying = true;
+    document.getElementById('btnPlay').textContent = '⏸';
+    document.getElementById('btnPlay').classList.add('playing');
+    if (currentIndex >= EVENTS.length - 1) currentIndex = -1;
+    playEvent(currentIndex + 1);
+  }
+};
+
+document.getElementById('btnPrev').onclick = () => {
+  stopAutoPlay();
+  playEvent(currentIndex - 1);
+};
+
+document.getElementById('btnNext').onclick = () => {
+  stopAutoPlay();
+  playEvent(currentIndex + 1);
+};
+
+document.getElementById('speedSelect').onchange = (e) => {
+  speed = parseFloat(e.target.value);
+};
+
+// ==================== 启动 ====================
+map.on('load', () => {
+  initAllCities();
+  initUI();
+  document.getElementById('loadingScreen').classList.add('hidden');
+  console.log('✅ 3D 古战场沙盘 V2 加载完成');
+});
+
+window.addEventListener('resize', () => {
+  const c = document.getElementById('fx-canvas');
+  c.width = c.offsetWidth; c.height = c.offsetHeight;});
+</script>
+</body>
+</html>

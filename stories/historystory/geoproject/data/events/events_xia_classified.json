@@ -1,0 +1,52 @@
+{
+  "events": [
+    {
+      "id": "evt_001",
+      "year": -2070,
+      "title": "大禹都阳城",
+      "type": "占领",
+      "changes": [
+        {
+          "city_id": "xia_yangcheng",
+          "from": "夏部落",
+          "to": "夏朝",
+          "vassal_of": null
+        }
+      ],
+      "note": "禹受舜禅，即位为天子，都阳城，国号曰夏后。《世本》：夏禹都阳城，避商均也。",
+      "source": "《世本·居篇》《史记·夏本纪》"
+    },
+    {
+      "id": "evt_002",
+      "year": -2068,
+      "title": "大禹迁都阳翟",
+      "type": "占领",
+      "changes": [
+        {
+          "city_id": "xia_yangdi",
+          "from": "夏部落",
+          "to": "夏朝",
+          "vassal_of": null
+        }
+      ],
+      "note": "禹迁都阳翟（今河南禹州），便于控制中原。《水经注》：阳翟，夏禹始封于此为夏国。",
+      "source": "《水经注》《汉书·地理志》"
+    },
+    {
+      "id": "evt_003",
+      "year": -2065,
+      "title": "大禹迁都平阳",
+      "type": "占领",
+      "changes": [
+        {
+          "city_id": "xia_pingyang",
+          "from": "唐国",
+          "to": "夏朝",
+          "vassal_of": null
+        }
+      ],
+      "note": "禹迁都平阳（今山西临汾），加强对北方控制。《帝王世纪》：禹受禅都平阳。",
+      "source": "《帝王世纪》《初学记》"
+    }
+    ]
+    }

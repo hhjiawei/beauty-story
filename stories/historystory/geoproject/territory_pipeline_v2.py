@@ -1,26 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-历史疆域变化动态渲染 Pipeline —— 增强版
+历史疆域变化动态渲染 Pipeline —— 增强版 v2.0
 ============================================
 新增功能：
-1. neutral 县晕染：空白县自动归属最近控制点
-2. 边界平滑：buffer + simplify 让直线县界变柔和
-3. 颜色优化：附庸淡化30%，neutral几乎透明，边界线变细
+1. 事件分类系统：占领/灭国/联盟/反叛/归附
+2. 联盟颜色：联盟国显示为宗主国浅色版
+3. 灭国处理：被灭势力全部城市归属变更
+4. 归附处理：某势力全部城市归于目标势力
+5. 反叛处理：反叛势力脱离原宗主
+6. 城市动效数据：为前端生成变化标记
 
-用法: python territory_pipeline.py
-
-
-china_adm3.geojson是什么？
-china_adm3.geojson 是预处理后的中国县级行政区划边界数据，从 geoBoundaries 下载的原始数据转换而来。
-属性	说明
-来源	geoBoundaries 全球行政区划数据库（中国 ADM3 县级）
-原始格式	Shapefile（.shp + .shx + .dbf + .prj）
-转换后	GeoJSON（china_adm3.geojson）
-内容	中国约 2800+ 个县级/区级行政边界多边形
-坐标系	WGS84（EPSG:4326，经纬度）
-关键字段	county_idx（整数索引 0~N-1）、shapeName（拼音名称）、geometry（边界多边形）
-
+用法: python territory_pipeline_v2.py
 """
 
 import json
@@ -42,10 +33,9 @@ from historystory.config import root_path
 
 CONFIG = {
     "city_json": root_path / "geoproject" / "data" / "city_xia.json",
-    "events_json": root_path / "geoproject" / "data" / "events" / "category1_territory.json",
+    "events_json": root_path / "geoproject" / "data" / "events" / "events_xia_classified.json",
     "color_map_json": root_path / "geoproject" / "data" / "color_map_xia.json",
     "counties_geojson": root_path / "geoproject" / "data" / "china_adm3.geojson",
-    # 也建议改成 Path 对象，保持类型统一
     "output_dir": root_path / "geoproject" / "output",
 
     "sjoin_predicate": "within",
@@ -61,17 +51,18 @@ CONFIG = {
     },
 
     "vassal_lighten_factor": 0.3,
+    "allied_lighten_factor": 0.5,  # 联盟颜色淡化程度
 
-    # === 新增：neutral 晕染参数 ===
-    "enable_neutral_fill": True,       # 是否启用空白县晕染
-    "neutral_fill_max_distance": 0.8,  # 最大晕染距离（度），约80km
+    # neutral 晕染参数
+    "enable_neutral_fill": True,
+    "neutral_fill_max_distance": 0.8,
 
-    # === 新增：边界平滑参数 ===
-    "enable_boundary_smooth": True,      # 是否启用边界平滑
-    "smooth_buffer_size": 0.008,         # 缓冲距离（度），约800米
-    "smooth_simplify": 0.005,           # 简化容差
+    # 边界平滑参数
+    "enable_boundary_smooth": True,
+    "smooth_buffer_size": 0.008,
+    "smooth_simplify": 0.005,
 
-    # === 新增：删除小碎片 ===
+    # 删除小碎片
     "remove_small_fragments": True,
     "min_fragment_area": 0.001,
 }
@@ -212,7 +203,7 @@ def stage_1_spatial_join(config: dict, counties: gpd.GeoDataFrame) -> tuple[dict
 
 
 # ============================================================================
-# 阶段 1.5：neutral 晕染（新增）
+# 阶段 1.5：neutral 晕染
 # ============================================================================
 
 def fill_neutral_counties(
@@ -220,20 +211,8 @@ def fill_neutral_counties(
     cities_state: dict,
     max_distance: float = 0.8,
 ) -> gpd.GeoDataFrame:
-    """
-    对无城池关联的 neutral 县，根据距离最近的控制点决定归属
-
-    参数:
-        counties_gdf: 县级面 GeoDataFrame（含 owner 列）
-        cities_state: 城池状态字典
-        max_distance: 最大晕染距离（度），超过则保持 neutral
-
-    返回:
-        更新后的 counties_gdf
-    """
     print(f"\n[阶段1.5] neutral 晕染: 空白县归属最近控制点...")
 
-    # 构建控制点列表（只包含有 county_idx 的城池）
     control_points = []
     for city in cities_state.values():
         idx = city.get("county_idx", -1)
@@ -242,11 +221,11 @@ def fill_neutral_counties(
                 "point": Point(city["lon"], city["lat"]),
                 "owner": city["owner"],
                 "vassal_of": city.get("vassal_of"),
+                "allied_to": city.get("allied_to"),
             })
 
     print(f"  控制点: {len(control_points)} 个")
 
-    # 对每个 neutral 县，找最近控制点
     filled_count = 0
     for idx, row in counties_gdf.iterrows():
         if row["owner"] != "neutral":
@@ -264,8 +243,10 @@ def fill_neutral_counties(
 
         if nearest:
             counties_gdf.at[idx, "owner"] = nearest["owner"]
-            counties_gdf.at[idx, "vassal_of"] = nearest["vassal_of"]
-            counties_gdf.at[idx, "is_vassal"] = nearest["vassal_of"] is not None
+            counties_gdf.at[idx, "vassal_of"] = nearest.get("vassal_of")
+            counties_gdf.at[idx, "allied_to"] = nearest.get("allied_to")
+            counties_gdf.at[idx, "is_vassal"] = nearest.get("vassal_of") is not None
+            counties_gdf.at[idx, "is_allied"] = nearest.get("allied_to") is not None
             filled_count += 1
 
     print(f"  ✅ 晕染完成: {filled_count} 个 neutral 县被填充")
@@ -273,7 +254,7 @@ def fill_neutral_counties(
 
 
 # ============================================================================
-# 阶段 2：时间断面生成
+# 阶段 2：时间断面生成（增强版，支持事件分类）
 # ============================================================================
 
 def resolve_county_owner(city_ids, cities_state, priority_map):
@@ -287,27 +268,46 @@ def resolve_county_owner(city_ids, cities_state, priority_map):
         cities_in_county.append(c)
 
     if not cities_in_county:
-        return "neutral", None, False
+        return "neutral", None, False, False
 
     def sort_key(c):
         p = priority_map.get(c.get("type", ""), 0)
         t = c.get("last_event_time", float("-inf"))
         is_vassal = 1 if c.get("vassal_of") else 0
-        return (p, -is_vassal, t)
+        is_allied = 1 if c.get("allied_to") else 0
+        return (p, -is_vassal, -is_allied, t)
 
     cities_in_county.sort(key=sort_key, reverse=True)
 
     winner = cities_in_county[0]
     owner = winner["owner"]
     vassal_of = winner.get("vassal_of", None)
+    allied_to = winner.get("allied_to", None)
     is_vassal = vassal_of is not None
+    is_allied = allied_to is not None
 
-    return owner, vassal_of, is_vassal
+    return owner, vassal_of, is_vassal, is_allied
 
 
-def get_color(owner, vassal_of, is_vassal, color_map, config):
+def get_color(owner, vassal_of, allied_to, is_vassal, is_allied, color_map, config):
     colors = color_map.get("colors", color_map)
 
+    # 联盟颜色：宗主国颜色的淡化版
+    if is_allied and allied_to in colors:
+        suzerain = colors[allied_to]
+        allied_fill = lighten_color(suzerain.get("fill", "#CCCCCC"), config["allied_lighten_factor"])
+        allied_stroke = lighten_color(suzerain.get("stroke", "#999999"), config["allied_lighten_factor"] * 0.8)
+        return {
+            "fill": allied_fill,
+            "stroke": allied_stroke,
+            "fill_opacity": suzerain.get("allied_fill_opacity", 0.45),
+            "stroke_width": 0.6,
+            "is_vassal": False,
+            "is_allied": True,
+            "suzerain": allied_to,
+        }
+
+    # 附庸颜色
     if is_vassal and vassal_of in colors:
         suzerain = colors[vassal_of]
         vassal_fill = suzerain.get("vassal_fill")
@@ -323,6 +323,7 @@ def get_color(owner, vassal_of, is_vassal, color_map, config):
             "fill_opacity": suzerain.get("vassal_fill_opacity", 0.60),
             "stroke_width": 0.8,
             "is_vassal": True,
+            "is_allied": False,
             "suzerain": vassal_of,
         }
     elif owner in colors:
@@ -333,6 +334,7 @@ def get_color(owner, vassal_of, is_vassal, color_map, config):
             "fill_opacity": c.get("fill_opacity", 0.65),
             "stroke_width": 0.8 if owner != "neutral" else 0.3,
             "is_vassal": False,
+            "is_allied": False,
             "suzerain": None,
         }
     else:
@@ -342,27 +344,19 @@ def get_color(owner, vassal_of, is_vassal, color_map, config):
             "fill_opacity": 0.3,
             "stroke_width": 0.3,
             "is_vassal": False,
+            "is_allied": False,
             "suzerain": None,
         }
 
 
 def smooth_boundary(geometry, buffer_size=0.008, simplify_tol=0.005):
-    """
-    边界平滑：轻微缓冲后简化，让直线县界变柔和曲线
-    """
     if geometry.is_empty or geometry is None:
         return geometry
 
     try:
-        # 正向缓冲：让相邻碎片连起来，模糊边界
         expanded = geometry.buffer(buffer_size, resolution=8)
-
-        # 简化：减少顶点，让折线变柔和
         simplified = expanded.simplify(simplify_tol, preserve_topology=True)
-
-        # 负向缓冲：收缩回去，但边界已变柔和
         contracted = simplified.buffer(-buffer_size * 0.6, resolution=8)
-
         return contracted
     except Exception:
         return geometry
@@ -393,50 +387,41 @@ def generate_time_slice(
 ):
     gdf = counties_gdf.copy()
 
-    # 1. 为每个县级面添加归属属性
     gdf["owner"] = gdf["county_idx"].map(lambda i: counties_state.get(i, {}).get("owner", "neutral"))
     gdf["vassal_of"] = gdf["county_idx"].map(lambda i: counties_state.get(i, {}).get("vassal_of", None))
+    gdf["allied_to"] = gdf["county_idx"].map(lambda i: counties_state.get(i, {}).get("allied_to", None))
     gdf["is_vassal"] = gdf["county_idx"].map(lambda i: counties_state.get(i, {}).get("is_vassal", False))
+    gdf["is_allied"] = gdf["county_idx"].map(lambda i: counties_state.get(i, {}).get("is_allied", False))
 
-    # === 新增：neutral 晕染 ===
-    if config["enable_neutral_fill"]:
-        # 构建 cities_state（从 counties_state 反向推导）
-        # 这里简化处理：使用 counties_state 中的 owner 信息
-        pass  # 实际上在 stage_2 中预处理了，这里 counties_gdf 已经带 owner
-
-    # 2. 按 owner dissolve
     dissolved = gdf.dissolve(by="owner", as_index=False)
 
-    # === 新增：边界平滑 ===
     if config["enable_boundary_smooth"]:
         dissolved["geometry"] = dissolved.geometry.apply(
             lambda g: smooth_boundary(g, config["smooth_buffer_size"], config["smooth_simplify"])
         )
 
-    # 3. 删除小碎片
     if config["remove_small_fragments"]:
         dissolved["geometry"] = dissolved.geometry.apply(
             lambda g: remove_small_fragments(g, config["min_fragment_area"])
         )
 
-    # 4. 添加颜色属性
-    def get_dominant_vassal_of(owner_val):
+    def get_dominant_props(owner_val):
         mask = gdf["owner"] == owner_val
         if not mask.any():
-            return None, False
+            return None, False, False
         subset = gdf[mask].copy()
         subset["area"] = subset.geometry.area
         dominant = subset.sort_values("area", ascending=False).iloc[0]
-        return dominant["vassal_of"], dominant["is_vassal"]
+        return dominant["vassal_of"], dominant["allied_to"], dominant["is_vassal"], dominant["is_allied"]
 
     color_props = []
     for _, row in dissolved.iterrows():
         owner = row["owner"]
-        vassal_of, is_vassal = get_dominant_vassal_of(owner)
-        color = get_color(owner, vassal_of, is_vassal, color_map, config)
+        vassal_of, allied_to, is_vassal, is_allied = get_dominant_props(owner)
+        color = get_color(owner, vassal_of, allied_to, is_vassal, is_allied, color_map, config)
         color_props.append(color)
 
-    for key in ["fill", "stroke", "fill_opacity", "stroke_width", "is_vassal", "suzerain"]:
+    for key in ["fill", "stroke", "fill_opacity", "stroke_width", "is_vassal", "is_allied", "suzerain"]:
         dissolved[key] = [c[key] for c in color_props]
 
     dissolved["county_count"] = dissolved["owner"].map(
@@ -444,15 +429,14 @@ def generate_time_slice(
     )
     dissolved["country"] = dissolved["owner"]
 
-    # 5. 简化几何
     if config["simplify_tolerance"] > 0:
         dissolved["geometry"] = dissolved["geometry"].simplify(
             tolerance=config["simplify_tolerance"],
             preserve_topology=True,
         )
 
-    # 6. 构建 FeatureCollection
-    export_cols = ["country", "owner", "fill", "stroke", "fill_opacity", "stroke_width", "is_vassal", "suzerain", "county_count", "geometry"]
+    export_cols = ["country", "owner", "fill", "stroke", "fill_opacity", "stroke_width",
+                   "is_vassal", "is_allied", "suzerain", "county_count", "geometry"]
     features = json.loads(dissolved[[c for c in export_cols if c in dissolved.columns]].to_json())["features"]
 
     feature_collection = {
@@ -489,17 +473,19 @@ def stage_2_generate_slices(config: dict, city_data: dict, county_city_map: dict
     for idx in range(len(counties_gdf)):
         if idx in county_city_map:
             city_ids = county_city_map[idx]
-            owner, vassal_of, is_vassal = resolve_county_owner(city_ids, cities_state, config["priority_map"])
+            owner, vassal_of, is_vassal, is_allied = resolve_county_owner(city_ids, cities_state, config["priority_map"])
         else:
-            owner, vassal_of, is_vassal = "neutral", None, False
+            owner, vassal_of, is_vassal, is_allied = "neutral", None, False, False
 
         counties_state[idx] = {
             "owner": owner,
             "vassal_of": vassal_of,
+            "allied_to": None,
             "is_vassal": is_vassal,
+            "is_allied": is_allied,
         }
 
-    # === 新增：neutral 晕染（初始状态）===
+    # neutral 晕染（初始状态）
     if config["enable_neutral_fill"]:
         counties_gdf_copy = counties_gdf.copy()
         counties_gdf_copy["owner"] = counties_gdf_copy["county_idx"].map(
@@ -508,20 +494,27 @@ def stage_2_generate_slices(config: dict, city_data: dict, county_city_map: dict
         counties_gdf_copy["vassal_of"] = counties_gdf_copy["county_idx"].map(
             lambda i: counties_state.get(i, {}).get("vassal_of", None)
         )
+        counties_gdf_copy["allied_to"] = counties_gdf_copy["county_idx"].map(
+            lambda i: counties_state.get(i, {}).get("allied_to", None)
+        )
         counties_gdf_copy["is_vassal"] = counties_gdf_copy["county_idx"].map(
             lambda i: counties_state.get(i, {}).get("is_vassal", False)
+        )
+        counties_gdf_copy["is_allied"] = counties_gdf_copy["county_idx"].map(
+            lambda i: counties_state.get(i, {}).get("is_allied", False)
         )
 
         counties_gdf_copy = fill_neutral_counties(
             counties_gdf_copy, cities_state, config["neutral_fill_max_distance"]
         )
 
-        # 将晕染结果写回 counties_state
         for idx, row in counties_gdf_copy.iterrows():
             counties_state[idx] = {
                 "owner": row["owner"],
                 "vassal_of": row["vassal_of"] if pd.notna(row["vassal_of"]) else None,
+                "allied_to": row["allied_to"] if pd.notna(row["allied_to"]) else None,
                 "is_vassal": row["is_vassal"] if pd.notna(row["is_vassal"]) else False,
+                "is_allied": row["is_allied"] if pd.notna(row["is_allied"]) else False,
             }
 
         print(f"  初始状态晕染完成")
@@ -534,45 +527,143 @@ def stage_2_generate_slices(config: dict, city_data: dict, county_city_map: dict
     n_features = generate_time_slice(
         counties_gdf, counties_state, color_map, config,
         initial_path,
-        metadata={"year": events[0]["year"] if events else 0, "event": "initial", "title": "初始状态"},
+        metadata={"year": events[0]["year"] if events else 0, "event": "initial", "title": "初始状态", "type": "initial"},
     )
     print(f"  ✅ 初始断面: {n_features} 个国家/势力")
 
     # 4. 遍历事件
     slice_index = []
+    animation_events = []  # 记录城市变化动画数据
 
     for event in events:
+        event_type = event.get("type", "占领")
         affected_counties = set()
+        changed_cities = []  # 记录本次事件变化的城市
 
-        for change in event.get("changes", []):
-            cid = change["city_id"]
-            if cid not in cities_state:
-                print(f"    ⚠️ 警告: city_id {cid} 不存在")
-                continue
+        # 处理不同类型的事件
+        if event_type == "灭国":
+            # 灭国：被灭势力的所有城市归于进攻者
+            for change in event.get("changes", []):
+                target_power = change["from"]  # 被灭的势力
+                conqueror = change["to"]       # 进攻者
 
-            cities_state[cid]["owner"] = change["to"]
-            cities_state[cid]["last_event_time"] = event["year"]
+                # 找到所有属于被灭势力的城市
+                for cid, city in cities_state.items():
+                    if city["owner"] == target_power:
+                        cities_state[cid]["owner"] = conqueror
+                        cities_state[cid]["last_event_time"] = event["year"]
+                        cities_state[cid]["vassal_of"] = None
+                        cities_state[cid]["allied_to"] = None
+                        changed_cities.append({
+                            "city_id": cid,
+                            "from": target_power,
+                            "to": conqueror,
+                            "type": "灭国"
+                        })
+                        county_idx = cities_state[cid].get("county_idx", -1)
+                        if county_idx >= 0:
+                            affected_counties.add(county_idx)
 
-            if "vassal_of" in change:
-                cities_state[cid]["vassal_of"] = change["vassal_of"]
+        elif event_type == "归附":
+            # 归附：某势力的所有城市归于目标势力
+            for change in event.get("changes", []):
+                target_power = change["from"]  # 归附的势力
+                new_owner = change["to"]       # 目标势力
 
-            county_idx = cities_state[cid].get("county_idx", -1)
-            if county_idx >= 0:
-                affected_counties.add(county_idx)
+                for cid, city in cities_state.items():
+                    if city["owner"] == target_power:
+                        cities_state[cid]["owner"] = new_owner
+                        cities_state[cid]["last_event_time"] = event["year"]
+                        cities_state[cid]["vassal_of"] = change.get("vassal_of")
+                        changed_cities.append({
+                            "city_id": cid,
+                            "from": target_power,
+                            "to": new_owner,
+                            "type": "归附"
+                        })
+                        county_idx = cities_state[cid].get("county_idx", -1)
+                        if county_idx >= 0:
+                            affected_counties.add(county_idx)
+
+        elif event_type == "反叛":
+            # 反叛：反叛的势力脱离原宗主
+            for change in event.get("changes", []):
+                cid = change["city_id"]
+                if cid in cities_state:
+                    old_owner = cities_state[cid]["owner"]
+                    cities_state[cid]["owner"] = change["to"]
+                    cities_state[cid]["last_event_time"] = event["year"]
+                    cities_state[cid]["vassal_of"] = None
+                    cities_state[cid]["allied_to"] = None
+                    changed_cities.append({
+                        "city_id": cid,
+                        "from": old_owner,
+                        "to": change["to"],
+                        "type": "反叛"
+                    })
+                    county_idx = cities_state[cid].get("county_idx", -1)
+                    if county_idx >= 0:
+                        affected_counties.add(county_idx)
+
+        elif event_type == "联盟":
+            # 联盟：联盟国变为同一颜色的浅色系
+            for change in event.get("changes", []):
+                cid = change["city_id"]
+                if cid in cities_state:
+                    cities_state[cid]["allied_to"] = change.get("allied_to")
+                    cities_state[cid]["vassal_of"] = change.get("vassal_of")
+                    cities_state[cid]["last_event_time"] = event["year"]
+                    changed_cities.append({
+                        "city_id": cid,
+                        "from": change["from"],
+                        "to": change["to"],
+                        "type": "联盟",
+                        "allied_to": change.get("allied_to")
+                    })
+                    county_idx = cities_state[cid].get("county_idx", -1)
+                    if county_idx >= 0:
+                        affected_counties.add(county_idx)
+
+        else:  # 占领（默认）
+            for change in event.get("changes", []):
+                cid = change["city_id"]
+                if cid not in cities_state:
+                    print(f"    ⚠️ 警告: city_id {cid} 不存在")
+                    continue
+
+                cities_state[cid]["owner"] = change["to"]
+                cities_state[cid]["last_event_time"] = event["year"]
+
+                if "vassal_of" in change:
+                    cities_state[cid]["vassal_of"] = change["vassal_of"]
+                if "allied_to" in change:
+                    cities_state[cid]["allied_to"] = change["allied_to"]
+
+                changed_cities.append({
+                    "city_id": cid,
+                    "from": change["from"],
+                    "to": change["to"],
+                    "type": "占领"
+                })
+
+                county_idx = cities_state[cid].get("county_idx", -1)
+                if county_idx >= 0:
+                    affected_counties.add(county_idx)
 
         # 重新计算受影响县的归属
         for county_idx in affected_counties:
             city_ids = county_city_map.get(county_idx, [])
-            owner, vassal_of, is_vassal = resolve_county_owner(city_ids, cities_state, config["priority_map"])
+            owner, vassal_of, is_vassal, is_allied = resolve_county_owner(city_ids, cities_state, config["priority_map"])
             counties_state[county_idx] = {
                 "owner": owner,
                 "vassal_of": vassal_of,
+                "allied_to": None,  # 县级面不直接存 allied_to，由城市决定
                 "is_vassal": is_vassal,
+                "is_allied": is_allied,
             }
 
-        # === 新增：每次事件后重新晕染（只晕染受影响的neutral县）===
+        # 每次事件后重新晕染
         if config["enable_neutral_fill"] and affected_counties:
-            # 构建临时 counties_gdf 用于晕染
             temp_gdf = counties_gdf.copy()
             temp_gdf["owner"] = temp_gdf["county_idx"].map(
                 lambda i: counties_state.get(i, {}).get("owner", "neutral")
@@ -580,8 +671,14 @@ def stage_2_generate_slices(config: dict, city_data: dict, county_city_map: dict
             temp_gdf["vassal_of"] = temp_gdf["county_idx"].map(
                 lambda i: counties_state.get(i, {}).get("vassal_of", None)
             )
+            temp_gdf["allied_to"] = temp_gdf["county_idx"].map(
+                lambda i: counties_state.get(i, {}).get("allied_to", None)
+            )
             temp_gdf["is_vassal"] = temp_gdf["county_idx"].map(
                 lambda i: counties_state.get(i, {}).get("is_vassal", False)
+            )
+            temp_gdf["is_allied"] = temp_gdf["county_idx"].map(
+                lambda i: counties_state.get(i, {}).get("is_allied", False)
             )
 
             temp_gdf = fill_neutral_counties(temp_gdf, cities_state, config["neutral_fill_max_distance"])
@@ -591,7 +688,9 @@ def stage_2_generate_slices(config: dict, city_data: dict, county_city_map: dict
                     counties_state[idx] = {
                         "owner": row["owner"],
                         "vassal_of": row["vassal_of"] if pd.notna(row["vassal_of"]) else None,
+                        "allied_to": row["allied_to"] if pd.notna(row["allied_to"]) else None,
                         "is_vassal": row["is_vassal"] if pd.notna(row["is_vassal"]) else False,
+                        "is_allied": row["is_allied"] if pd.notna(row["is_allied"]) else False,
                     }
 
         # 生成时间断面
@@ -603,26 +702,44 @@ def stage_2_generate_slices(config: dict, city_data: dict, county_city_map: dict
         n_features = generate_time_slice(
             counties_gdf, counties_state, color_map, config,
             filepath,
-            metadata={"year": year, "event": event["id"], "title": event["title"]},
+            metadata={"year": year, "event": event["id"], "title": event["title"], "type": event_type},
         )
+
+        # 记录动画事件
+        animation_events.append({
+            "year": year,
+            "event_id": event["id"],
+            "title": event["title"],
+            "type": event_type,
+            "file": filename,
+            "changed_cities": changed_cities,
+            "note": event.get("note", ""),
+            "source": event.get("source", ""),
+        })
 
         slice_index.append({
             "year": year,
             "event_id": event["id"],
             "title": event["title"],
+            "type": event_type,
             "file": filename,
             "changes_count": len(event.get("changes", [])),
             "features_count": n_features,
         })
 
-        print(f"  ✅ {event['year']}年 {event['title']}: {filename} ({n_features} 个国家)")
+        print(f"  ✅ {event['year']}年 {event['title']} [{event_type}]: {filename} ({n_features} 个国家)")
 
     # 5. 保存索引
     index_path = os.path.join(output_dir, "slice_index.json")
     save_json(index_path, slice_index)
 
+    # 6. 保存动画事件数据（供前端使用）
+    anim_path = os.path.join(output_dir, "animation_events.json")
+    save_json(anim_path, animation_events)
+
     print(f"\n[阶段2] ✅ 全部完成！共 {len(slice_index) + 1} 个时间断面")
     print(f"  索引: {index_path}")
+    print(f"  动画数据: {anim_path}")
 
     return slice_index
 
@@ -633,13 +750,14 @@ def stage_2_generate_slices(config: dict, city_data: dict, county_city_map: dict
 
 def main():
     print("=" * 60)
-    print("历史疆域变化动态渲染 Pipeline —— 增强版")
+    print("历史疆域变化动态渲染 Pipeline —— 增强版 v2.0")
     print(f"开始: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
     print(f"\n功能开关:")
     print(f"  neutral 晕染: {'✅ 开启' if CONFIG['enable_neutral_fill'] else '❌ 关闭'}")
     print(f"  边界平滑: {'✅ 开启' if CONFIG['enable_boundary_smooth'] else '❌ 关闭'}")
     print(f"  删除小碎片: {'✅ 开启' if CONFIG['remove_small_fragments'] else '❌ 关闭'}")
+    print(f"\n事件分类支持: 占领 | 灭国 | 联盟 | 反叛 | 归附")
 
     counties_gdf = stage_0_load_counties(CONFIG)
     city_data, county_city_map, failed = stage_1_spatial_join(CONFIG, counties_gdf)
@@ -653,11 +771,11 @@ def main():
     print(f"     ├── time_slice_initial.geojson")
     for s in slice_index:
         print(f"     ├── {s['file']}")
-    print(f"     └── slice_index.json")
+    print(f"     ├── slice_index.json")
+    print(f"     └── animation_events.json")
     print(f"\n下一步:")
     print(f"  1. 在 QGIS 中打开 time_slice_initial.geojson 验证")
-    print(f"  2. 对比前后效果：夏朝核心区应更连续，边界更柔和")
-    print(f"  3. 在 MapLibre 中加载并添加时间轴控制")
+    print(f"  2. 启动前端页面查看动效")
 
 
 if __name__ == "__main__":
