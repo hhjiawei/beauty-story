@@ -1,0 +1,158 @@
+{
+  "meta": { "title": "商代全史事件库（精简演示版）", "dynasty": "商", "version": "1.0.0" },
+  "events": [
+    {
+      "id": "shang-0001", "seq": 1, "year": -1600, "yearLabel": "约前1600年",
+      "title": "汤始居亳", "category": "国内", "type": "proclaim",
+      "actors": { "primary": "shang", "target": null, "supporters": [] },
+      "routes": [],
+      "outcomes": [ { "type": "proclaim", "faction": "shang", "ruler": "汤", "title": "商侯" } ],
+      "summary": "汤居于亳，修德备兵，网开三面，诸侯渐归。商之兴，自此始。",
+      "quote": { "text": "汤始居亳，从先王居。", "source": "《史记·殷本纪》" }
+    },
+    {
+      "id": "shang-0002", "seq": 2, "year": -1600, "yearLabel": "约前1600年",
+      "title": "葛伯不祀，汤始征", "category": "国际", "type": "conquer",
+      "actors": { "primary": "shang", "target": "ge", "supporters": [] },
+      "routes": [ { "faction": "shang", "from": "bo", "toCity": "gec", "toPoint": null, "waypoints": [] } ],
+      "outcomes": [ { "type": "conquer", "faction": "ge", "by": "shang" } ],
+      "summary": "葛伯放纵、不祭先祖，汤起兵伐之。商汤十一征，自葛始。",
+      "quote": { "text": "汤始征，自葛载，十一征而无敌于天下。", "source": "《孟子·滕文公下》" }
+    },
+    {
+      "id": "shang-0003", "seq": 3, "year": -1596, "yearLabel": "约前1596年",
+      "title": "汤征韦、顾", "category": "国际", "type": "conquer",
+      "actors": { "primary": "shang", "target": "wei", "supporters": [ "gu" ] },
+      "routes": [
+        { "faction": "shang", "from": "bo", "toCity": "weic", "toPoint": null, "waypoints": [] },
+        { "faction": "shang", "from": "bo", "toCity": "guc", "toPoint": null, "waypoints": [] }
+      ],
+      "outcomes": [
+        { "type": "conquer", "faction": "wei", "by": "shang" },
+        { "type": "conquer", "faction": "gu", "by": "shang" }
+      ],
+      "summary": "汤次第翦除夏之羽翼，豕韦、顾国皆灭，夏桀之势日孤。",
+      "quote": { "text": "韦顾既伐，昆吾夏桀。", "source": "《诗经·商颂·长发》" }
+    },
+    {
+      "id": "shang-0004", "seq": 4, "year": -1592, "yearLabel": "约前1592年",
+      "title": "鸣条之战", "category": "国际", "type": "battle",
+      "actors": { "primary": "shang", "target": "xia", "supporters": [] },
+      "routes": [
+        { "faction": "shang", "from": "bo", "toCity": null, "toPoint": [111.05, 35.05], "waypoints": [] },
+        { "faction": "xia", "from": "zhenxun", "toCity": null, "toPoint": [111.05, 35.05], "waypoints": [] }
+      ],
+      "battle": { "name": "鸣条", "location": [111.05, 35.05], "note": "今山西运城夏县西" },
+      "outcomes": [
+        { "type": "conquer", "faction": "kunwu", "by": "shang" },
+        { "type": "conquer", "faction": "xia", "by": "shang" }
+      ],
+      "summary": "汤先灭昆吾，遂率诸侯联军与夏桀决战于鸣条。桀败走，夏师败绩，夏亡。",
+      "quote": { "text": "桀败于有娀之虚，桀奔于鸣条，夏师败绩。", "source": "《史记·殷本纪》" },
+      "camera": { "zoom": 7.4, "pitch": 58 }
+    },
+    {
+      "id": "shang-0005", "seq": 5, "year": -1590, "yearLabel": "约前1590年",
+      "title": "汤践天子位，定都于亳", "category": "国内", "type": "proclaim",
+      "actors": { "primary": "shang", "target": null, "supporters": [] },
+      "routes": [],
+      "outcomes": [ { "type": "proclaim", "faction": "shang", "ruler": "汤", "title": "天子" } ],
+      "summary": "诸侯毕服，汤乃践天子位，平定海内，国号商，还都于亳。",
+      "quote": { "text": "汤乃践天子位，平定海内。", "source": "《史记·殷本纪》" }
+    },
+    {
+      "id": "shang-0006", "seq": 6, "year": -1500, "yearLabel": "约前1500年",
+      "title": "仲丁自亳迁嚣", "category": "国内", "type": "move_capital",
+      "actors": { "primary": "shang", "target": null, "supporters": [] },
+      "routes": [],
+      "outcomes": [ { "type": "move_capital", "faction": "shang", "from": "bo", "to": "xiao" } ],
+      "summary": "仲丁即位，因河患与经略东方，自亳迁都于嚣（今郑州商城）。",
+      "quote": { "text": "帝仲丁迁于隞。", "source": "《史记·殷本纪》" }
+    },
+    {
+      "id": "shang-0007", "seq": 7, "year": -1300, "yearLabel": "约前1300年",
+      "title": "盘庚迁殷", "category": "国内", "type": "move_capital",
+      "actors": { "primary": "shang", "target": null, "supporters": [] },
+      "routes": [],
+      "outcomes": [ { "type": "move_capital", "faction": "shang", "from": "xiao", "to": "yin" } ],
+      "summary": "盘庚力排众议，渡河而北，定都于殷。自此商道复兴，史称殷商。",
+      "quote": { "text": "盘庚迁于殷，民不适有居。", "source": "《尚书·盘庚》" },
+      "camera": { "zoom": 7.2, "pitch": 55 }
+    },
+    {
+      "id": "shang-0008", "seq": 8, "year": -1250, "yearLabel": "约前1250年",
+      "title": "武丁继位", "category": "国内", "type": "succeed",
+      "actors": { "primary": "shang", "target": null, "supporters": [] },
+      "routes": [],
+      "outcomes": [ { "type": "ruler_change", "faction": "shang", "ruler": "武丁", "title": "王" } ],
+      "summary": "武丁立，思复兴殷，三年不言，以观国风；后得傅说于版筑之间，殷道大治。",
+      "quote": { "text": "帝武丁即位，思复兴殷，而未得其佐。", "source": "《史记·殷本纪》" }
+    },
+    {
+      "id": "shang-0009", "seq": 9, "year": -1240, "yearLabel": "约前1240年",
+      "title": "武丁伐鬼方", "category": "国际", "type": "march",
+      "actors": { "primary": "shang", "target": "guifang", "supporters": [] },
+      "routes": [ { "faction": "shang", "from": "yin", "toCity": "guifangzhai", "toPoint": null, "waypoints": [] } ],
+      "outcomes": [ { "type": "occupy", "city": "guifangzhai", "to": "shang" } ],
+      "summary": "武丁举兵伐鬼方，三年乃克，殷之兵锋北及晋陕高原，四夷咸服。",
+      "quote": { "text": "高宗伐鬼方，三年克之。", "source": "《周易·既济》" }
+    },
+    {
+      "id": "shang-0010", "seq": 10, "year": -1100, "yearLabel": "约前1100年",
+      "title": "帝乙归妹于周", "category": "国际", "type": "ally",
+      "actors": { "primary": "shang", "target": "zhou", "supporters": [] },
+      "routes": [],
+      "outcomes": [ { "type": "ally", "leader": "shang", "members": [ "zhou" ] } ],
+      "summary": "帝乙以妹嫁西伯昌，商周联姻。周为商之西伯，屏藩西土。",
+      "quote": { "text": "帝乙归妹，以祉元吉。", "source": "《周易·泰》" }
+    },
+    {
+      "id": "shang-0011", "seq": 11, "year": -1060, "yearLabel": "约前1060年",
+      "title": "囚西伯于羑里", "category": "国内", "type": "other",
+      "actors": { "primary": "shang", "target": "zhou", "supporters": [] },
+      "city": "youli",
+      "routes": [],
+      "outcomes": [ { "type": "ally_break", "leader": "shang", "members": [ "zhou" ] } ],
+      "summary": "崇侯虎谮西伯于纣，纣囚西伯昌于羑里。商周之盟，自此而裂。",
+      "quote": { "text": "帝纣乃囚西伯于羑里。", "source": "《史记·周本纪》" }
+    },
+    {
+      "id": "shang-0012", "seq": 12, "year": -1055, "yearLabel": "约前1055年",
+      "title": "西伯戡黎", "category": "国际", "type": "occupy",
+      "actors": { "primary": "zhou", "target": "shang", "supporters": [] },
+      "routes": [ { "faction": "zhou", "from": "feng", "toCity": "li", "toPoint": null, "waypoints": [] } ],
+      "outcomes": [ { "type": "occupy", "city": "li", "to": "zhou" } ],
+      "summary": "西伯既释，东向戡定黎国，兵锋直逼王畿。祖伊恐，奔告于纣，纣不悟。",
+      "quote": { "text": "西伯既戡黎，祖伊恐，奔告于王。", "source": "《尚书·西伯戡黎》" }
+    },
+    {
+      "id": "shang-0013", "seq": 13, "year": -1052, "yearLabel": "约前1052年",
+      "title": "虞芮质成，归于周", "category": "国际", "type": "submit",
+      "actors": { "primary": "yu", "target": "zhou", "supporters": [ "rui" ] },
+      "routes": [],
+      "outcomes": [
+        { "type": "submit", "faction": "yu", "to": "zhou" },
+        { "type": "submit", "faction": "rui", "to": "zhou" }
+      ],
+      "summary": "虞、芮之君争田，入周见耕者让畔、行者让路，惭而让还。诸侯闻之，多归于周。",
+      "quote": { "text": "虞芮之人有狱不能决，乃如周。", "source": "《史记·周本纪》" }
+    },
+    {
+      "id": "shang-0014", "seq": 14, "year": -1046, "yearLabel": "约前1046年",
+      "title": "牧野之战", "category": "国际", "type": "battle",
+      "actors": { "primary": "zhou", "target": "shang", "supporters": [ "yu", "rui" ] },
+      "routes": [
+        { "faction": "zhou", "from": "mengjin", "toCity": null, "toPoint": [113.90, 35.40], "waypoints": [] },
+        { "faction": "shang", "from": "zhaoge", "toCity": null, "toPoint": [113.90, 35.40], "waypoints": [] }
+      ],
+      "battle": { "name": "牧野", "location": [113.90, 35.40], "note": "今河南新乡北" },
+      "outcomes": [
+        { "type": "rebel", "faction": "shang", "to": "zhou", "cities": [ "muye" ] },
+        { "type": "conquer", "faction": "shang", "by": "zhou" }
+      ],
+      "summary": "武王率诸侯联军渡孟津，陈师牧野。商军前徒倒戈，纣登鹿台自焚，商亡，周兴。",
+      "quote": { "text": "纣师皆倒兵以战，以开武王。", "source": "《史记·周本纪》" },
+      "camera": { "zoom": 7.6, "pitch": 58 }
+    }
+  ]
+}

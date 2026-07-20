@@ -1,0 +1,22 @@
+[
+  { "id": "bo",          "name": "亳",     "location": [115.65, 34.45], "owner": "shang",   "tier": 1, "note": "商汤之都（今河南商丘北，取通说）" },
+  { "id": "xiao",        "name": "嚣",     "location": [113.65, 34.75], "owner": "shang",   "tier": 2, "note": "隞都，郑州商城（今河南郑州）" },
+  { "id": "yin",         "name": "殷",     "location": [114.35, 36.10], "owner": "shang",   "tier": 2, "note": "今河南安阳殷墟" },
+  { "id": "zhaoge",      "name": "朝歌",   "location": [114.20, 35.60], "owner": "shang",   "tier": 2, "note": "纣之行都（今河南淇县）" },
+  { "id": "youli",       "name": "羑里",   "location": [114.37, 35.92], "owner": "shang",   "tier": 3, "note": "今河南汤阴北" },
+  { "id": "mengjin",     "name": "孟津",   "location": [112.43, 34.83], "owner": "shang",   "tier": 3, "note": "黄河渡口（今河南洛阳孟津）" },
+  { "id": "muye",        "name": "牧野",   "location": [113.90, 35.40], "owner": "shang",   "tier": 3, "note": "今河南新乡北郊" },
+  { "id": "li",          "name": "黎",     "location": [113.12, 36.20], "owner": "shang",   "tier": 3, "note": "黎国，商之属国（今山西长治西南）" },
+  { "id": "zhenxun",     "name": "斟鄩",   "location": [113.02, 34.75], "owner": "xia",     "tier": 1, "note": "夏都（今河南巩义西南，取二里头通说）" },
+  { "id": "anyi",        "name": "安邑",   "location": [111.22, 35.14], "owner": "xia",     "tier": 2, "note": "夏都之一（今山西运城夏县）" },
+  { "id": "xibo",        "name": "西亳",   "location": [112.78, 34.72], "owner": "xia",     "tier": 2, "note": "今河南偃师（后为商之西亳）" },
+  { "id": "gec",         "name": "葛",     "location": [115.32, 34.45], "owner": "ge",      "tier": 3, "note": "葛国（今河南宁陵北）" },
+  { "id": "weic",        "name": "韦",     "location": [114.55, 35.58], "owner": "wei",     "tier": 3, "note": "豕韦（今河南滑县东南）" },
+  { "id": "guc",         "name": "顾",     "location": [115.50, 35.85], "owner": "gu",      "tier": 3, "note": "顾国（今山东范县东南）" },
+  { "id": "kunwuc",      "name": "昆吾",   "location": [115.03, 35.76], "owner": "kunwu",   "tier": 3, "note": "昆吾（今河南濮阳）" },
+  { "id": "guifangzhai", "name": "鬼方",   "location": [110.80, 37.60], "owner": "guifang", "tier": 3, "note": "晋陕高原方国（示意位置）" },
+  { "id": "yucheng",     "name": "虞",     "location": [111.20, 34.85], "owner": "yu",      "tier": 3, "note": "虞国（今山西平陆北）" },
+  { "id": "ruicheng",    "name": "芮",     "location": [110.70, 34.70], "owner": "rui",     "tier": 3, "note": "芮国（今山西芮城）" },
+  { "id": "feng",        "name": "丰",     "location": [108.72, 34.20], "owner": "zhou",    "tier": 1, "note": "周都（今陕西西安西南）" },
+  { "id": "hao",         "name": "镐",     "location": [108.85, 34.26], "owner": "zhou",    "tier": 2, "note": "今陕西西安西" }
+]

@@ -1,0 +1,12 @@
+[
+  { "id": "shang",   "name": "商",   "color": "#a63a2b", "founded": -1600, "fallen": null },
+  { "id": "xia",     "name": "夏",   "color": "#4a5560", "founded": -2070, "fallen": null },
+  { "id": "ge",      "name": "葛",   "color": "#7a6c4f", "founded": null,  "fallen": null },
+  { "id": "wei",     "name": "韦",   "color": "#5d7052", "founded": null,  "fallen": null },
+  { "id": "gu",      "name": "顾",   "color": "#8c6a3f", "founded": null,  "fallen": null },
+  { "id": "kunwu",   "name": "昆吾", "color": "#6b4f6e", "founded": null,  "fallen": null },
+  { "id": "guifang", "name": "鬼方", "color": "#7d7a63", "founded": null,  "fallen": null },
+  { "id": "yu",      "name": "虞",   "color": "#5e7a8a", "founded": null,  "fallen": null },
+  { "id": "rui",     "name": "芮",   "color": "#8a5e6e", "founded": null,  "fallen": null },
+  { "id": "zhou",    "name": "周",   "color": "#b0762a", "founded": null,  "fallen": null }
+]

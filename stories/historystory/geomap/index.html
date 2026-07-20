@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>山河战图 · 商代全史战图</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/900.css">
+<style>
+/* ================= 山河战图 · 古风 UI ================= */
+:root {
+  --paper: rgba(246, 240, 226, 0.88);
+  --paper-solid: #f6f0e2;
+  --ink: #2b241c;
+  --ink-soft: rgba(43, 36, 28, 0.62);
+  --ink-line: rgba(43, 36, 28, 0.18);
+  --cinnabar: #a63a2b;
+  --cinnabar-deep: #8c2f22;
+  --ochre: #b0762a;
+  --gold: #d8b45a;
+  --radius: 14px;
+  --shadow: 0 10px 34px rgba(43, 36, 28, 0.22);
+  --serif: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #ece4d0; font-family: var(--serif); color: var(--ink); }
+button { font-family: inherit; cursor: pointer; }
+input, select { font-family: inherit; }
+
+#map { position: fixed; inset: 0; touch-action: none; transition: transform 90ms linear; }
+#map.shake { animation: mapshake 0.38s linear; }
+@keyframes mapshake {
+  0% { transform: translate(0, 0); } 20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(5px, -4px); } 60% { transform: translate(-4px, -2px); }
+  80% { transform: translate(3px, 2px); } 100% { transform: translate(0, 0); }
+}
+
+/* 城市中文标签层（HTML，绕开 glyph 中文字形问题） */
+#labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 3; }
+.city-label {
+  position: absolute; left: 0; top: 0; white-space: nowrap;
+  transform: translate(-50%, -140%);
+  font-family: var(--serif); font-weight: 600; color: var(--ink);
+  text-shadow: 0 0 3px #f6f0e2, 0 0 6px #f6f0e2, 1px 1px 0 #f6f0e2;
+  will-change: transform;
+}
+.city-label.capital { font-weight: 900; }
+.city-label .cap-mark { color: var(--cinnabar); margin-right: 2px; }
+
+/* 暗角 */
+#vignette {
+  position: fixed; inset: 0; pointer-events: none; z-index: 2;
+  background: radial-gradient(ellipse 120% 105% at 50% 42%, transparent 58%, rgba(58, 44, 28, 0.20) 100%);
+}
+
+/* 战斗闪光 */
+#flash {
+  position: fixed; inset: 0; pointer-events: none; z-index: 4; opacity: 0;
+  background: radial-gradient(ellipse at 50% 55%, rgba(166, 58, 43, 0.22), transparent 60%);
+}
+#flash.on { animation: flashonce 0.5s ease-out; }
+@keyframes flashonce { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+
+/* 通用面板 */
+.panel {
+  position: fixed; z-index: 10;
+  background: var(--paper);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
+  border: 1px solid var(--ink-line); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.panel-inner-top { } /* fixed 已定位，::before 高光可绝对定位 */
+.panel-inner-top::before {
+  content: ""; position: absolute; top: 0; left: 12px; right: 12px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.75), transparent);
+}
+
+/* 顶部标题区 */
+#title-panel { top: 20px; left: 20px; padding: 14px 22px 12px; pointer-events: none; }
+#title-panel .eyebrow {
+  font-size: 11px; letter-spacing: 0.42em; color: var(--ink-soft);
+  font-weight: 600; margin-bottom: 4px;
+}
+#title-panel h1 { font-size: 34px; font-weight: 900; letter-spacing: 0.12em; line-height: 1.1; }
+#title-panel h1 .seal-dot { color: var(--cinnabar); }
+#title-panel .subtitle { margin-top: 5px; font-size: 12px; letter-spacing: 0.28em; color: var(--ink-soft); }
+
+/* 右侧事件列表面板 */
+#events-panel {
+  top: 20px; right: 20px; width: 322px; bottom: 108px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#events-panel header { padding: 14px 16px 10px; border-bottom: 1px solid var(--ink-line); }
+#events-panel header .ptitle { font-size: 16px; font-weight: 900; letter-spacing: 0.18em; }
+#events-panel header .psub { font-size: 11px; color: var(--ink-soft); margin-top: 3px; letter-spacing: 0.12em; }
+#search-input {
+  width: 100%; margin-top: 10px; padding: 7px 10px; font-size: 13px;
+  background: rgba(255, 252, 244, 0.8); color: var(--ink);
+  border: 1px solid var(--ink-line); border-radius: 8px; outline: none;
+}
+#search-input:focus { border-color: var(--cinnabar); }
+#type-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.chip {
+  border: 1px solid var(--ink-line); background: rgba(255, 252, 244, 0.55);
+  border-radius: 999px; padding: 2px 9px; font-size: 11px; color: var(--ink-soft);
+  transition: all 0.16s ease;
+}
+.chip:hover { border-color: var(--ink-soft); color: var(--ink); }
+.chip.on { background: var(--cinnabar); border-color: var(--cinnabar); color: #f6f0e2; }
+#faction-select {
+  width: 100%; margin-top: 9px; padding: 6px 8px; font-size: 12px;
+  background: rgba(255, 252, 244, 0.8); color: var(--ink);
+  border: 1px solid var(--ink-line); border-radius: 8px; outline: none;
+}
+#events-list { flex: 1; overflow-y: auto; padding: 6px 10px 12px; scrollbar-width: thin; }
+#events-list::-webkit-scrollbar { width: 6px; }
+#events-list::-webkit-scrollbar-thumb { background: rgba(43,36,28,0.25); border-radius: 3px; }
+.year-head {
+  position: sticky; top: -6px; z-index: 2; padding: 8px 4px 5px;
+  font-size: 12px; font-weight: 900; letter-spacing: 0.22em; color: var(--ochre);
+  background: linear-gradient(var(--paper-solid) 78%, transparent);
+}
+.event-item {
+  display: flex; gap: 9px; align-items: flex-start; padding: 8px 8px;
+  border-radius: 10px; border: 1px solid transparent; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.event-item:hover { background: rgba(255, 252, 244, 0.7); }
+.event-item.active { border-color: var(--cinnabar); background: rgba(166, 58, 43, 0.07); }
+.event-item.done .ev-title { color: var(--ink-soft); }
+.ev-seq { font-family: var(--mono); font-size: 10px; color: var(--ink-soft); padding-top: 4px; width: 18px; text-align: right; flex: none; }
+.ev-badge {
+  flex: none; width: 26px; height: 26px; border-radius: 8px; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900; color: #f6f0e2;
+}
+.ev-main { min-width: 0; }
+.ev-title { font-size: 14px; font-weight: 600; line-height: 1.35; }
+.ev-meta { font-size: 11px; color: var(--ink-soft); margin-top: 2px; letter-spacing: 0.06em; }
+
+/* 事件详情卡 */
+#detail-card {
+  left: 20px; bottom: 108px; width: 340px; padding: 16px 18px 14px;
+  transform: translateY(18px); opacity: 0; pointer-events: none;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease;
+  z-index: 11;
+}
+#detail-card.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+#dc-head { display: flex; align-items: center; gap: 8px; }
+#dc-badges { display: flex; gap: 5px; }
+#dc-title { font-size: 19px; font-weight: 900; margin-top: 8px; letter-spacing: 0.04em; }
+#dc-meta { font-size: 11.5px; color: var(--ochre); margin-top: 3px; letter-spacing: 0.14em; font-weight: 600; }
+#dc-actors { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.actor-chip {
+  font-size: 11px; padding: 2px 10px; border-radius: 999px; color: #f6f0e2; font-weight: 600;
+}
+#dc-summary { font-size: 13px; line-height: 1.75; margin-top: 10px; color: var(--ink); }
+#dc-quote {
+  margin-top: 10px; padding: 8px 12px; border-left: 3px solid var(--cinnabar);
+  background: rgba(166, 58, 43, 0.05); border-radius: 0 8px 8px 0;
+  font-size: 12.5px; line-height: 1.8; color: var(--ink);
+}
+#dc-quote .qsrc { display: block; margin-top: 3px; font-size: 11px; color: var(--ink-soft); }
+#dc-cities { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.city-link {
+  font-size: 11px; padding: 2px 9px; border-radius: 999px;
+  border: 1px solid var(--ink-line); background: rgba(255,252,244,0.6); color: var(--ink);
+}
+.city-link:hover { border-color: var(--cinnabar); color: var(--cinnabar); }
+
+/* 图例 */
+#legend { left: 20px; bottom: 20px; width: 210px; padding: 12px 14px; z-index: 10; }
+#legend .lg-title {
+  font-size: 12px; font-weight: 900; letter-spacing: 0.3em; color: var(--ink);
+  display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+}
+#legend .lg-title .arrow { font-size: 10px; color: var(--ink-soft); transition: transform 0.2s; }
+#legend.collapsed .lg-body { display: none; }
+#legend.collapsed .arrow { transform: rotate(-90deg); }
+.lg-body { margin-top: 9px; }
+.lg-faction { display: flex; align-items: center; gap: 8px; padding: 2.5px 0; font-size: 12.5px; }
+.lg-faction .dot { width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(43,36,28,0.5); flex: none; }
+.lg-faction.dead { color: var(--ink-soft); }
+.lg-faction.dead .dot { filter: grayscale(1); opacity: 0.6; }
+.lg-faction .dead-mark { font-size: 10px; color: var(--cinnabar); border: 1px solid var(--cinnabar); border-radius: 4px; padding: 0 3px; margin-left: auto; }
+.lg-faction .cap-name { font-size: 10.5px; color: var(--ink-soft); margin-left: auto; }
+.lg-faction.dead .cap-name { display: none; }
+.lg-faction.ally-member { padding-left: 16px; position: relative; }
+.lg-faction.ally-member::before {
+  content: ""; position: absolute; left: 5px; top: -3px; bottom: 4px; width: 6px;
+  border-left: 1px solid var(--ink-line); border-bottom: 1px solid var(--ink-line);
+}
+.lg-toggles { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--ink-line); display: flex; flex-direction: column; gap: 6px; }
+.lg-toggle { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--ink-soft); cursor: pointer; user-select: none; }
+.lg-toggle .box {
+  width: 13px; height: 13px; border: 1px solid var(--ink-soft); border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; font-size: 10px; color: #f6f0e2;
+}
+.lg-toggle.on .box { background: var(--cinnabar); border-color: var(--cinnabar); }
+.lg-toggle.on { color: var(--ink); }
+
+/* 战果横幅 */
+#banner {
+  position: fixed; left: 50%; bottom: 118px; transform: translate(-50%, 24px);
+  z-index: 12; text-align: center; pointer-events: none; opacity: 0;
+  transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1), opacity 0.45s ease;
+  background: var(--paper); border: 1px solid var(--ink-line); border-radius: 12px;
+  padding: 10px 30px 9px; box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  max-width: min(640px, 86vw);
+}
+#banner.show { transform: translate(-50%, 0); opacity: 1; }
+#banner-title { font-size: 21px; font-weight: 900; letter-spacing: 0.16em; }
+#banner-sub { font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; letter-spacing: 0.1em; }
+
+/* 迁都印章 */
+#seal {
+  position: fixed; z-index: 13; width: 64px; height: 64px; pointer-events: none;
+  border: 3px solid var(--cinnabar); border-radius: 10px; color: var(--cinnabar);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 900; font-family: var(--serif);
+  background: rgba(166, 58, 43, 0.06);
+  opacity: 0; transform: translate(-50%, -50%) scale(2.2) rotate(-8deg);
+  transition: transform 0.22s cubic-bezier(0.3, 1.6, 0.5, 1), opacity 0.18s ease;
+  mix-blend-mode: multiply;
+}
+#seal.show { opacity: 0.92; transform: translate(-50%, -50%) scale(1) rotate(-8deg); }
+
+/* 底部时间轴 */
+#timeline {
+  left: 50%; transform: translateX(-50%); bottom: 20px; z-index: 10;
+  width: min(860px, calc(100vw - 700px)); min-width: 480px;
+  padding: 12px 18px 13px; display: flex; flex-direction: column; gap: 9px;
+}
+#tl-top { display: flex; align-items: center; gap: 12px; }
+#tl-year { font-size: 19px; font-weight: 900; color: var(--cinnabar); letter-spacing: 0.06em; min-width: 118px; }
+#tl-count { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); letter-spacing: 0.1em; }
+#tl-controls { margin-left: auto; display: flex; align-items: center; gap: 7px; }
+.tbtn {
+  width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--ink-line);
+  background: rgba(255, 252, 244, 0.7); color: var(--ink); font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s ease; user-select: none;
+}
+.tbtn:hover { border-color: var(--ink-soft); }
+.tbtn:active { transform: scale(0.94); }
+.tbtn.primary { background: var(--cinnabar); border-color: var(--cinnabar); color: #f6f0e2; width: 42px; }
+.tbtn.text { width: auto; padding: 0 10px; font-size: 11.5px; font-family: var(--mono); }
+.tbtn.on { background: var(--ochre); border-color: var(--ochre); color: #f6f0e2; }
+#tl-bar { position: relative; height: 22px; cursor: pointer; }
+#tl-track {
+  position: absolute; left: 0; right: 0; top: 9px; height: 4px; border-radius: 2px;
+  background: rgba(43, 36, 28, 0.16);
+}
+#tl-progress { position: absolute; left: 0; top: 9px; height: 4px; border-radius: 2px; background: var(--cinnabar); width: 0; }
+.tl-tick { position: absolute; top: 7px; width: 8px; height: 8px; border-radius: 50%; transform: translateX(-50%); border: 1.5px solid #f6f0e2; }
+.tl-tick.intl { background: var(--cinnabar); }
+.tl-tick.dom { background: var(--gold); }
+.tl-tick.big { width: 11px; height: 11px; top: 5.5px; background: var(--ink); border-radius: 3px; }
+.tl-tick:hover { transform: translateX(-50%) scale(1.35); }
+.tl-tick.cur { box-shadow: 0 0 0 3px rgba(166, 58, 43, 0.3); }
+
+/* 加载界面 */
+#loading {
+  position: fixed; inset: 0; z-index: 100; background: #ece4d0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  transition: opacity 0.8s ease;
+}
+#loading.hide { opacity: 0; pointer-events: none; }
+#loading .seal-box {
+  width: 108px; height: 108px; border: 4px solid var(--cinnabar); border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--cinnabar); font-size: 44px; font-weight: 900; letter-spacing: 0.1em;
+  writing-mode: vertical-rl; font-family: var(--serif);
+  animation: sealpulse 2.2s ease-in-out infinite;
+  box-shadow: 0 0 0 6px rgba(166, 58, 43, 0.08);
+}
+@keyframes sealpulse { 0%, 100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.045); opacity: 1; } }
+#loading .load-title { font-size: 15px; letter-spacing: 0.5em; color: var(--ink); font-weight: 600; }
+#loading .load-status { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); letter-spacing: 0.14em; }
+
+/* 错误界面 */
+#error {
+  position: fixed; inset: 0; z-index: 101; background: rgba(236, 228, 208, 0.97);
+  display: none; align-items: center; justify-content: center;
+}
+#error.show { display: flex; }
+#error .err-box {
+  max-width: 640px; max-height: 76vh; overflow: auto; padding: 28px 34px;
+  background: var(--paper-solid); border: 1px solid var(--cinnabar); border-radius: 16px; box-shadow: var(--shadow);
+}
+#error h2 { color: var(--cinnabar); font-size: 22px; letter-spacing: 0.2em; margin-bottom: 6px; }
+#error .err-note { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 14px; line-height: 1.7; }
+#error ul { list-style: none; }
+#error li { font-family: var(--mono); font-size: 11.5px; padding: 5px 0; border-top: 1px dashed var(--ink-line); color: var(--ink); }
+
+/* 响应式 */
+@media (max-width: 1100px) {
+  #timeline { width: calc(100vw - 400px); }
+}
+@media (max-width: 768px) {
+  #title-panel { top: 12px; left: 12px; padding: 10px 16px 9px; }
+  #title-panel h1 { font-size: 24px; }
+  #title-panel .subtitle { display: none; }
+  #events-panel {
+    top: auto; right: 0; left: 0; bottom: 0; width: auto; height: 46vh;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(calc(46vh - 52px)); transition: transform 0.3s ease;
+  }
+  #events-panel.open { transform: translateY(0); }
+  #events-panel header { cursor: pointer; }
+  #detail-card { left: 12px; right: 12px; width: auto; bottom: 118px; }
+  #legend { display: none; }
+  #timeline { left: 12px; right: 12px; transform: none; width: auto; min-width: 0; bottom: 12px; }
+  #tl-year { font-size: 15px; min-width: 96px; }
+  #banner { bottom: 170px; }
+}
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="labels"></div>
+<div id="vignette"></div>
+<div id="flash"></div>
+
+<!-- 顶部标题 -->
+<div id="title-panel" class="panel panel-inner-top">
+  <div class="eyebrow">商 · 全史战图</div>
+  <h1>山河战图<span class="seal-dot">。</span></h1>
+  <div class="subtitle">行军 · 会战 · 兴亡 &nbsp;一图演绎</div>
+</div>
+
+<!-- 右侧事件列表 -->
+<aside id="events-panel" class="panel panel-inner-top">
+  <header id="panel-header">
+    <div class="ptitle">编年事件</div>
+    <div class="psub" id="panel-sub">商代全史事件库</div>
+    <input id="search-input" type="text" placeholder="搜索事件 / 城市 / 势力…" aria-label="搜索事件">
+    <div id="type-chips"></div>
+    <select id="faction-select" aria-label="按势力筛选"><option value="">全部势力</option></select>
+  </header>
+  <div id="events-list"></div>
+</aside>
+
+<!-- 事件详情卡 -->
+<div id="detail-card" class="panel panel-inner-top">
+  <div id="dc-head"><div id="dc-badges"></div></div>
+  <div id="dc-title"></div>
+  <div id="dc-meta"></div>
+  <div id="dc-actors"></div>
+  <div id="dc-summary"></div>
+  <div id="dc-quote"></div>
+  <div id="dc-cities"></div>
+</div>
+
+<!-- 图例 -->
+<div id="legend" class="panel panel-inner-top">
+  <div class="lg-title" id="legend-toggle">势力图例 <span class="arrow">▾</span></div>
+  <div class="lg-body">
+    <div id="legend-factions"></div>
+    <div class="lg-toggles">
+      <label class="lg-toggle on" id="tg-territory"><span class="box">✓</span>势力范围</label>
+      <label class="lg-toggle" id="tg-adm3"><span class="box">✓</span>现代政区界</label>
+      <label class="lg-toggle on" id="tg-labels"><span class="box">✓</span>城市标签</label>
+    </div>
+  </div>
+</div>
+
+<!-- 战果横幅 -->
+<div id="banner"><div id="banner-title"></div><div id="banner-sub"></div></div>
+
+<!-- 迁都印章 -->
+<div id="seal">都</div>
+
+<!-- 底部时间轴 -->
+<footer id="timeline" class="panel panel-inner-top">
+  <div id="tl-top">
+    <div id="tl-year">初始之局</div>
+    <div id="tl-count">第 0 / 14 事</div>
+    <div id="tl-controls">
+      <button class="tbtn" id="btn-prev" title="上一事件" aria-label="上一事件">‹</button>
+      <button class="tbtn primary" id="btn-play" title="播放/暂停（空格）" aria-label="播放或暂停">▶</button>
+      <button class="tbtn" id="btn-next" title="下一事件" aria-label="下一事件">›</button>
+      <button class="tbtn text" id="btn-speed" title="倍速" aria-label="倍速">1×</button>
+      <button class="tbtn text" id="btn-auto" title="自动连播" aria-label="自动连播">连播</button>
+      <button class="tbtn text" id="btn-china" title="全国视图" aria-label="全国视图">全国</button>
+    </div>
+  </div>
+  <div id="tl-bar">
+    <div id="tl-track"></div>
+    <div id="tl-progress"></div>
+    <div id="tl-ticks"></div>
+  </div>
+</footer>
+
+<!-- 加载 -->
+<div id="loading">
+  <div class="seal-box">山河战图</div>
+  <div class="load-title">山 河 铺 陈 中</div>
+  <div class="load-status" id="load-status">初始化…</div>
+</div>
+
+<!-- 错误 -->
+<div id="error">
+  <div class="err-box">
+    <h2>山河未展</h2>
+    <div class="err-note" id="error-note">数据加载或校验未通过，请修正后刷新。页面保持可用，但播放已锁定。</div>
+    <ul id="error-list"></ul>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
