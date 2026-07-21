@@ -1,0 +1,3434 @@
+{
+ "initial": {
+  "year": -1600,
+  "capitals": {
+   "shang": "bo",
+   "xia": "zhenxun",
+   "ge": null,
+   "wei": null,
+   "gu": null,
+   "kunwu": null,
+   "guifang": null,
+   "yu": null,
+   "rui": null,
+   "zhou": "feng"
+  },
+  "states": [
+   {
+    "county_idx": 155,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 156,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 157,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 158,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 159,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 160,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 161,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 162,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 163,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 164,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 165,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 168,
+    "owner": "kunwu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 169,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 170,
+    "owner": "kunwu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 172,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 304,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 305,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 306,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 307,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 308,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 309,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 310,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 311,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 312,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 313,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 314,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 316,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 318,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 319,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 320,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 321,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 339,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 340,
+    "owner": "rui",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 341,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 342,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 343,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 344,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 345,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 346,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 347,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 348,
+    "owner": "yu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 349,
+    "owner": "rui",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 350,
+    "owner": "rui",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 351,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 367,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 369,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 381,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 383,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 387,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 388,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 389,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 391,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 392,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1044,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1055,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1326,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1366,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1368,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1369,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1371,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1381,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1382,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1383,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1384,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1385,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1386,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1387,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1388,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1389,
+    "owner": "kunwu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1390,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1391,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1392,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1393,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1394,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1395,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1396,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1397,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1398,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1399,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1400,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1401,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1402,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1403,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1404,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1405,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1407,
+    "owner": "ge",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1409,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1410,
+    "owner": "ge",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1411,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1412,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1413,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1414,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1415,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1416,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1417,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1420,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1421,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1422,
+    "owner": "yu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1423,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1424,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1432,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1434,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1435,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1436,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1437,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1438,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1439,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1440,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1441,
+    "owner": "wei",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1442,
+    "owner": "kunwu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1443,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1444,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1445,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1446,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1447,
+    "owner": "wei",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1448,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1449,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1450,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1451,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1452,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1453,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1454,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1455,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1456,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1457,
+    "owner": "wei",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1458,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1459,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1460,
+    "owner": "wei",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1461,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1462,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1463,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1464,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1465,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1466,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1467,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1468,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1469,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1470,
+    "owner": "xia",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1471,
+    "owner": "kunwu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1472,
+    "owner": "kunwu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1473,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1474,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1475,
+    "owner": "gu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1476,
+    "owner": "kunwu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1477,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1478,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1481,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1482,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1488,
+    "owner": "yu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1489,
+    "owner": "yu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1490,
+    "owner": "yu",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1491,
+    "owner": "rui",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1492,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1493,
+    "owner": "rui",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1507,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1508,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1509,
+    "owner": "ge",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1510,
+    "owner": "ge",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1511,
+    "owner": "ge",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1512,
+    "owner": "ge",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1513,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1514,
+    "owner": "shang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1533,
+    "owner": "ge",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 1534,
+    "owner": "ge",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2484,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2485,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2486,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2487,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2488,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2489,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2490,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2491,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2492,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2493,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2494,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2495,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2496,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2499,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2513,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2514,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2515,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2516,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2517,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2518,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2519,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2523,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2524,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2525,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2527,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2529,
+    "owner": "rui",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2530,
+    "owner": "rui",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2531,
+    "owner": "rui",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2535,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2537,
+    "owner": "rui",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2567,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2568,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2569,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2570,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2571,
+    "owner": "guifang",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2577,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2585,
+    "owner": "rui",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2590,
+    "owner": "zhou",
+    "vassal_of": null
+   },
+   {
+    "county_idx": 2840,
+    "owner": "shang",
+    "vassal_of": null
+   }
+  ]
+ },
+ "events": [
+  {
+   "id": "shang-0001",
+   "seq": 1,
+   "year": -1600,
+   "yearLabel": "约前1600年",
+   "title": "汤始居亳",
+   "type": "proclaim",
+   "category": "国内",
+   "summary": "汤居于亳，修德备兵，网开三面，诸侯渐归。商之兴，自此始。",
+   "quote": {
+    "text": "汤始居亳，从先王居。",
+    "source": "《史记·殷本纪》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": null,
+    "supporters": []
+   },
+   "routes": [],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "proclaim",
+     "faction": "shang",
+     "ruler": "汤",
+     "title": "商侯"
+    }
+   ],
+   "changes": [],
+   "fallen": [],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "bo",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0002",
+   "seq": 2,
+   "year": -1600,
+   "yearLabel": "约前1600年",
+   "title": "葛伯不祀，汤始征",
+   "type": "conquer",
+   "category": "国际",
+   "summary": "葛伯放纵、不祭先祖，汤起兵伐之。商汤十一征，自葛始。",
+   "quote": {
+    "text": "汤始征，自葛载，十一征而无敌于天下。",
+    "source": "《孟子·滕文公下》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": "ge",
+    "supporters": []
+   },
+   "routes": [
+    {
+     "faction": "shang",
+     "from": "bo",
+     "toCity": "gec",
+     "toPoint": null,
+     "waypoints": []
+    }
+   ],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "conquer",
+     "faction": "ge",
+     "by": "shang"
+    }
+   ],
+   "changes": [
+    {
+     "county_idx": 1407,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1410,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1509,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1510,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1511,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1512,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1533,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1534,
+     "owner": "shang",
+     "vassal_of": null
+    }
+   ],
+   "fallen": [
+    "ge"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "bo",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0003",
+   "seq": 3,
+   "year": -1596,
+   "yearLabel": "约前1596年",
+   "title": "汤征韦、顾",
+   "type": "conquer",
+   "category": "国际",
+   "summary": "汤次第翦除夏之羽翼，豕韦、顾国皆灭，夏桀之势日孤。",
+   "quote": {
+    "text": "韦顾既伐，昆吾夏桀。",
+    "source": "《诗经·商颂·长发》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": "wei",
+    "supporters": [
+     "gu"
+    ]
+   },
+   "routes": [
+    {
+     "faction": "shang",
+     "from": "bo",
+     "toCity": "weic",
+     "toPoint": null,
+     "waypoints": []
+    },
+    {
+     "faction": "shang",
+     "from": "bo",
+     "toCity": "guc",
+     "toPoint": null,
+     "waypoints": []
+    }
+   ],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "conquer",
+     "faction": "wei",
+     "by": "shang"
+    },
+    {
+     "type": "conquer",
+     "faction": "gu",
+     "by": "shang"
+    }
+   ],
+   "changes": [
+    {
+     "county_idx": 163,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 169,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1326,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1366,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1368,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1369,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1371,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1381,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1386,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1387,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1388,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1441,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1447,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1457,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1460,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1473,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1474,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1475,
+     "owner": "shang",
+     "vassal_of": null
+    }
+   ],
+   "fallen": [
+    "ge",
+    "gu",
+    "wei"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "bo",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0004",
+   "seq": 4,
+   "year": -1592,
+   "yearLabel": "约前1592年",
+   "title": "鸣条之战",
+   "type": "battle",
+   "category": "国际",
+   "summary": "汤先灭昆吾，遂率诸侯联军与夏桀决战于鸣条。桀败走，夏师败绩，夏亡。",
+   "quote": {
+    "text": "桀败于有娀之虚，桀奔于鸣条，夏师败绩。",
+    "source": "《史记·殷本纪》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": "xia",
+    "supporters": []
+   },
+   "routes": [
+    {
+     "faction": "shang",
+     "from": "bo",
+     "toCity": null,
+     "toPoint": [
+      111.05,
+      35.05
+     ],
+     "waypoints": []
+    },
+    {
+     "faction": "xia",
+     "from": "zhenxun",
+     "toCity": null,
+     "toPoint": [
+      111.05,
+      35.05
+     ],
+     "waypoints": []
+    }
+   ],
+   "battle": {
+    "name": "鸣条",
+    "location": [
+     111.05,
+     35.05
+    ],
+    "note": "今山西运城夏县西"
+   },
+   "camera": {
+    "zoom": 7.4,
+    "pitch": 58
+   },
+   "outcomes": [
+    {
+     "type": "conquer",
+     "faction": "kunwu",
+     "by": "shang"
+    },
+    {
+     "type": "conquer",
+     "faction": "xia",
+     "by": "shang"
+    }
+   ],
+   "changes": [
+    {
+     "county_idx": 168,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 170,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 320,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 339,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 341,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 342,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 343,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 344,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 345,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 346,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 347,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 351,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 367,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 369,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 381,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1389,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1394,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1397,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1401,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1420,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1424,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1432,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1434,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1442,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1461,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1462,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1464,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1466,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1468,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1469,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1470,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1471,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1472,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1476,
+     "owner": "shang",
+     "vassal_of": null
+    }
+   ],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "bo",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0005",
+   "seq": 5,
+   "year": -1590,
+   "yearLabel": "约前1590年",
+   "title": "汤践天子位，定都于亳",
+   "type": "proclaim",
+   "category": "国内",
+   "summary": "诸侯毕服，汤乃践天子位，平定海内，国号商，还都于亳。",
+   "quote": {
+    "text": "汤乃践天子位，平定海内。",
+    "source": "《史记·殷本纪》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": null,
+    "supporters": []
+   },
+   "routes": [],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "proclaim",
+     "faction": "shang",
+     "ruler": "汤",
+     "title": "天子"
+    }
+   ],
+   "changes": [],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "bo",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0006",
+   "seq": 6,
+   "year": -1500,
+   "yearLabel": "约前1500年",
+   "title": "仲丁自亳迁嚣",
+   "type": "move_capital",
+   "category": "国内",
+   "summary": "仲丁即位，因河患与经略东方，自亳迁都于嚣（今郑州商城）。",
+   "quote": {
+    "text": "帝仲丁迁于隞。",
+    "source": "《史记·殷本纪》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": null,
+    "supporters": []
+   },
+   "routes": [],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "move_capital",
+     "faction": "shang",
+     "from": "bo",
+     "to": "xiao"
+    }
+   ],
+   "changes": [],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [
+    {
+     "faction": "shang",
+     "from": "bo",
+     "to": "xiao"
+    }
+   ],
+   "capitals": {
+    "shang": "xiao",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0007",
+   "seq": 7,
+   "year": -1300,
+   "yearLabel": "约前1300年",
+   "title": "盘庚迁殷",
+   "type": "move_capital",
+   "category": "国内",
+   "summary": "盘庚力排众议，渡河而北，定都于殷。自此商道复兴，史称殷商。",
+   "quote": {
+    "text": "盘庚迁于殷，民不适有居。",
+    "source": "《尚书·盘庚》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": null,
+    "supporters": []
+   },
+   "routes": [],
+   "battle": null,
+   "camera": {
+    "zoom": 7.2,
+    "pitch": 55
+   },
+   "outcomes": [
+    {
+     "type": "move_capital",
+     "faction": "shang",
+     "from": "xiao",
+     "to": "yin"
+    }
+   ],
+   "changes": [],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [
+    {
+     "faction": "shang",
+     "from": "xiao",
+     "to": "yin"
+    }
+   ],
+   "capitals": {
+    "shang": "yin",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0008",
+   "seq": 8,
+   "year": -1250,
+   "yearLabel": "约前1250年",
+   "title": "武丁继位",
+   "type": "succeed",
+   "category": "国内",
+   "summary": "武丁立，思复兴殷，三年不言，以观国风；后得傅说于版筑之间，殷道大治。",
+   "quote": {
+    "text": "帝武丁即位，思复兴殷，而未得其佐。",
+    "source": "《史记·殷本纪》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": null,
+    "supporters": []
+   },
+   "routes": [],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "ruler_change",
+     "faction": "shang",
+     "ruler": "武丁",
+     "title": "王"
+    }
+   ],
+   "changes": [],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "yin",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0009",
+   "seq": 9,
+   "year": -1240,
+   "yearLabel": "约前1240年",
+   "title": "武丁伐鬼方",
+   "type": "march",
+   "category": "国际",
+   "summary": "武丁举兵伐鬼方，三年乃克，殷之兵锋北及晋陕高原，四夷咸服。",
+   "quote": {
+    "text": "高宗伐鬼方，三年克之。",
+    "source": "《周易·既济》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": "guifang",
+    "supporters": []
+   },
+   "routes": [
+    {
+     "faction": "shang",
+     "from": "yin",
+     "toCity": "guifangzhai",
+     "toPoint": null,
+     "waypoints": []
+    }
+   ],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "occupy",
+     "city": "guifangzhai",
+     "to": "shang"
+    }
+   ],
+   "changes": [
+    {
+     "county_idx": 383,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 387,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 388,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 389,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 391,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 392,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2567,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2568,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2569,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2570,
+     "owner": "shang",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2571,
+     "owner": "shang",
+     "vassal_of": null
+    }
+   ],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "yin",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0010",
+   "seq": 10,
+   "year": -1100,
+   "yearLabel": "约前1100年",
+   "title": "帝乙归妹于周",
+   "type": "ally",
+   "category": "国际",
+   "summary": "帝乙以妹嫁西伯昌，商周联姻。周为商之西伯，屏藩西土。",
+   "quote": {
+    "text": "帝乙归妹，以祉元吉。",
+    "source": "《周易·泰》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": "zhou",
+    "supporters": []
+   },
+   "routes": [],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "ally",
+     "leader": "shang",
+     "members": [
+      "zhou"
+     ]
+    }
+   ],
+   "changes": [
+    {
+     "county_idx": 2484,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2485,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2486,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2487,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2488,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2489,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2490,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2491,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2492,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2493,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2494,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2495,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2496,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2499,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2513,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2514,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2515,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2516,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2517,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2518,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2519,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2523,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2524,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2525,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2527,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2535,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2577,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    },
+    {
+     "county_idx": 2590,
+     "owner": "zhou",
+     "vassal_of": "shang"
+    }
+   ],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [
+    {
+     "faction": "zhou",
+     "suzerain": "shang"
+    }
+   ],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "yin",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0011",
+   "seq": 11,
+   "year": -1060,
+   "yearLabel": "约前1060年",
+   "title": "囚西伯于羑里",
+   "type": "other",
+   "category": "国内",
+   "summary": "崇侯虎谮西伯于纣，纣囚西伯昌于羑里。商周之盟，自此而裂。",
+   "quote": {
+    "text": "帝纣乃囚西伯于羑里。",
+    "source": "《史记·周本纪》"
+   },
+   "actors": {
+    "primary": "shang",
+    "target": "zhou",
+    "supporters": []
+   },
+   "routes": [],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "ally_break",
+     "leader": "shang",
+     "members": [
+      "zhou"
+     ]
+    }
+   ],
+   "changes": [
+    {
+     "county_idx": 2484,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2485,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2486,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2487,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2488,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2489,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2490,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2491,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2492,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2493,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2494,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2495,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2496,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2499,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2513,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2514,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2515,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2516,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2517,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2518,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2519,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2523,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2524,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2525,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2527,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2535,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2577,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2590,
+     "owner": "zhou",
+     "vassal_of": null
+    }
+   ],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [
+    "zhou"
+   ],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "yin",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0012",
+   "seq": 12,
+   "year": -1055,
+   "yearLabel": "约前1055年",
+   "title": "西伯戡黎",
+   "type": "occupy",
+   "category": "国际",
+   "summary": "西伯既释，东向戡定黎国，兵锋直逼王畿。祖伊恐，奔告于纣，纣不悟。",
+   "quote": {
+    "text": "西伯既戡黎，祖伊恐，奔告于王。",
+    "source": "《尚书·西伯戡黎》"
+   },
+   "actors": {
+    "primary": "zhou",
+    "target": "shang",
+    "supporters": []
+   },
+   "routes": [
+    {
+     "faction": "zhou",
+     "from": "feng",
+     "toCity": "li",
+     "toPoint": null,
+     "waypoints": []
+    }
+   ],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "occupy",
+     "city": "li",
+     "to": "zhou"
+    }
+   ],
+   "changes": [
+    {
+     "county_idx": 164,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 304,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 305,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 306,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 307,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 308,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 309,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 310,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 311,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 312,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 313,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 314,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 316,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 319,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 321,
+     "owner": "zhou",
+     "vassal_of": null
+    }
+   ],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "yin",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0013",
+   "seq": 13,
+   "year": -1052,
+   "yearLabel": "约前1052年",
+   "title": "虞芮质成，归于周",
+   "type": "submit",
+   "category": "国际",
+   "summary": "虞、芮之君争田，入周见耕者让畔、行者让路，惭而让还。诸侯闻之，多归于周。",
+   "quote": {
+    "text": "虞芮之人有狱不能决，乃如周。",
+    "source": "《史记·周本纪》"
+   },
+   "actors": {
+    "primary": "yu",
+    "target": "zhou",
+    "supporters": [
+     "rui"
+    ]
+   },
+   "routes": [],
+   "battle": null,
+   "camera": null,
+   "outcomes": [
+    {
+     "type": "submit",
+     "faction": "yu",
+     "to": "zhou"
+    },
+    {
+     "type": "submit",
+     "faction": "rui",
+     "to": "zhou"
+    }
+   ],
+   "changes": [
+    {
+     "county_idx": 340,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 348,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 349,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 350,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1422,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1488,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1489,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1490,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1491,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1493,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2529,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2530,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2531,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2537,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2585,
+     "owner": "zhou",
+     "vassal_of": null
+    }
+   ],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "yin",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  },
+  {
+   "id": "shang-0014",
+   "seq": 14,
+   "year": -1046,
+   "yearLabel": "约前1046年",
+   "title": "牧野之战",
+   "type": "battle",
+   "category": "国际",
+   "summary": "武王率诸侯联军渡孟津，陈师牧野。商军前徒倒戈，纣登鹿台自焚，商亡，周兴。",
+   "quote": {
+    "text": "纣师皆倒兵以战，以开武王。",
+    "source": "《史记·周本纪》"
+   },
+   "actors": {
+    "primary": "zhou",
+    "target": "shang",
+    "supporters": [
+     "yu",
+     "rui"
+    ]
+   },
+   "routes": [
+    {
+     "faction": "zhou",
+     "from": "mengjin",
+     "toCity": null,
+     "toPoint": [
+      113.9,
+      35.4
+     ],
+     "waypoints": []
+    },
+    {
+     "faction": "shang",
+     "from": "zhaoge",
+     "toCity": null,
+     "toPoint": [
+      113.9,
+      35.4
+     ],
+     "waypoints": []
+    }
+   ],
+   "battle": {
+    "name": "牧野",
+    "location": [
+     113.9,
+     35.4
+    ],
+    "note": "今河南新乡北"
+   },
+   "camera": {
+    "zoom": 7.6,
+    "pitch": 58
+   },
+   "outcomes": [
+    {
+     "type": "rebel",
+     "faction": "shang",
+     "to": "zhou",
+     "cities": [
+      "muye"
+     ]
+    },
+    {
+     "type": "conquer",
+     "faction": "shang",
+     "by": "zhou"
+    }
+   ],
+   "changes": [
+    {
+     "county_idx": 155,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 156,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 157,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 158,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 159,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 160,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 161,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 162,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 163,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 165,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 168,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 169,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 170,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 172,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 318,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 320,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 339,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 341,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 342,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 343,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 344,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 345,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 346,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 347,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 351,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 367,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 369,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 381,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 383,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 387,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 388,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 389,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 391,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 392,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1044,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1055,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1326,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1366,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1368,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1369,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1371,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1381,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1382,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1383,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1384,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1385,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1386,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1387,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1388,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1389,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1390,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1391,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1392,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1393,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1394,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1395,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1396,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1397,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1398,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1399,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1400,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1401,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1402,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1403,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1404,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1405,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1407,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1409,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1410,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1411,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1412,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1413,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1414,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1415,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1416,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1417,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1420,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1421,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1423,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1424,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1432,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1434,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1435,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1436,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1437,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1438,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1439,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1440,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1441,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1442,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1443,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1444,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1445,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1446,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1447,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1448,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1449,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1450,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1451,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1452,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1453,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1454,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1455,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1456,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1457,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1458,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1459,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1460,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1461,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1462,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1463,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1464,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1465,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1466,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1467,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1468,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1469,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1470,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1471,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1472,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1473,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1474,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1475,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1476,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1477,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1478,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1481,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1482,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1492,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1507,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1508,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1509,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1510,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1511,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1512,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1513,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1514,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1533,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 1534,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2567,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2568,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2569,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2570,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2571,
+     "owner": "zhou",
+     "vassal_of": null
+    },
+    {
+     "county_idx": 2840,
+     "owner": "zhou",
+     "vassal_of": null
+    }
+   ],
+   "fallen": [
+    "ge",
+    "gu",
+    "kunwu",
+    "shang",
+    "wei",
+    "xia"
+   ],
+   "vassals_set": [],
+   "vassals_clear": [],
+   "capital_moves": [],
+   "capitals": {
+    "shang": "yin",
+    "xia": "zhenxun",
+    "ge": null,
+    "wei": null,
+    "gu": null,
+    "kunwu": null,
+    "guifang": null,
+    "yu": null,
+    "rui": null,
+    "zhou": "feng"
+   }
+  }
+ ]
+}

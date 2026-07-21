@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>山河裂变 · 3D历史疆域战争地图</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/400.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css" />
+<style>
+:root {
+  --gold: #c9a45c; --zhu: #a63a2b; --qing: #8fb8b2;
+  --ink: #0b0d10; --paper: #f2ead8;
+  --serif: "Noto Serif SC", "Songti SC", "SimSun", serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--ink); }
+body { font-family: var(--serif); color: rgba(255,255,255,0.92); }
+canvas { display: block; }
+#scene-canvas { position: fixed; inset: 0; touch-action: none; }
+
+#vignette { position: fixed; inset: 0; pointer-events: none; z-index: 5;
+  background: radial-gradient(ellipse 120% 90% at 50% 42%, transparent 55%, rgba(0,0,0,0.42) 100%),
+              linear-gradient(to bottom, transparent 78%, rgba(0,0,0,0.35) 100%); }
+
+#ui { position: fixed; inset: 0; z-index: 10; pointer-events: none; opacity: 0; transition: opacity 0.9s ease; }
+#ui.revealed { opacity: 1; }
+#ui.hidden-mode { opacity: 0 !important; transition: opacity 0.25s ease; }
+
+#panel-shell { position: absolute; top: 24px; left: 24px; padding: 6px; border-radius: 26px; pointer-events: auto;
+  background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.09);
+  transform: translateY(14px); opacity: 0;
+  transition: transform 1s cubic-bezier(0.22,1,0.36,1), opacity 1s ease;
+  max-height: calc(100vh - 48px); overflow-y: auto; scrollbar-width: none; }
+#panel-shell::-webkit-scrollbar { display: none; }
+#ui.revealed #panel-shell { transform: translateY(0); opacity: 1; }
+#panel { width: 320px; padding: 22px; border-radius: 20px;
+  background: rgba(10,12,16,0.58);
+  -webkit-backdrop-filter: blur(24px) saturate(140%); backdrop-filter: blur(24px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
+.eyebrow { font-size: 10px; letter-spacing: 0.32em; color: rgba(255,255,255,0.42); }
+h1 { font-size: 22px; font-weight: 700; color: var(--paper); margin: 6px 0 4px; letter-spacing: 0.12em; }
+.subtitle { font-size: 10px; color: rgba(255,255,255,0.38); letter-spacing: 0.14em; margin-bottom: 16px; }
+
+#year-display { font-size: 26px; font-weight: 700; color: var(--gold); letter-spacing: 0.06em; line-height: 1.2; }
+#event-counter { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.2em; margin: 2px 0 8px; }
+
+.slider-row { margin: 14px 0 2px; }
+.slider-label { display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 0.22em; color: rgba(255,255,255,0.55); margin-bottom: 7px; }
+.slider-value { color: var(--gold); letter-spacing: 0.1em; }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 3px;
+  background: rgba(255,255,255,0.18); border-radius: 2px; outline: none; cursor: pointer; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 8px rgba(201,164,92,0.8), 0 0 2px rgba(201,164,92,1); transition: transform 0.15s ease; }
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
+input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; border: none;
+  background: var(--gold); box-shadow: 0 0 8px rgba(201,164,92,0.8); transition: transform 0.15s ease; }
+input[type="range"]::-moz-range-thumb:hover { transform: scale(1.25); }
+input[type="range"]::-moz-range-track { height: 3px; background: rgba(255,255,255,0.18); border-radius: 2px; }
+
+#transport { display: flex; align-items: center; gap: 6px; margin: 14px 0 4px; flex-wrap: wrap; }
+.tbtn { font-family: var(--serif); font-size: 11px; padding: 6px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.65);
+  border: 1px solid rgba(255,255,255,0.12); cursor: pointer; letter-spacing: 0.08em;
+  transition: all 0.15s ease; user-select: none; }
+.tbtn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.tbtn:active { transform: scale(0.95); }
+.tbtn.active { background: rgba(201,164,92,0.22); border-color: rgba(201,164,92,0.55); color: #e8d5a8; }
+#btn-play { min-width: 44px; text-align: center; }
+.speed-pill { font-size: 10px; padding: 5px 8px; }
+
+#legend { margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; }
+.legend-title { font-size: 10px; letter-spacing: 0.28em; color: rgba(255,255,255,0.42); margin-bottom: 8px; }
+.legend-item { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 8px;
+  cursor: pointer; transition: background 0.15s ease; font-size: 12px; }
+.legend-item:hover { background: rgba(255,255,255,0.06); }
+.legend-item.solo { background: rgba(201,164,92,0.14); }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; box-shadow: 0 0 6px rgba(0,0,0,0.5); }
+.legend-name { flex: 1; color: rgba(255,255,255,0.85); letter-spacing: 0.1em; }
+.legend-count { font-size: 10px; color: rgba(255,255,255,0.35); }
+.legend-item.fallen .legend-name { color: rgba(255,255,255,0.28); text-decoration: line-through; }
+.legend-item.fallen .legend-dot { opacity: 0.25; }
+.legend-fallen-tag { font-size: 9px; color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.15); padding: 1px 4px; border-radius: 4px; }
+
+#bottom-row { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+#fps { font-size: 10px; letter-spacing: 0.2em; color: rgba(255,255,255,0.4); }
+
+#event-card { position: absolute; left: 24px; bottom: 24px; max-width: 380px; pointer-events: auto;
+  padding: 18px 20px; border-radius: 18px; background: rgba(10,12,16,0.62);
+  -webkit-backdrop-filter: blur(20px) saturate(130%); backdrop-filter: blur(20px) saturate(130%);
+  border: 1px solid rgba(255,255,255,0.09); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+  opacity: 0; transform: translateY(12px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1); }
+#event-card.show { opacity: 1; transform: translateY(0); }
+#ec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+#ec-badge { font-size: 10px; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.18em; color: #0b0d10; font-weight: 700; }
+#ec-year { font-size: 11px; color: var(--gold); letter-spacing: 0.12em; }
+#ec-title { font-size: 17px; font-weight: 700; color: var(--paper); letter-spacing: 0.08em; margin-bottom: 7px; }
+#ec-summary { font-size: 12.5px; line-height: 1.75; color: rgba(255,255,255,0.78); margin-bottom: 9px; }
+#ec-quote { font-size: 11.5px; line-height: 1.7; color: rgba(232,213,168,0.75); border-left: 2px solid rgba(201,164,92,0.5); padding-left: 10px; }
+#ec-source { display: block; font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 4px; letter-spacing: 0.1em; }
+
+#hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; letter-spacing: 0.34em; color: rgba(255,255,255,0.28); pointer-events: none; white-space: nowrap; }
+
+.city-label { font-family: var(--serif); color: #e8e2d4;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.7);
+  pointer-events: none; letter-spacing: 0.08em; white-space: nowrap; }
+.city-label.t1 { font-size: 14px; font-weight: 700; }
+.city-label.t2 { font-size: 12px; }
+.city-label.t3 { font-size: 10px; opacity: 0.7; }
+
+#loader { position: fixed; inset: 0; z-index: 100; background: var(--ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  transition: opacity 0.9s ease; }
+#loader.fade { opacity: 0; pointer-events: none; }
+#loader .l-eyebrow { font-size: 11px; letter-spacing: 0.4em; color: rgba(255,255,255,0.35); }
+#loader .l-title { font-size: 42px; font-weight: 700; letter-spacing: 0.42em; color: var(--paper); text-indent: 0.42em; }
+#loader .l-track { width: 168px; height: 2px; background: rgba(255,255,255,0.1); border-radius: 1px; overflow: hidden; position: relative; }
+#loader .l-bar { position: absolute; top: 0; left: -40%; width: 40%; height: 100%; background: var(--gold);
+  border-radius: 1px; animation: lslide 1.2s ease-in-out infinite; box-shadow: 0 0 8px rgba(201,164,92,0.8); }
+@keyframes lslide { 0% { left: -40%; } 100% { left: 100%; } }
+#loader .l-status { font-size: 10px; letter-spacing: 0.3em; color: rgba(255,255,255,0.4); }
+#loader.error .l-title { color: #e08a7a; letter-spacing: 0.2em; font-size: 30px; }
+#loader.error .l-track, #loader.error .l-bar { display: none; }
+#loader .l-detail { font-size: 11px; color: rgba(255,255,255,0.5); max-width: 420px; text-align: center; line-height: 1.8; display: none; }
+#loader.error .l-detail { display: block; }
+
+@media (max-width: 768px) {
+  #panel-shell { top: 14px; left: 14px; right: 14px; }
+  #panel { width: 100%; padding: 16px; }
+  #legend { max-height: 120px; overflow-y: auto; }
+  #event-card { left: 14px; right: 14px; bottom: 14px; max-width: none; }
+  #hint { display: none; }
+  #loader .l-title { font-size: 30px; }
+}
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="vignette"></div>
+
+<div id="ui">
+  <div id="panel-shell">
+    <div id="panel">
+      <div class="eyebrow">先秦 · 战争与疆域实录</div>
+      <h1>山河裂变</h1>
+      <div class="subtitle">县邑为骨 · 山河为形 · 事件为脉</div>
+
+      <div id="year-display">—</div>
+      <div id="event-counter">— / —</div>
+      <input type="range" id="timeline" min="0" max="14" value="0" step="1" aria-label="时间轴" />
+
+      <div id="transport">
+        <button class="tbtn" id="btn-prev" aria-label="上一事件">◀</button>
+        <button class="tbtn active" id="btn-play" aria-label="播放/暂停">⏸</button>
+        <button class="tbtn" id="btn-next" aria-label="下一事件">▶</button>
+        <button class="tbtn active" id="btn-auto" aria-label="自动连播">连播</button>
+        <button class="tbtn speed-pill active" data-speed="1">1×</button>
+        <button class="tbtn speed-pill" data-speed="2">2×</button>
+        <button class="tbtn speed-pill" data-speed="4">4×</button>
+      </div>
+
+      <div id="legend">
+        <div class="legend-title">势力图鉴</div>
+        <div id="legend-items"></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-label"><span>地形夸张</span><span class="slider-value" id="exagg-val">1.8×</span></div>
+        <input type="range" id="exagg" min="0" max="100" value="45" aria-label="地形夸张系数" />
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>时辰</span><span class="slider-value" id="tod-val">午后</span></div>
+        <input type="range" id="tod" min="0" max="100" value="62" aria-label="时辰" />
+      </div>
+
+      <div id="bottom-row">
+        <button class="tbtn active" id="btn-drift">DRIFT</button>
+        <span id="fps">— FPS</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="event-card">
+    <div id="ec-head"><span id="ec-badge">事件</span><span id="ec-year"></span></div>
+    <div id="ec-title"></div>
+    <div id="ec-summary"></div>
+    <div id="ec-quote"><span id="ec-quote-text"></span><span id="ec-source"></span></div>
+  </div>
+
+  <div id="hint">左键平移 — 右键旋转 — 滚轮缩放 — H 隐藏界面</div>
+</div>
+
+<div id="loader">
+  <div class="l-eyebrow">Three.js · WebGL2 · GeoJSON</div>
+  <div class="l-title">山河裂变</div>
+  <div class="l-track"><div class="l-bar"></div></div>
+  <div class="l-status" id="l-status">加载地形…</div>
+  <div class="l-detail" id="l-detail"></div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
