@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>音色库与读音词典</title>
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:960px;margin:0 auto;padding:24px;background:#f6f5f1;color:#2b2b2b}
+nav a{margin-right:14px;color:#7a6a4f;text-decoration:none}
+.card{background:#fff;border:1px solid #e3ddcf;border-radius:10px;padding:16px;margin:12px 0}
+input,select{padding:8px;margin:4px;border:1px solid #d6cfbd;border-radius:6px;font-size:14px}
+button{padding:7px 16px;border:none;border-radius:6px;background:#7a6a4f;color:#fff;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px;border-bottom:1px solid #eee;text-align:left}
+.active{color:#2f7d4f;font-weight:bold}
+</style>
+</head>
+<body>
+<nav><a href="/index.html">← 项目列表</a><a href="/settings.html">模型设置</a></nav>
+<h2>音色库（refs/）</h2>
+<div class="card">
+<input type="file" id="file" accept="audio/*">
+<input id="vname" placeholder="名称，如 narrator / 燃">
+<select id="vkind"><option value="narrator">基准音色</option><option value="emotion">情感参考</option></select>
+<input id="vemo" placeholder="情感标签（emotion 时填，如 唏嘘）">
+<button onclick="upload()">上传</button>
+<div class="meta" style="font-size:13px;color:#888;margin-top:8px">
+建议：克隆你自己的声音（零版权风险、音色即IP）。基准音色 1 条 + 情感参考 4-6 条（平静/燃/唏嘘/讽刺/惊讶/温情）。</div>
+</div>
+<div id="refs"></div>
+
+<h2>全局读音词典</h2>
+<div class="card"><input id="dword" placeholder="专名，如 妺喜"><input id="dpinyin" placeholder="拼音，如 mò xǐ">
+<button onclick="addDict()">添加/更新</button></div>
+<table id="dictTable"></table>
+
+<script>
+function mediaUrl(p){const i=p.indexOf('/data/');return i>=0?'/media/'+p.slice(i+6):p;}
+async function load(){
+  const rs=await (await fetch('/api/voice-refs')).json();
+  refs.innerHTML=rs.map(r=>`<div class="card ${r.is_active?'active':''}"><b>${r.name}</b>
+    <span class="meta">${r.kind}${r.emotion_tag?'·'+r.emotion_tag:''} ${r.is_active?'· 启用中':''}</span><br>
+    <audio controls src="${mediaUrl(r.file_path)}" style="height:32px;margin:6px 0"></audio><br>
+    <button onclick="act(${r.id})">设为启用</button></div>`).join('');
+  const ds=await (await fetch('/api/pronunciation-dict')).json();
+  dictTable.innerHTML='<tr><th>专名</th><th>拼音</th><th>来源</th></tr>'+
+    ds.map(d=>`<tr><td>${d.word}</td><td>${d.pinyin}</td><td class="meta">${d.source_run_id||'手动'}</td></tr>`).join('');
+}
+async function upload(){
+  const fd=new FormData(); fd.append('file',file.files[0]);
+  await fetch(`/api/voice-refs?name=${encodeURIComponent(vname.value)}&kind=${vkind.value}&emotion_tag=${encodeURIComponent(vemo.value)}`,{method:'POST',body:fd});
+  load();
+}
+async function act(id){await fetch(`/api/voice-refs/${id}/activate`,{method:'POST'});load();}
+async function addDict(){
+  await fetch('/api/pronunciation-dict',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({word:dword.value,pinyin:dpinyin.value})});load();
+}
+load();
+</script>
+</body></html>
