@@ -11,7 +11,7 @@ from sqlmodel import select
 
 from ..db import session
 from ..graph.pipeline import PIPELINE_SEQUENCE
-from ..models import Artifact, Review, Run
+from ..models import Artifact, NodeRun, Review, Run
 from ..services import artifacts as art_svc
 from ..services import runner
 
@@ -134,3 +134,29 @@ def regen_units(run_id: str, d: Decision):
         raise HTTPException(400, "须指定重生单元 unit_ids")
     runner.resume_run(run_id, {"action": "regen_units", "unit_ids": d.unit_ids})
     return {"ok": True}
+
+
+@router.post("/{run_id}/retry")
+def retry(run_id: str):
+    """出错后原地重试失败节点（invoke(None) 从 checkpoint 续跑，不从头再来）。"""
+    try:
+        runner.retry_run(run_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@router.get("/{run_id}/node-runs")
+def node_runs(run_id: str):
+    """节点运行记录（查看用）：每次节点执行的状态/耗时/错误。"""
+    with session() as s:
+        rows = s.exec(select(NodeRun).where(NodeRun.run_id == run_id)
+                      .order_by(NodeRun.started_at)).all()
+        return [{
+            "node_id": r.node_id, "status": r.status,
+            "started_at": r.started_at.isoformat() if r.started_at else None,
+            "finished_at": r.finished_at.isoformat() if r.finished_at else None,
+            "duration_s": round((r.finished_at - r.started_at).total_seconds(), 1)
+                          if r.finished_at and r.started_at else None,
+            "error": r.error,
+        } for r in rows]

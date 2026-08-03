@@ -43,6 +43,8 @@ async function load(){
         ${p.current_node? ' · 当前节点：'+p.current_node : ''}</div>
       ${p.run_id? `<a class="go" href="/run.html?run_id=${p.run_id}">进入工作台 →</a>`
                 : `<button onclick="startRun('${p.id}')">启动流水线</button>`}
+      <button style="background:#b3402f;margin-left:8px" onclick="delProject('${p.id}','${p.title}')">删除</button>
+      ${p.run_status==='error' && p.error ? `<div style="color:#b3402f;font-size:12px;margin-top:6px">⚠ ${p.error}</div>`:''}
     </div>`).join('');
 }
 async function createProject(){
@@ -55,6 +57,11 @@ async function createProject(){
   const r2=await fetch(`/api/projects/${d.id}/runs`,{method:'POST'});
   const d2=await r2.json();
   location.href='/run.html?run_id='+d2.run_id;
+}
+async function delProject(pid,title){
+  if(!confirm(`确定删除「${title}」？运行记录、产物文件、checkpoint 将一并清除。`)) return;
+  const r=await fetch(`/api/projects/${pid}`,{method:'DELETE'});
+  if(r.ok) load(); else alert('删除失败');
 }
 async function startRun(pid){
   const r=await fetch(`/api/projects/${pid}/runs`,{method:'POST'}); const d=await r.json();

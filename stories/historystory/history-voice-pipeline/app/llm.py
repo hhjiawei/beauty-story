@@ -98,16 +98,34 @@ def test_profile_connection(profile: ModelProfile) -> dict:
 
 
 def extract_json(text: str):
-    """从 LLM 输出提取 JSON（容错 markdown 代码块包裹）。"""
-    t = text.strip()
-    if t.startswith("```"):
-        t = t.split("\n", 1)[1] if "\n" in t else t
-        if t.rstrip().endswith("```"):
-            t = t.rstrip()[:-3]
-        t = t.strip()
-        if t.startswith("json"):
+    """从 LLM 输出提取 JSON。
+
+    加固点（对应线上事故「Expecting value: line 1 column 1」）：
+    - 剥离推理模型的 <think>...</think> 块；
+    - 剥离 markdown 代码块包裹；
+    - 容忍 JSON 前后的散文（raw_decode 只取第一个 JSON 值）；
+    - 空/纯文本返回抛出带原文摘要的清晰错误。
+    """
+    import re
+    if text is None or not str(text).strip():
+        raise ValueError("LLM 返回了空内容（可能是模型限流/超时/上下文超限），请重试或检查模型档案")
+    t = str(text).strip()
+    t = re.sub(r"<think>.*?</think>", "", t, flags=re.S).strip()   # 推理模型思考块
+    if t.startswith("```"):                                        # 代码块包裹
+        lines = t.split("\n")
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        t = "\n".join(lines).strip()
+        if t.lower().startswith("json"):
             t = t[4:].strip()
-    start = min([i for i in (t.find("["), t.find("{")) if i != -1], default=-1)
-    if start > 0:
-        t = t[start:]
-    return json.loads(t)
+    decoder = json.JSONDecoder()
+    for i, ch in enumerate(t):                                     # 找第一个 JSON 起点
+        if ch in "{[":
+            try:
+                obj, _ = decoder.raw_decode(t[i:])
+                return obj
+            except json.JSONDecodeError:
+                continue
+    raise ValueError(f"LLM 输出中找不到合法 JSON，原文前 200 字：{t[:200]}")

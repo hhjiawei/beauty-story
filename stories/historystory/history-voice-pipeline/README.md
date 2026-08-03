@@ -57,7 +57,7 @@ python run.py                 # http://127.0.0.1:8600
 ## 五、测试
 
 ```bash
-python -m pytest tests/ -q     # 20 passed
+python -m pytest tests/ -q     # 28 passed
 ```
 
 | 测试 | 覆盖 |
@@ -67,6 +67,7 @@ python -m pytest tests/ -q     # 20 passed
 | test_audio.py | mock 合成、停顿/章间拼接、FFmpeg 后期（-16 LUFS）、字幕时间轴 |
 | test_pipeline_e2e.py | 全流程：打回重跑+版本递增、编辑放行、定点重生、G2 塌段回退、归档沉淀 |
 | test_api.py | HTTP 建任务→启动→闸门快照→放行/打回、第二集强制衔接段 |
+| test_retry_and_delete.py | JSON 加固、节点内部重试、error 后原地重试、项目级联删除、节点记录/日志端点 |
 
 ## 六、目录结构
 
@@ -97,7 +98,17 @@ tests/                   5 个测试文件，20 条用例
 - **L2 系列记忆**：归档时打回教训 → `lessons.md`；闸门放行时语气示例 → `voice_samples.md`；N6/N7 专名 → `pronunciation_dict` 表；后续任务开工自动读取，`memories_loaded` 可审计；
 - **L3 单集记忆**：声口样句、情绪坐标、伏笔登记表随 state/产物文件在各节点间共享。
 
-## 八、已知边界（本期范围外，按 §1.2）
+## 八、运维能力（v1.1 增补）
+
+| 能力 | 实现 |
+| ---- | ---- |
+| **项目删除** | `DELETE /api/projects/{id}`——连运行记录、产物版本、checkpoint、产物文件一起清；项目列表页每张卡片有删除按钮（带确认） |
+| **出错重试** | 节点失败后 run 进入 `error`；工作台错误面板点「重试失败节点」→ `POST /api/runs/{id}/retry` → LangGraph `invoke(None)` **从 checkpoint 原地重跑失败节点**，不从头再来。另：LLM 输出 JSON 解析失败时节点内部已自动重试 1 次（附「只输出 JSON」强约束） |
+| **节点查看** | `GET /api/runs/{id}/node-runs`——每次节点执行的状态/耗时/错误；工作台底部「节点运行记录」折叠区实时可查 |
+| **后台日志** | `data/logs/pipeline.log`（RotatingFileHandler 5MB×3）：驱动开始/节点开始完成/LLM 返回字数/失败 traceback 全记录；`GET /api/logs/tail?lines=200` 在线查看 |
+| **JSON 加固** | `extract_json` 剥离推理模型 `<think>` 块、容忍代码块包裹与前后散文、空返回报清晰错误——修掉线上「Expecting value: line 1 column 1」事故 |
+
+## 九、已知边界（本期范围外，按 §1.2）
 
 - 不做视频剪辑/地图动画（字幕时间轴 JSON 留给地图 pipeline 对轴）
 - 不做 BGM 生成与混音（后期链已预留 sidechain 参数位）

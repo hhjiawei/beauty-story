@@ -37,7 +37,10 @@ from ..tts import postprocess
 # ---------------------------------------------------------------- 工具
 
 def _node_log(run_id: str, node_id: str, fn):
-    """节点运行日志（耗时/状态/错误）。"""
+    """节点运行日志（耗时/状态/错误）：node_runs 表 + pipeline.log 文件双写。"""
+    from ..logging_setup import get_logger
+    log = get_logger()
+    log.info("节点开始 run=%s node=%s", run_id, node_id)
     with session() as s:
         nr = NodeRun(run_id=run_id, node_id=node_id, status="running")
         s.add(nr); s.commit(); s.refresh(nr)
@@ -45,6 +48,7 @@ def _node_log(run_id: str, node_id: str, fn):
     try:
         result = fn()
     except Exception as e:
+        log.error("节点失败 run=%s node=%s err=%s", run_id, node_id, e, exc_info=True)
         with session() as s:
             nr = s.get(NodeRun, nid)
             nr.status = "error"; nr.error = str(e)[:500]
@@ -53,11 +57,36 @@ def _node_log(run_id: str, node_id: str, fn):
     with session() as s:
         nr = s.get(NodeRun, nid)
         nr.status = "ok"; nr.finished_at = datetime.now(UTC); s.commit()
+    log.info("节点完成 run=%s node=%s", run_id, node_id)
     return result
 
 
 def _llm(node_id: str, system: str, user: str):
     return get_chat_model(node_id).chat(system, user)
+
+
+def _llm_json(node_id: str, system: str, user: str, retries: int = 1):
+    """调用 LLM 并解析 JSON；解析失败自动重试一次（附「只输出 JSON」强约束）。
+
+    仍失败则抛出带节点名与原文摘要的清晰错误——出错信息进 node_runs 表与
+    data/logs/pipeline.log，前端可「查看」并可「重试」。
+    """
+    from ..logging_setup import get_logger
+    log = get_logger()
+    last_err = None
+    cur_user = user
+    for attempt in range(retries + 1):
+        try:
+            raw = _llm(node_id, system, cur_user)
+            log.info("%s LLM 返回 %d 字（第 %d 次）", node_id, len(raw or ""), attempt + 1)
+            return extract_json(raw)
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+            log.warning("%s 第 %d 次解析失败: %s", node_id, attempt + 1, e)
+            cur_user = user + (
+                "\n\n## ⚠️ 格式重试\n你上一次的输出无法解析为 JSON。"
+                "这次请只输出一个合法 JSON（不要 markdown 代码块、不要任何解释文字）。")
+    raise RuntimeError(f"[{node_id}] LLM 输出解析失败（已重试 {retries} 次）: {last_err}")
 
 
 def _record_review(state, node_id: str, artifact_id, action: str, feedback=None):
@@ -103,7 +132,7 @@ def n1_event_card_mining(state):
     def work():
         prev = json.dumps(state.get("event_cards"), ensure_ascii=False) if fb else None
         system, user, loaded = prompts.build_n1_event_card_mining(state, feedback=fb, prev=prev)
-        cards = extract_json(_llm(node, system, user))
+        cards = _llm_json(node, system, user)
         a = artifacts.save_artifact(state["project_id"], state["run_id"], node,
                                     "event_cards", cards, origin="rework" if fb else "ai")
         return cards, loaded, a
@@ -138,7 +167,7 @@ def n2_style_robe_selection(state):
     def work():
         prev = json.dumps(state.get("style_candidates"), ensure_ascii=False) if fb else None
         system, user, loaded = prompts.build_n2_style_robe_selection(state, feedback=fb, prev=prev)
-        result = extract_json(_llm(node, system, user))
+        result = _llm_json(node, system, user)
         candidates = result.get("候选风格", [])
         a = artifacts.save_artifact(state["project_id"], state["run_id"], node,
                                     "style_candidates", result, origin="rework" if fb else "ai")
@@ -182,7 +211,7 @@ def n3_outline_blueprinting(state):
         prev = json.dumps({"主题卡": state.get("theme_card"), "大纲": state.get("outline")},
                           ensure_ascii=False) if fb else None
         system, user, loaded = prompts.build_n3_outline_blueprinting(state, feedback=fb, prev=prev)
-        result = extract_json(_llm(node, system, user))
+        result = _llm_json(node, system, user)
         outline = result.get("单集大纲文件", [])
         theme = result.get("主题卡", {})
         checklist = result.get("签发清单", [])
@@ -234,12 +263,12 @@ def n4_narration_construction(state):
         for ch in chapters:
             system, user, _ = prompts.build_n4_chapter_construction(
                 state, ch, prev_tail, feedback=fb if not drafts else None)
-            r = extract_json(_llm(node, system, user))
+            r = _llm_json(node, system, user)
             drafts.append(r.get("本章正文", ""))
             prev_tail = r.get("本章正文", "")[-300:]
             switches += r.get("技法切换声明", [])
         system, user, _ = prompts.build_n4_full_script_stitch(state, drafts)
-        final = extract_json(_llm(node, system, user))
+        final = _llm_json(node, system, user)
         script = final.get("成稿", "")
         self_check = final.get("自查清单", []) + [{"item": "技法切换声明", "verdict": "过",
                                                   "location": "; ".join(switches) or "无"}]
@@ -276,7 +305,7 @@ def n5_draft_three_gate_audit(state):
         script = state.get("script_md", "")
         scan_findings = run_all_scans(script, state.get("outline", []))
         system, user, loaded = prompts.build_n5_three_gate_audit(state, scan_findings)
-        report = extract_json(_llm(node, system, user))
+        report = _llm_json(node, system, user)
         report["确定性扫描"] = scan_findings
         hard = has_hard_violations(scan_findings)
         passed = bool(report.get("passed")) and not hard
@@ -324,7 +353,7 @@ def n6_storyboard_translation(state):
         prev = json.dumps(state.get("storyboard"), ensure_ascii=False) if fb else None
         system, user, loaded = prompts.build_n6_storyboard_translation(
             state, _pronunciation_dict(), feedback=fb, prev=prev)
-        result = extract_json(_llm(node, system, user))
+        result = _llm_json(node, system, user)
         pages = result.get("画本", [])
         artifacts.save_artifact(state["project_id"], state["run_id"], node,
                                 "storyboard", result, origin="rework" if fb else "ai")

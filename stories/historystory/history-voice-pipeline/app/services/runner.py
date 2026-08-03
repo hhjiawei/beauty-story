@@ -55,12 +55,19 @@ def _update_run(run_id: str, **fields):
 
 
 def _drive(run_id: str, payload):
-    """在线程里跑图直到 interrupt 或结束，然后落库状态。"""
+    """在线程里跑图直到 interrupt 或结束，然后落库状态。
+
+    payload=None 表示「原地重试」：invoke(None) 从最近 checkpoint 续跑失败节点。
+    """
+    from ..logging_setup import get_logger
+    log = get_logger()
     graph = get_graph()
     with session() as s:
         run = s.get(Run, run_id)
         cfg = _cfg(run)
     try:
+        log.info("run=%s 驱动开始 payload=%s", run_id,
+                 "resume-checkpoint" if payload is None else type(payload).__name__)
         result = graph.invoke(payload, cfg)
         state = graph.get_state(cfg)
         if "__interrupt__" in result and result["__interrupt__"]:
@@ -68,10 +75,12 @@ def _drive(run_id: str, payload):
             _update_run(run_id, status="waiting_review",
                         current_node=gate_info.get("gate", str(state.next)))
         elif not state.next:
+            log.info("run=%s 全流程完成", run_id)
             _update_run(run_id, status="done", current_node="finalize_episode_archive")
         else:
             _update_run(run_id, status="running", current_node=str(state.next))
     except Exception as e:  # noqa: BLE001
+        log.error("run=%s 运行中断: %s", run_id, e, exc_info=True)
         _update_run(run_id, status="error", error=str(e)[:800])
 
 
@@ -108,3 +117,18 @@ def wait(run_id: str, timeout: float | None = None):
     t = _run_threads.get(run_id)
     if t:
         t.join(timeout)
+
+
+def retry_run(run_id: str) -> None:
+    """出错后原地重试：LangGraph invoke(None) 从 checkpoint 重跑失败节点。
+
+    checkpoint 未因异常推进，state.next 停在失败节点——重跑它而不是从头再来。
+    """
+    with session() as s:
+        r = s.get(Run, run_id)
+        if not r or r.status != "error":
+            raise ValueError("只有 error 状态的运行才能重试")
+    _update_run(run_id, status="running", error=None)
+    t = threading.Thread(target=_drive, args=(run_id, None), daemon=True)
+    _run_threads[run_id] = t
+    t.start()

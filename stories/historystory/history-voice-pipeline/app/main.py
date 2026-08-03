@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from . import config
 from .api import projects, runs, settings_api, voices
 from .db import get_engine
+from .logging_setup import tail_logs
 
 config.ensure_dirs()
 get_engine()
@@ -20,6 +21,12 @@ app.include_router(projects.router)
 app.include_router(runs.router)
 app.include_router(settings_api.router)
 app.include_router(voices.router)
+
+@app.get("/api/logs/tail")
+def logs_tail(lines: int = 200):
+    """服务器日志尾部（后台日志查看）。"""
+    return {"lines": tail_logs(min(lines, 1000))}
+
 
 app.mount("/media", StaticFiles(directory=str(config.DATA_DIR)), name="media")
 app.mount("/", StaticFiles(directory=str(config.STATIC_DIR), html=True), name="static")

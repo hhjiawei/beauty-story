@@ -48,6 +48,7 @@ def list_projects():
             "run_id": cur[p.id].id if p.id in cur else None,
             "run_status": cur[p.id].status if p.id in cur else None,
             "current_node": cur[p.id].current_node if p.id in cur else None,
+            "error": cur[p.id].error if p.id in cur else None,
         } for p in projs]
 
 
@@ -71,3 +72,44 @@ def start_run(pid: str):
         rid = run.id
     runner.start_run(rid)
     return {"run_id": rid, "status": "running"}
+
+
+@router.delete("/projects/{pid}")
+def delete_project(pid: str):
+    """删除项目：连运行记录、产物版本、checkpoint、产物文件一起清。"""
+    import shutil
+    import sqlite3
+
+    from .. import config
+    from ..models import Artifact, NodeRun, Review
+
+    with session() as s:
+        proj = s.get(Project, pid)
+        if not proj:
+            raise HTTPException(404, "项目不存在")
+        runs = s.exec(select(Run).where(Run.project_id == pid)).all()
+        run_ids = [r.id for r in runs]
+        thread_ids = [r.thread_id for r in runs]
+        for rid in run_ids:
+            for model in (Artifact, NodeRun, Review):
+                for row in s.exec(select(model).where(model.run_id == rid)).all():
+                    s.delete(row)
+            s.delete(s.get(Run, rid))
+        s.delete(proj)
+        s.commit()
+    # checkpoint 清理（LangGraph SqliteSaver 表）
+    if config.CHECKPOINT_DB_PATH.exists():
+        conn = sqlite3.connect(str(config.CHECKPOINT_DB_PATH))
+        try:
+            for tid in thread_ids:
+                for table in ("checkpoints", "writes"):
+                    try:
+                        conn.execute(f"DELETE FROM {table} WHERE thread_id=?", (tid,))
+                    except sqlite3.OperationalError:
+                        pass
+            conn.commit()
+        finally:
+            conn.close()
+    # 产物文件目录
+    shutil.rmtree(config.DATA_DIR / "projects" / pid, ignore_errors=True)
+    return {"ok": True, "deleted_runs": len(run_ids)}

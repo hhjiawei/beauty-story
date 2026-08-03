@@ -52,8 +52,34 @@ function gatePanel(gate){
     <button class="reject" onclick="doReject()">打 回</button>`;
   if(gate.gate==='gate_n7_unit_listening'||gate.gate==='gate_g2_final_listening')
     html += `<button class="regen" onclick="doRegen()">重生成选中单元</button>`;
-  html += `</div></div>`;
+  html += `</div></div>` + nodeRunsBlock();
   return html;
+}
+
+let _nodeRunsCache = null;
+async function loadNodeRuns(){
+  const r = await fetch(`/api/runs/${runId}/node-runs`);
+  _nodeRunsCache = await r.json();
+  const el = document.getElementById('noderuns');
+  if(el) el.innerHTML = nodeRunsHtml();
+}
+function nodeRunsHtml(){
+  const rows = _nodeRunsCache||[];
+  if(!rows.length) return '<div class="meta">暂无节点运行记录</div>';
+  return '<table style="width:100%;font-size:12px;border-collapse:collapse">'+rows.map(r=>
+    `<tr><td>${r.node_id}</td><td>${r.status==='ok'?'✅':r.status==='error'?'❌':'⏳'} ${r.status}</td>
+     <td>${r.duration_s??'-'}s</td><td style="color:#b3402f">${r.error||''}</td></tr>`
+  ).join('')+'</table>';
+}
+function nodeRunsBlock(){
+  return `<div class="panel"><details ${(_nodeRunsCache&&_nodeRunsCache.some(r=>r.status==='error'))?'open':''}>
+    <summary style="cursor:pointer">节点运行记录（查看每次节点执行的状态/耗时/错误）</summary>
+    <div id="noderuns">${nodeRunsHtml()}</div></details></div>`;
+}
+async function doRetry(){
+  const r = await fetch(`/api/runs/${runId}/retry`,{method:'POST'});
+  const d = await r.json();
+  if(!r.ok) alert(d.detail||'重试失败');
 }
 
 function renderArtifact(kind, content, gate){
@@ -128,12 +154,17 @@ function render(snap){
   }else{
     lastGateKey='';
     if(snap.status==='done') main.innerHTML='<div class="panel"><h3>✅ 任务完成（已归档，教训与读音已沉淀）</h3></div>';
-    else if(snap.status==='error') main.innerHTML=`<div class="panel"><h3 style="color:#b3402f">❌ 运行出错</h3><pre>${snap.error||''}</pre></div>`;
+    else if(snap.status==='error') main.innerHTML=`<div class="panel">
+      <h3 style="color:#b3402f">❌ 运行出错</h3>
+      <pre style="white-space:pre-wrap">${snap.error||''}</pre>
+      <div class="meta">重试将从失败的节点原地重跑（checkpoint 续跑），不会从头再来。</div>
+      <button class="save" onclick="doRetry()">重试失败节点</button>
+    </div>` + nodeRunsBlock();
     else main.innerHTML='<div class="panel">⏳ 节点运行中……</div>';
   }
 }
 
 const es = new EventSource(`/api/runs/${runId}/events`);
-es.onmessage = e => render(JSON.parse(e.data));
+es.onmessage = e => { render(JSON.parse(e.data)); loadNodeRuns(); };
 </script>
 </body></html>
