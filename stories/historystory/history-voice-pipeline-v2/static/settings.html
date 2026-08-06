@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模型设置</title>
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:960px;margin:0 auto;padding:24px;background:#f6f5f1;color:#2b2b2b}
+nav a{margin-right:14px;color:#7a6a4f;text-decoration:none}
+.card{background:#fff;border:1px solid #e3ddcf;border-radius:10px;padding:16px;margin:12px 0}
+input,select{padding:8px;margin:4px 0;border:1px solid #d6cfbd;border-radius:6px;font-size:14px;width:100%;box-sizing:border-box}
+button{padding:7px 16px;border:none;border-radius:6px;background:#7a6a4f;color:#fff;cursor:pointer;margin-right:6px}
+.row{display:flex;gap:10px}.row>div{flex:1}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px;border-bottom:1px solid #eee;text-align:left}
+</style>
+</head>
+<body>
+<nav><a href="/index.html">← 项目列表</a><a href="/voices.html">音色库</a></nav>
+<h2>模型档案</h2>
+<div class="card">
+<div class="row"><div><input id="pname" placeholder="档案名（如 DeepSeek-V3）"></div>
+<div><select id="pprovider"><option value="openai">OpenAI 兼容</option><option value="mock">Mock（演示/测试）</option></select></div></div>
+<div class="row"><div><input id="pbase" placeholder="base_url（如 https://api.deepseek.com/v1）"></div>
+<div><input id="pmodel" placeholder="model（如 deepseek-chat）"></div></div>
+<div class="row"><div><input id="pkey" placeholder="api_key"></div>
+<div><input id="ptemp" type="number" step="0.1" value="0.7" placeholder="temperature"></div></div>
+<button onclick="addProfile()">添加档案</button>
+</div>
+<div id="profiles"></div>
+
+<h2>节点-模型绑定</h2>
+<div class="meta" style="font-size:13px;color:#888">典型配法：旁白施工用最强模型；史料选矿/画本用便宜快模型；审核用与写作不同家的模型（交叉防盲区）。</div>
+<table id="mapTable"></table>
+<button onclick="saveMap()">保存绑定</button>
+
+<h2>节点 Agent 挂载（skills / MCP）</h2>
+<div class="meta" style="font-size:13px;color:#888">
+每个内容节点是一个独立的 deepagents 实例：技能手册按勾选挂载进该节点的 /skills/ 目录（渐进加载），
+MCP 工具同理。标「默认」的为执行方案 §5.1 挂载表。</div>
+<div id="agentConfigs"></div>
+
+<h2>MCP 服务器</h2>
+<div class="card">
+<div class="row"><div><input id="mname" placeholder="服务器名（如 tavily-search）"></div>
+<div><select id="mtransport"><option value="http">HTTP (streamable)</option><option value="sse">SSE</option>
+<option value="stdio">stdio（本地命令）</option><option value="websocket">WebSocket</option></select></div></div>
+<div class="row"><div><input id="murl" placeholder="url（http/sse/ws 用，如 http://127.0.0.1:8000/mcp）"></div>
+<div><input id="mcommand" placeholder="command（stdio 用，如 npx）"></div></div>
+<div class="row"><div><input id="margs" placeholder='args（stdio 用，JSON 数组，如 ["-y","@modelcontextprotocol/server-filesystem","/tmp"]）'></div>
+<div><input id="mheaders" placeholder='headers（JSON 对象，如 {"Authorization":"Bearer xxx"}）'></div></div>
+<button onclick="addMcp()">添加 MCP 服务器</button>
+</div>
+<div id="mcpList"></div>
+
+<script>
+const NODE_LABELS={n1_event_card_mining:'N1 史料选矿',n2_style_robe_selection:'N2 外衣选定',
+n3_outline_blueprinting:'N3 大纲蓝图',n4_narration_construction:'N4 旁白施工（建议最强模型）',
+n5_draft_three_gate_audit:'N5 三道门禁（建议不同家模型）',n6_storyboard_translation:'N6 画本翻译'};
+let profiles=[];
+async function load(){
+  profiles=await (await fetch('/api/model-profiles')).json();
+  profilesDiv();
+  const m=await (await fetch('/api/node-model-map')).json();
+  mapTable.innerHTML='<tr><th>节点</th><th>绑定档案</th></tr>'+m.nodes.map(n=>`
+    <tr><td>${NODE_LABELS[n]||n}</td><td><select id="bind_${n}">
+      <option value="">（未绑定）</option>
+      ${profiles.map(p=>`<option value="${p.id}" ${m.map[n]==p.id?'selected':''}>${p.name}</option>`).join('')}
+    </select></td></tr>`).join('');
+}
+function profilesDiv(){
+  profilesDivEl=document.getElementById('profiles');
+  profilesDivEl.innerHTML=profiles.map(p=>`<div class="card"><b>${p.name}</b>
+    <span class="meta"> ${p.provider} · ${p.model||'-'} · temp ${p.temperature}</span><br>
+    <button onclick="testP(${p.id})">测试连接</button>
+    <button onclick="delP(${p.id})">删除</button>
+    <span id="test_${p.id}" style="font-size:13px"></span></div>`).join('');
+}
+async function addProfile(){
+  await fetch('/api/model-profiles',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:pname.value,base_url:pbase.value,api_key:pkey.value,
+      model:pmodel.value,temperature:+ptemp.value,provider:pprovider.value})});
+  load();
+}
+async function testP(id){
+  const r=await (await fetch(`/api/model-profiles/${id}/test`,{method:'POST'})).json();
+  document.getElementById('test_'+id).textContent=(r.ok?'✅ ':'❌ ')+r.detail;
+}
+async function delP(id){await fetch(`/api/model-profiles/${id}`,{method:'DELETE'});load();}
+async function saveMap(){
+  const m=await (await fetch('/api/node-model-map')).json();
+  const body={}; m.nodes.forEach(n=>{const v=document.getElementById('bind_'+n).value; if(v) body[n]=+v;});
+  await fetch('/api/node-model-map',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  alert('已保存');
+}
+
+// ---------------- 节点 Agent 挂载（skills / MCP） ----------------
+let allSkills=[], mcpServers=[], agentCfgs=null;
+async function loadAgentConfigs(){
+  allSkills=(await (await fetch('/api/skills')).json()).skills;
+  mcpServers=(await (await fetch('/api/mcp-servers')).json()).servers;
+  agentCfgs=await (await fetch('/api/node-agent-configs')).json();
+  renderAgentConfigs(); renderMcpList();
+}
+function renderAgentConfigs(){
+  document.getElementById('agentConfigs').innerHTML=agentCfgs.nodes.map(n=>{
+    const c=agentCfgs.configs[n];
+    const skillBoxes=allSkills.map(s=>{
+      const chk=c.skills.includes(s.name)?'checked':'';
+      return `<label style="display:block;font-size:13px"><input type="checkbox" class="sk_${n}" value="${s.name}" ${chk} style="width:auto">
+        <b>${s.name}</b> <span style="color:#888">${s.description||''}</span></label>`;
+    }).join('')||'<span style="color:#888">技能库为空</span>';
+    const mcpBoxes=mcpServers.map(s=>{
+      const chk=c.mcp_ids.includes(s.id)?'checked':'';
+      return `<label style="display:inline-block;margin-right:12px;font-size:13px"><input type="checkbox" class="mcp_${n}" value="${s.id}" ${chk} style="width:auto">
+        ${s.name}（${s.transport}）</label>`;
+    }).join('')||'<span style="color:#888">暂无 MCP 服务器，先在下方添加</span>';
+    const badge=c.is_default?'<span style="color:#a08030;font-size:12px">（默认 · §5.1 挂载表）</span>':'<span style="color:#3a7a3a;font-size:12px">（自定义）</span>';
+    return `<div class="card"><b>${NODE_LABELS[n]||n}</b> ${badge}
+      <div style="margin:8px 0"><div style="font-size:13px;color:#7a6a4f">挂载技能（顺序即优先级，第一个为主技能）</div>${skillBoxes}</div>
+      <div style="margin:8px 0"><div style="font-size:13px;color:#7a6a4f">挂载 MCP 工具</div>${mcpBoxes}</div>
+      <button onclick="saveAgentCfg('${n}')">保存该节点挂载</button>
+      <span id="cfgmsg_${n}" style="font-size:13px"></span></div>`;
+  }).join('');
+}
+async function saveAgentCfg(n){
+  const skills=[...document.querySelectorAll('.sk_'+n+':checked')].map(x=>x.value);
+  const mcp_ids=[...document.querySelectorAll('.mcp_'+n+':checked')].map(x=>+x.value);
+  const r=await fetch('/api/node-agent-configs/'+n,{method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({skills,mcp_ids})});
+  const msg=document.getElementById('cfgmsg_'+n);
+  if(r.ok){msg.textContent=' ✅ 已保存';loadAgentConfigs();}
+  else{msg.textContent=' ❌ '+(await r.json()).detail;}
+}
+
+// ---------------- MCP 服务器管理 ----------------
+function renderMcpList(){
+  document.getElementById('mcpList').innerHTML=mcpServers.map(s=>`<div class="card"><b>${s.name}</b>
+    <span class="meta"> ${s.transport} · ${s.url||s.command||'-'} ${s.enabled?'':'· 已停用'}</span><br>
+    <button onclick="testMcp(${s.id})">测试连接</button>
+    <button onclick="toggleMcp(${s.id},${!s.enabled})">${s.enabled?'停用':'启用'}</button>
+    <button onclick="delMcp(${s.id})">删除</button>
+    <span id="mcptest_${s.id}" style="font-size:13px"></span></div>`).join('');
+}
+function jargs(v,def){if(!v.trim())return def;try{return JSON.parse(v)}catch(e){alert('JSON 格式有误: '+v);throw e;}}
+async function addMcp(){
+  await fetch('/api/mcp-servers',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:mname.value,transport:mtransport.value,url:murl.value,
+      command:mcommand.value,args:jargs(margs.value,[]),headers:jargs(mheaders.value,{})})});
+  mname.value=murl.value=mcommand.value=margs.value=mheaders.value='';
+  loadAgentConfigs();
+}
+async function testMcp(id){
+  const el=document.getElementById('mcptest_'+id); el.textContent=' 连接中…';
+  const r=await (await fetch(`/api/mcp-servers/${id}/test`,{method:'POST'})).json();
+  el.textContent=(r.ok?'✅ ':'❌ ')+r.detail+(r.tools?'：'+r.tools.join(', '):'');
+}
+async function toggleMcp(id,en){
+  const s=mcpServers.find(x=>x.id===id);
+  await fetch('/api/mcp-servers/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:s.name,transport:s.transport,url:s.url,command:s.command,
+      args:s.args,env:s.env,headers:s.headers,enabled:en})});
+  loadAgentConfigs();
+}
+async function delMcp(id){await fetch(`/api/mcp-servers/${id}`,{method:'DELETE'});loadAgentConfigs();}
+
+load(); loadAgentConfigs();
+</script>
+</body></html>

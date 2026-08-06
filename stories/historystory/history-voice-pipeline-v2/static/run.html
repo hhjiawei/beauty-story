@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>流水线工作台</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:1100px;margin:0 auto;padding:20px;background:#f6f5f1;color:#2b2b2b}
+nav a{margin-right:14px;color:#7a6a4f;text-decoration:none}
+#flowbar{display:flex;flex-wrap:wrap;gap:4px;margin:14px 0}
+.step{padding:4px 10px;border-radius:6px;font-size:12px;background:#e8e4d8;color:#999}
+.step.done{background:#dcfce7;color:#166534}.step.running{background:#dbeafe;color:#1d4ed8}
+.step.waiting{background:#fef3c7;color:#92400e;font-weight:bold}
+.panel{background:#fff;border:1px solid #e3ddcf;border-radius:10px;padding:18px;margin:14px 0}
+textarea{width:100%;box-sizing:border-box;border:1px solid #d6cfbd;border-radius:6px;padding:10px;font:13px/1.6 ui-monospace,Menlo,monospace}
+button{padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:14px;margin-right:8px}
+.approve{background:#2f7d4f;color:#fff}.save{background:#7a6a4f;color:#fff}.reject{background:#b3402f;color:#fff}
+.regen{background:#8a5fbf;color:#fff}
+.preview{border:1px dashed #d6cfbd;border-radius:6px;padding:12px;margin:10px 0;background:#fbfaf6}
+.unit{display:flex;align-items:center;gap:10px;padding:6px;border-bottom:1px solid #f0ece0;font-size:13px}
+.unit audio{height:32px}
+.meta{font-size:12px;color:#999}
+h3.gate{color:#92400e}
+</style>
+</head>
+<body>
+<nav><a href="/index.html">← 项目列表</a><a href="/settings.html">模型设置</a><a href="/voices.html">音色库</a></nav>
+<h2 id="title">流水线工作台</h2>
+<div id="flowbar"></div>
+<div id="main"></div>
+
+<script>
+const runId = new URLSearchParams(location.search).get('run_id');
+let lastGateKey = '';
+function mediaUrl(p){ if(!p) return ''; const i = p.indexOf('/data/'); return i>=0 ? '/media/'+p.slice(i+6) : p; }
+
+function renderFlow(seq){
+  flowbar.innerHTML = seq.map(s=>`<div class="step ${s.status}">${s.label}</div>`).join('');
+}
+
+function gatePanel(gate){
+  const arts = gate.artifacts||{};
+  let html = `<div class="panel"><h3 class="gate">⛔ 待审：${gate.gate}</h3>
+    <div class="meta">节点 ${gate.node} · 本节点被打回 ${gate.rework_count||0} 次 ${gate.rework_count>=3?'· <b style="color:#b3402f">告警：打回≥3次</b>':''}</div>`;
+  for(const [kind,a] of Object.entries(arts)){
+    html += `<h4>${kind} <span class="meta">v${a.version} · ${a.origin}</span></h4>`;
+    html += renderArtifact(kind, a.content, gate);
+  }
+  html += `<div style="margin-top:14px">
+    <button class="approve" onclick="decide('approve')">放 行</button>
+    <button class="save" onclick="decide('approve',true)">保存并放行</button>
+    <button class="reject" onclick="doReject()">打 回</button>`;
+  if(gate.gate==='gate_n7_unit_listening'||gate.gate==='gate_g2_final_listening')
+    html += `<button class="regen" onclick="doRegen()">重生成选中单元</button>`;
+  html += `</div></div>` + nodeRunsBlock();
+  return html;
+}
+
+let _nodeRunsCache = null;
+async function loadNodeRuns(){
+  const r = await fetch(`/api/runs/${runId}/node-runs`);
+  _nodeRunsCache = await r.json();
+  const el = document.getElementById('noderuns');
+  if(el) el.innerHTML = nodeRunsHtml();
+}
+function nodeRunsHtml(){
+  const rows = _nodeRunsCache||[];
+  if(!rows.length) return '<div class="meta">暂无节点运行记录</div>';
+  return '<table style="width:100%;font-size:12px;border-collapse:collapse">'+rows.map(r=>
+    `<tr><td>${r.node_id}</td><td>${r.status==='ok'?'✅':r.status==='error'?'❌':'⏳'} ${r.status}</td>
+     <td>${r.duration_s??'-'}s</td><td style="color:#b3402f">${r.error||''}</td></tr>`
+  ).join('')+'</table>';
+}
+function nodeRunsBlock(){
+  return `<div class="panel"><details ${(_nodeRunsCache&&_nodeRunsCache.some(r=>r.status==='error'))?'open':''}>
+    <summary style="cursor:pointer">节点运行记录（查看每次节点执行的状态/耗时/错误）</summary>
+    <div id="noderuns">${nodeRunsHtml()}</div></details></div>`;
+}
+async function doRetry(){
+  const r = await fetch(`/api/runs/${runId}/retry`,{method:'POST'});
+  const d = await r.json();
+  if(!r.ok) alert(d.detail||'重试失败');
+}
+
+function renderArtifact(kind, content, gate){
+  if(kind==='audio_unit' && Array.isArray(content)){
+    return content.map(u=>`<div class="unit">
+      <input type="checkbox" class="regenbox" value="${u.unit_id}">
+      <span style="width:110px">${u.unit_id}</span>
+      <audio controls src="${mediaUrl(u.path)}"></audio>
+      <span class="meta">${(u.text||'').slice(0,30)}… 重生${u.regen_count||0}次</span></div>`).join('');
+  }
+  if(kind==='final_audio'){
+    return `<audio controls style="width:100%" src="${mediaUrl(content.final_mp3||content.final_wav)}"></audio>
+      <div class="meta">时长 ${content.duration_s}s · ${content.units} 个单元 · ${content.master?.detail||''}</div>`;
+  }
+  if(kind==='theme_card'){
+    return `<div class="preview"><b>一句话主题</b>：${content['一句话主题']||''}<br>
+      <b>钩子选型</b>：${content['钩子选型']||''}<br><b>钩子那一帧</b>：${content['钩子那一帧']||''}<br>
+      <b>三问答卷</b>：<pre>${JSON.stringify(content['主题自检三问'],null,2)}</pre></div>
+      <div class="meta">主题让你「哦？」了吗？钩子那一帧你想看下去吗？三问答卷有糊弄痕迹吗？</div>`;
+  }
+  const text = typeof content==='string' ? content : JSON.stringify(content,null,2);
+  const rows = Math.min(Math.max(text.split('\n').length+1, 8), 30);
+  let html = `<textarea id="edit_${kind}" rows="${rows}">${text.replace(/</g,'&lt;')}</textarea>`;
+  if(typeof content==='string')
+    html += `<details><summary>Markdown 预览</summary><div class="preview">${marked.parse(content)}</div></details>`;
+  return html;
+}
+
+function collectEdits(gate){
+  const edits={};
+  for(const kind of Object.keys(gate.artifacts||{})){
+    const ta=document.getElementById('edit_'+kind);
+    if(!ta) continue;
+    const orig=gate.artifacts[kind].content;
+    const origText=typeof orig==='string'?orig:JSON.stringify(orig,null,2);
+    if(ta.value!==origText){
+      if(typeof orig==='string') edits[kind]=ta.value;
+      else{ try{edits[kind]=JSON.parse(ta.value);}catch(e){alert(kind+' JSON 格式错误');throw e;} }
+    }
+  }
+  return edits;
+}
+
+async function decide(action, withEdits){
+  const gate = window._gate;
+  let edited=null;
+  if(withEdits && gate){ edited = collectEdits(gate); if(!Object.keys(edited).length) edited=null;
+    if(edited){ const k=Object.keys(edited)[0]; edited=edited[k]; } }
+  await fetch(`/api/runs/${runId}/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action, edited_content:edited})});
+}
+async function doReject(){
+  const fb = prompt('打回意见（将注入重跑 prompt，按条目修改不重写全文）：');
+  if(!fb) return;
+  await fetch(`/api/runs/${runId}/reject`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'reject',feedback:fb})});
+}
+async function doRegen(){
+  const ids=[...document.querySelectorAll('.regenbox:checked')].map(b=>b.value);
+  if(!ids.length){alert('先勾选要重生的单元');return;}
+  await fetch(`/api/runs/${runId}/nodes/n7/regenerate`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'regen_units',unit_ids:ids})});
+}
+
+function render(snap){
+  renderFlow(snap.sequence||[]);
+  if(snap.status==='waiting_review' && snap.pending_gate){
+    const g=snap.pending_gate;
+    const key = g.gate + JSON.stringify(Object.values(g.artifacts||{}).map(a=>a.version));
+    window._gate=g;
+    if(key!==lastGateKey){ main.innerHTML=gatePanel(g); lastGateKey=key; }
+  }else{
+    lastGateKey='';
+    if(snap.status==='done') main.innerHTML='<div class="panel"><h3>✅ 任务完成（已归档，教训与读音已沉淀）</h3></div>';
+    else if(snap.status==='error') main.innerHTML=`<div class="panel">
+      <h3 style="color:#b3402f">❌ 运行出错</h3>
+      <pre style="white-space:pre-wrap">${snap.error||''}</pre>
+      <div class="meta">重试将从失败的节点原地重跑（checkpoint 续跑），不会从头再来。</div>
+      <button class="save" onclick="doRetry()">重试失败节点</button>
+    </div>` + nodeRunsBlock();
+    else main.innerHTML='<div class="panel">⏳ 节点运行中……</div>';
+  }
+}
+
+const es = new EventSource(`/api/runs/${runId}/events`);
+es.onmessage = e => { render(JSON.parse(e.data)); loadNodeRuns(); };
+</script>
+</body></html>
