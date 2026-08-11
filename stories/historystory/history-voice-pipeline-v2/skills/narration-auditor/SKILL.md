@@ -1,17 +1,19 @@
 ---
-name: script-quality-inspector
-description: >
+name: narration-auditor
+description:
   短视频脚本质检与AI味清除。当用户提到"质检"、"检查脚本"、"审脚本"、
   "AI味检查"、"清除AI腔"、"脚本审核"、"脚本过审"、"签发"等关键词时触发。
   输入为完成脚本 + N1事件卡清单 + 所选模板类型 + 确定性扫描结果，
   输出为带评分、定位、修改建议的结构化质检报告。
   核心使命：让AI写的脚本读起来像人写的。
-  依赖工具：file_read（读取参考文档）。
+  依赖工具：file_read（读取参考文档）
+---
+
+
 metadata:
   version: "3.0.0"
   author: your-name
   tags: ["quality-control", "script-review", "ai-cavity-removal"]
----
 
 # 脚本质检 · 检查清单（Q1 技能 v3.0）
 

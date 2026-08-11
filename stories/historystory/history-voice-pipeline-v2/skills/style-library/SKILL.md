@@ -1,6 +1,6 @@
 ---
 name: style-library
-description: >
+description:
   历史短视频风格选定与匹配。当用户提到"选风格"、"定风格"、"风格库"、
   "叙事风格"、"风格匹配"、"风格外衣"、"风格模板"、"兵器谱"、
   "周星驰风格"、"昆汀风格"、"诺兰风格"、"当年明月风格"等关键词时触发。
@@ -8,11 +8,13 @@ description: >
   （含风格定义 + 叙事模板 + 语气示例 + 施工要点）。
   适用题材：夏商周至清朝的历史内容。
   依赖工具：file_read（读取参考文档）。
+
+---
+
 metadata:
   version: "3.0.0"
   author: your-name
   tags: ["style-selection", "narrative-style", "persona-clothing"]
----
 
 # 创作风格库与风格匹配（v3.0）
 

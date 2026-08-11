@@ -1,17 +1,19 @@
 ---
 name: tts-script-doctor
-description: >
+description:
   历史短视频旁白语音合成与后期加工。当用户提到"TTS"、"配音"、"语音合成"、
   "画本"、"IndexTTS"、"旁白音频"、"语音后期"、"审听"、"音色克隆"、
   "FFmpeg后期"、"音频加工"等关键词时触发。
   输入为写作层成稿（旁白成稿），输出为可直接进剪辑的成品配音音频。
   适用题材：夏商周至清朝的历史内容（上古史专有名词读音风险最高）。
   依赖工具：file_read（读取参考文档）。
+
+---
+
 metadata:
   version: "1.0.0"
   author: your-name
   tags: ["tts", "voice-synthesis", "audio-post-production", "dubbing"]
----
 
 # 旁白语音层设计方案 · IndexTTS2 配音加工手册（v1）
 

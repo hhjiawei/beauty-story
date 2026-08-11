@@ -1,6 +1,6 @@
 ---
 name: ammo-depot
-description: >
+description: 
   历史短视频弹药库查询与选配。当用户提到"弹药库"、"选弹药"、"配弹药"、
   "技法清单"、"头部博主技法"、"成功技法"、"弹药选型"、"钩子弹药"、
   "插件弹药"、"炸点弹药"、"动情点弹药"、"收尾弹药"、"方言弹药"、
@@ -9,11 +9,13 @@ description: >
   输出为匹配的弹药包（含来源/施工要点/适配/纪律四字段）。
   适用题材：夏商周至清朝的历史人物、朝代、事件。
   依赖工具：file_read（读取参考文档）。
+
+---
+
 metadata:
   version: "5.0.0"
   author: your-name
   tags: ["ammo", "techniques", "hooks", "plugins", "explosions"]
----
 
 # 弹药库 · 头部历史博主成功技法清单（v5）
 

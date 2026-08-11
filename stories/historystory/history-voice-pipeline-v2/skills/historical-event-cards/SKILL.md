@@ -1,17 +1,18 @@
 ---
 name: historical-event-cards
-description: >
+description:
   分析中国历史史料并拆分为结构化事件卡。当用户提到"拆卡"、"史料分析"、
   "整理事件"、"准备素材"、"写脚本前的史料整理"、"事件卡"、"弹药库"、
   "选矿"等关键词时触发。
   输入为史料原文或历史事件描述，输出为 JSON 格式的事件卡数组。
   适用题材：夏商周至清朝的人物传记、朝代全史、重大事件。
   依赖工具：web_search（史料核实）、file_read（读取参考文档）。
+---
+
 metadata:
   version: "1.0.0"
   author: your-name
   tags: ["history", "script-prep", "data-analysis", "event-cards"]
----
 
 # 史料分析 · 事件卡选矿（N1 技能）
 
