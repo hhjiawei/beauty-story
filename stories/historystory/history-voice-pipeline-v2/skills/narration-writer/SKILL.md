@@ -1,4 +1,4 @@
-`---
+---
 name: narration-writer
 description:
   历史短视频旁白写作。当用户提到"写旁白"、"写脚本"、"写稿"、"旁白成稿"、
