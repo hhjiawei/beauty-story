@@ -1,0 +1,48 @@
+{
+  "skill": "technique-decay",
+  "version": "0.1.0",
+  "test_cases": [
+    {
+      "id": "should-trigger-01",
+      "type": "should_trigger",
+      "prompt": "用现代梗写'商鞅变法'，降维一下",
+      "expected_behavior": "调用 technique-decay，黑话嫁接",
+      "notes": "正面：现代梗写历史"
+    },
+    {
+      "id": "should-trigger-02",
+      "type": "should_trigger",
+      "prompt": "给'玄武门之变'加个黑话词",
+      "expected_behavior": "调用 technique-decay",
+      "notes": "正面：加降维词"
+    },
+    {
+      "id": "should-trigger-03",
+      "type": "should_trigger",
+      "prompt": "把'三国争霸'用网络语讲出来",
+      "expected_behavior": "调用 technique-decay",
+      "notes": "正面：网络语讲历史"
+    },
+    {
+      "id": "should-not-trigger-01",
+      "type": "should_not_trigger",
+      "prompt": "解释一下商鞅变法的核心内容是什么",
+      "expected_behavior": "知识查询，不触发",
+      "notes": "诱饵：非风格化"
+    },
+    {
+      "id": "should-not-trigger-02",
+      "type": "should_not_trigger",
+      "prompt": "用杜氏风格写整篇'商鞅变法'的口播",
+      "expected_behavior": "应触发 duruhui-style 总控而非单手法",
+      "notes": "跨 skill 混淆：整篇改写归总控"
+    },
+    {
+      "id": "edge-01",
+      "type": "edge_case",
+      "prompt": "写面向青少年的严肃历史普及读物，语言怎么把握",
+      "expected_behavior": "边界：可少量降维，忌满篇黑话",
+      "notes": "边界：普及 vs 口播"
+    }
+  ]
+}

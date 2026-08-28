@@ -1,0 +1,48 @@
+{
+  "skill": "hook-factory",
+  "version": "0.1.0",
+  "test_cases": [
+    {
+      "id": "should-trigger-01",
+      "type": "should_trigger",
+      "prompt": "写'赤壁之战'用哪种钩子？给我个数字反差或设问开头",
+      "expected_behavior": "调用 hook-factory，产钩子",
+      "notes": "正面：设计开头"
+    },
+    {
+      "id": "should-trigger-02",
+      "type": "should_trigger",
+      "prompt": "这个历史现象很反常识，帮我用网络迷因破题写个开头",
+      "expected_behavior": "调用 hook-factory，迷因钩子",
+      "notes": "正面：迷因破题"
+    },
+    {
+      "id": "should-trigger-03",
+      "type": "should_trigger",
+      "prompt": "给'崇祯之死'设计一个设问悬念钩子",
+      "expected_behavior": "调用 hook-factory",
+      "notes": "正面：设问钩子"
+    },
+    {
+      "id": "should-not-trigger-01",
+      "type": "should_not_trigger",
+      "prompt": "赤壁之战的导火索是什么",
+      "expected_behavior": "事实查询，不触发",
+      "notes": "诱饵：非开头设计"
+    },
+    {
+      "id": "should-not-trigger-02",
+      "type": "should_not_trigger",
+      "prompt": "用杜氏风格写整篇'赤壁之战'的口播文案",
+      "expected_behavior": "应触发 duruhui-style 总控（其内部调钩子工厂）",
+      "notes": "跨 skill 混淆：整篇改写归总控"
+    },
+    {
+      "id": "edge-01",
+      "type": "edge_case",
+      "prompt": "写学术文章的引言开头，需要强钩子吗",
+      "expected_behavior": "边界：学术不需强钩子，不触发",
+      "notes": "边界：学术 vs 口播"
+    }
+  ]
+}

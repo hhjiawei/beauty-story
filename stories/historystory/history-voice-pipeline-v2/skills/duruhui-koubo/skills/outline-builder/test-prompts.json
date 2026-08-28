@@ -1,0 +1,48 @@
+{
+  "skill": "outline-builder",
+  "version": "0.1.0",
+  "test_cases": [
+    {
+      "id": "should-trigger-01",
+      "type": "should_trigger",
+      "prompt": "我要写'安史之乱'杜茹慧风格口播，帮我列六模块大纲",
+      "expected_behavior": "调用 outline-builder，出大纲",
+      "notes": "正面：规划结构"
+    },
+    {
+      "id": "should-trigger-02",
+      "type": "should_trigger",
+      "prompt": "把'商鞅变法'归事件类，给我规划结构和弹药布置位",
+      "expected_behavior": "调用 outline-builder，选变体+排位",
+      "notes": "正面：定类规划"
+    },
+    {
+      "id": "should-trigger-03",
+      "type": "should_trigger",
+      "prompt": "写'刘裕'人物类文案，先出大纲（人设钩子→命运转折→盖棺）",
+      "expected_behavior": "调用 outline-builder",
+      "notes": "正面：人物类变体"
+    },
+    {
+      "id": "should-not-trigger-01",
+      "type": "should_not_trigger",
+      "prompt": "安史之乱到底讲了什么历史事件",
+      "expected_behavior": "知识查询，不触发",
+      "notes": "诱饵：非结构规划"
+    },
+    {
+      "id": "should-not-trigger-02",
+      "type": "should_not_trigger",
+      "prompt": "直接用杜氏风格写安史之乱的完整口播文案",
+      "expected_behavior": "应触发 duruhui-style 总控写文，而非只出大纲",
+      "notes": "跨 skill 混淆：写文归总控，大纲是其前置"
+    },
+    {
+      "id": "edge-01",
+      "type": "edge_case",
+      "prompt": "我已有完整初稿，只想润色，要不要先列大纲",
+      "expected_behavior": "边界：已有初稿直接调总控润色，不强制大纲",
+      "notes": "边界：大纲 vs 润色"
+    }
+  ]
+}

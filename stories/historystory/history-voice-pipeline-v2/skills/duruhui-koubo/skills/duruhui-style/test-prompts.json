@@ -1,0 +1,48 @@
+{
+  "skill": "duruhui-style",
+  "version": "0.1.0",
+  "test_cases": [
+    {
+      "id": "should-trigger-01",
+      "type": "should_trigger",
+      "prompt": "用杜茹慧风格写一篇关于安史之乱的口播文案",
+      "expected_behavior": "调用 duruhui-style，走总控流程改写",
+      "notes": "正面：历史素材风格化仿写"
+    },
+    {
+      "id": "should-trigger-02",
+      "type": "should_trigger",
+      "prompt": "把'王莽篡汉'改写成杜氏历史口播，不拘朝代",
+      "expected_behavior": "调用 duruhui-style，跨朝代套用四把板斧",
+      "notes": "正面：验证跨朝代插槽变量"
+    },
+    {
+      "id": "should-trigger-03",
+      "type": "should_trigger",
+      "prompt": "仿写这个博主的历史解说风格，写'靖难之役'",
+      "expected_behavior": "调用 duruhui-style",
+      "notes": "正面：用户明确要仿写风格"
+    },
+    {
+      "id": "should-not-trigger-01",
+      "type": "should_not_trigger",
+      "prompt": "帮我查一下《资治通鉴》的成书年份和作者",
+      "expected_behavior": "纯信息查询，不应调用任何风格 skill",
+      "notes": "诱饵：非写作场景"
+    },
+    {
+      "id": "should-not-trigger-02",
+      "type": "should_not_trigger",
+      "prompt": "用幽默风格写个新产品发布会的开场白",
+      "expected_behavior": "应触发通用'幽默/演讲'类 skill，而非本历史口播 skill",
+      "notes": "跨 skill 混淆诱饵：同为'幽默风格'但非历史素材"
+    },
+    {
+      "id": "edge-01",
+      "type": "edge_case",
+      "prompt": "写一段严肃学术的魏晋制度分析论文",
+      "expected_behavior": "学术写作不触发；须保持客观不降维",
+      "notes": "边界：严肃 vs 风格化"
+    }
+  ]
+}

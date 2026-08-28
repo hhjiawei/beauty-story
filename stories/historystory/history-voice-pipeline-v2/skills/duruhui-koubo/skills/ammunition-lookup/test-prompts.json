@@ -1,0 +1,48 @@
+{
+  "skill": "ammunition-lookup",
+  "version": "0.1.0",
+  "test_cases": [
+    {
+      "id": "should-trigger-01",
+      "type": "should_trigger",
+      "prompt": "写一场以少胜多战争，帮我从弹药库抽合适的黑话和史料例句",
+      "expected_behavior": "调用 ammunition-lookup，按类检索",
+      "notes": "正面：抽弹药"
+    },
+    {
+      "id": "should-trigger-02",
+      "type": "should_trigger",
+      "prompt": "仿写隋朝材料，'老登'这类黑话该怎么对应替换？",
+      "expected_behavior": "调用 ammunition-lookup，查跨朝代插槽",
+      "notes": "正面：跨朝代替换"
+    },
+    {
+      "id": "should-trigger-03",
+      "type": "should_trigger",
+      "prompt": "给我一组适合'暴君'类人物的弹药（称谓+评价+史料）",
+      "expected_behavior": "调用 ammunition-lookup",
+      "notes": "正面：按类取"
+    },
+    {
+      "id": "should-not-trigger-01",
+      "type": "should_not_trigger",
+      "prompt": "基本盘这个词现在网络上是啥意思",
+      "expected_behavior": "词义查询，不触发（除非要写文案）",
+      "notes": "诱饵：非写作检索"
+    },
+    {
+      "id": "should-not-trigger-02",
+      "type": "should_not_trigger",
+      "prompt": "用杜氏风格写整篇暴君文案",
+      "expected_behavior": "应触发 duruhui-style 总控（其内部调弹药检索）",
+      "notes": "跨 skill 混淆：整篇改写归总控"
+    },
+    {
+      "id": "edge-01",
+      "type": "edge_case",
+      "prompt": "写严肃学术论文需要引用这些黑话吗",
+      "expected_behavior": "边界：学术不抽弹药，不触发",
+      "notes": "边界：学术 vs 口播"
+    }
+  ]
+}

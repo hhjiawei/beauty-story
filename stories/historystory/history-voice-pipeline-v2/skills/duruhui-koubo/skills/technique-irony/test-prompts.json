@@ -1,0 +1,48 @@
+{
+  "skill": "technique-irony",
+  "version": "0.1.0",
+  "test_cases": [
+    {
+      "id": "should-trigger-01",
+      "type": "should_trigger",
+      "prompt": "给'项羽乌江自刎'写个反转收尾",
+      "expected_behavior": "调用 technique-irony，反讽收束",
+      "notes": "正面：反转结尾"
+    },
+    {
+      "id": "should-trigger-02",
+      "type": "should_trigger",
+      "prompt": "结尾来个反讽，平反一下'秦桧'",
+      "expected_behavior": "调用 technique-irony",
+      "notes": "正面：平反式收尾"
+    },
+    {
+      "id": "should-trigger-03",
+      "type": "should_trigger",
+      "prompt": "这段历史其实怪他自己，收束做个反转",
+      "expected_behavior": "调用 technique-irony",
+      "notes": "正面：归因反转"
+    },
+    {
+      "id": "should-not-trigger-01",
+      "type": "should_not_trigger",
+      "prompt": "项羽是谁，简单介绍一下",
+      "expected_behavior": "知识查询，不触发",
+      "notes": "诱饵：非收尾设计"
+    },
+    {
+      "id": "should-not-trigger-02",
+      "type": "should_not_trigger",
+      "prompt": "用杜氏风格写整篇'项羽'的口播文案",
+      "expected_behavior": "应触发 duruhui-style 总控而非单手法",
+      "notes": "跨 skill 混淆：整篇改写归总控"
+    },
+    {
+      "id": "edge-01",
+      "type": "edge_case",
+      "prompt": "写一段客观史实陈述，不评价不反转",
+      "expected_behavior": "边界：中立陈述不反讽，不触发",
+      "notes": "边界：客观 vs 反讽"
+    }
+  ]
+}

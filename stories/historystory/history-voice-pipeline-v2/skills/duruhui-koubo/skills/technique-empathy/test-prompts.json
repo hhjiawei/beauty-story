@@ -1,0 +1,48 @@
+{
+  "skill": "technique-empathy",
+  "version": "0.1.0",
+  "test_cases": [
+    {
+      "id": "should-trigger-01",
+      "type": "should_trigger",
+      "prompt": "给'崇祯自缢'加段心理描写，代入他当时的想法",
+      "expected_behavior": "调用 technique-empathy，补内心OS",
+      "notes": "正面：加心理代入"
+    },
+    {
+      "id": "should-trigger-02",
+      "type": "should_trigger",
+      "prompt": "这段历史写得太干，加心理代入让人物活起来",
+      "expected_behavior": "调用 technique-empathy",
+      "notes": "正面：缺人味"
+    },
+    {
+      "id": "should-trigger-03",
+      "type": "should_trigger",
+      "prompt": "写'苻坚兵败'时，他当时心里怎么想的？",
+      "expected_behavior": "调用 technique-empathy",
+      "notes": "正面：脑补古人心理"
+    },
+    {
+      "id": "should-not-trigger-01",
+      "type": "should_not_trigger",
+      "prompt": "把这段文言文翻译成现代汉语",
+      "expected_behavior": "翻译任务，不触发",
+      "notes": "诱饵：非心理描写"
+    },
+    {
+      "id": "should-not-trigger-02",
+      "type": "should_not_trigger",
+      "prompt": "用杜氏风格写整篇安史之乱的口播文案",
+      "expected_behavior": "应触发 duruhui-style 总控而非单手法 skill",
+      "notes": "跨 skill 混淆：整篇改写归总控"
+    },
+    {
+      "id": "edge-01",
+      "type": "edge_case",
+      "prompt": "写学术传记时能不能适度加人物心理描写？",
+      "expected_behavior": "边界：学术须克制，少量可，不滥用",
+      "notes": "边界：学术 vs 口播"
+    }
+  ]
+}

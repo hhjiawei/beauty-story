@@ -1,0 +1,48 @@
+{
+  "skill": "technique-scene",
+  "version": "0.1.0",
+  "test_cases": [
+    {
+      "id": "should-trigger-01",
+      "type": "should_trigger",
+      "prompt": "把'赤壁之战'火攻写成有画面的分镜",
+      "expected_behavior": "调用 technique-scene，还原动作链",
+      "notes": "正面：画面感"
+    },
+    {
+      "id": "should-trigger-02",
+      "type": "should_trigger",
+      "prompt": "这里写得太概述，还原一下'土木堡之变'的现场",
+      "expected_behavior": "调用 technique-scene",
+      "notes": "正面：还原场景"
+    },
+    {
+      "id": "should-trigger-03",
+      "type": "should_trigger",
+      "prompt": "给'淝水之战'写一段动作细节链",
+      "expected_behavior": "调用 technique-scene",
+      "notes": "正面：动作细节"
+    },
+    {
+      "id": "should-not-trigger-01",
+      "type": "should_not_trigger",
+      "prompt": "赤壁之战具体发生在公元哪一年",
+      "expected_behavior": "事实查询，不触发",
+      "notes": "诱饵：非场景还原"
+    },
+    {
+      "id": "should-not-trigger-02",
+      "type": "should_not_trigger",
+      "prompt": "用杜氏风格写整篇'赤壁之战'的口播文案",
+      "expected_behavior": "应触发 duruhui-style 总控而非单手法",
+      "notes": "跨 skill 混淆：整篇改写归总控"
+    },
+    {
+      "id": "edge-01",
+      "type": "edge_case",
+      "prompt": "写历史教科书里对一场战役的客观描述",
+      "expected_behavior": "边界：概述式不画面化，不触发",
+      "notes": "边界：教科书 vs 口播分镜"
+    }
+  ]
+}
