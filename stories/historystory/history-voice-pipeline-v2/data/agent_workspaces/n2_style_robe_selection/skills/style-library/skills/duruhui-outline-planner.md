@@ -1,5 +1,5 @@
 ---
-name: 02-大纲规划-duruhui-outline-planner
+name: duruhui-outline-planner
 description: |
   写历史故事/口播稿/公众号历史文之前的大纲规划。当用户说"帮我把这段历史改成杜茹慧风格""这篇历史文章怎么改得好玩""写个历史视频脚本/口播稿""帮我列个大纲"时调用。核心动作：先定事件编年骨架，再规划弹药布点（哪段放什么梗/类比/数据），最后定钩子与收尾栏目位置。不适用于：纯史料考据、学术论文、不需要叙事的说明文。Trigger: 历史 改写 大纲 / 口播 脚本 / outline for history story / 杜茹慧风格。
 source_book: 杜茹慧「两晋」系列口播稿 45 篇

@@ -9,7 +9,7 @@
 **写作一篇杜茹慧风格文案的标准调用链（按序加载）：**
 
 1. `duruhui-genre-routing` —— 判断文章大类（人物/事件/朝代），选择叙事路由
-2. `02-大纲规划-duruhui-outline-planner` —— 生成大纲：事件顺序 + 弹药布点
+2. `duruhui-outline-planner` —— 生成大纲：事件顺序 + 弹药布点
 3. `duruhui-wojin-voice` —— 确立「我晋」领属视角与称呼系统
 4. `duruhui-hook-openers` —— 写开头钩子
 5. `duruhui-question-engine` —— 用设问驱动叙事推进
