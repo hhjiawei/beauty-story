@@ -72,11 +72,12 @@ def _mounted_skills(node_id: str) -> list[str]:
     return factory.get_node_agent_config(node_id)["skills"]
 
 
-def _llm_json(node_id: str, system: str, user: str, retries: int = 1):
-    """调用 LLM 并解析 JSON；解析失败自动重试一次（附「只输出 JSON」强约束）。
+def _llm_json(node_id: str, system: str, user: str, retries: int = 1, expect: type | None = None):
+    """调用 LLM 并解析 JSON；解析失败/顶层类型不符自动重试一次（附强约束）。
 
-    仍失败则抛出带节点名与原文摘要的清晰错误——出错信息进 node_runs 表与
-    data/logs/pipeline.log，前端可「查看」并可「重试」。
+    expect：指定期望的顶层类型（dict 或 list）。模型常见翻车是「该给对象时
+    给了数组」——下游 .get() 会炸出 'list' object has no attribute 'get'，
+    这里提前拦下并走格式重试。
     """
     from ..logging_setup import get_logger
     log = get_logger()
@@ -85,14 +86,30 @@ def _llm_json(node_id: str, system: str, user: str, retries: int = 1):
     for attempt in range(retries + 1):
         try:
             raw = _llm(node_id, system, cur_user)
-            log.info("%s LLM 返回 %d 字（第 %d 次）", node_id, len(raw or ""), attempt + 1)
-            return extract_json(raw)
+        except Exception as e:  # noqa: BLE001
+            # 调用层错误（MCP 工具失败/网络/鉴权等）：直接报真实原因，
+            # 不做「只输出 JSON」的格式重试——重试也治不好它。
+            log.error("%s agent 调用失败: %s", node_id, e, exc_info=True)
+            raise RuntimeError(f"[{node_id}] agent 调用失败: {e}") from e
+        log.info("%s LLM 返回 %d 字（第 %d 次）", node_id, len(raw or ""), attempt + 1)
+        try:
+            obj = extract_json(raw)
+            if expect is not None and not isinstance(obj, expect):
+                want = "JSON 对象 {...}" if expect is dict else "JSON 数组 [...]"
+                got = "数组" if isinstance(obj, list) else ("对象" if isinstance(obj, dict) else type(obj).__name__)
+                raise ValueError(f"顶层应为 {want}，实际返回了{got}")
+            return obj
         except Exception as e:  # noqa: BLE001
             last_err = e
             log.warning("%s 第 %d 次解析失败: %s", node_id, attempt + 1, e)
+            want_hint = ""
+            if expect is dict:
+                want_hint = "（必须是一个 JSON 对象 {...}，不是数组）"
+            elif expect is list:
+                want_hint = "（必须是一个 JSON 数组 [...]，不是对象）"
             cur_user = user + (
-                "\n\n## ⚠️ 格式重试\n你上一次的输出无法解析为 JSON。"
-                "这次请只输出一个合法 JSON（不要 markdown 代码块、不要任何解释文字）。")
+                "\n\n## ⚠️ 格式重试\n你上一次的输出不符合要求。"
+                f"这次请只输出一个合法 JSON{want_hint}（不要 markdown 代码块、不要任何解释文字）。")
     raise RuntimeError(f"[{node_id}] LLM 输出解析失败（已重试 {retries} 次）: {last_err}")
 
 
@@ -139,7 +156,7 @@ def n1_event_card_mining(state):
     def work():
         prev = json.dumps(state.get("event_cards"), ensure_ascii=False) if fb else None
         system, user, loaded = prompts.build_n1_event_card_mining(state, feedback=fb, prev=prev, mounted_skills=_mounted_skills(node))
-        cards = _llm_json(node, system, user)
+        cards = _llm_json(node, system, user, expect=list)
         a = artifacts.save_artifact(state["project_id"], state["run_id"], node,
                                     "event_cards", cards, origin="rework" if fb else "ai")
         return cards, loaded, a
@@ -174,7 +191,7 @@ def n2_style_robe_selection(state):
     def work():
         prev = json.dumps(state.get("style_candidates"), ensure_ascii=False) if fb else None
         system, user, loaded = prompts.build_n2_style_robe_selection(state, feedback=fb, prev=prev, mounted_skills=_mounted_skills(node))
-        result = _llm_json(node, system, user)
+        result = _llm_json(node, system, user, expect=list)
         candidates = result.get("候选风格", [])
         a = artifacts.save_artifact(state["project_id"], state["run_id"], node,
                                     "style_candidates", result, origin="rework" if fb else "ai")
@@ -218,7 +235,7 @@ def n3_outline_blueprinting(state):
         prev = json.dumps({"主题卡": state.get("theme_card"), "大纲": state.get("outline")},
                           ensure_ascii=False) if fb else None
         system, user, loaded = prompts.build_n3_outline_blueprinting(state, feedback=fb, prev=prev, mounted_skills=_mounted_skills(node))
-        result = _llm_json(node, system, user)
+        result = _llm_json(node, system, user, expect=list)
         outline = result.get("单集大纲文件", [])
         theme = result.get("主题卡", {})
         checklist = result.get("签发清单", [])
@@ -271,7 +288,7 @@ def n4_narration_construction(state):
             system, user, _ = prompts.build_n4_chapter_construction(
                 state, ch, prev_tail, feedback=fb if not drafts else None,
                 mounted_skills=_mounted_skills(node))
-            r = _llm_json(node, system, user)
+            r = _llm_json(node, system, user, expect=list)
             drafts.append(r.get("本章正文", ""))
             prev_tail = r.get("本章正文", "")[-300:]
             switches += r.get("技法切换声明", [])
@@ -313,7 +330,7 @@ def n5_draft_three_gate_audit(state):
         script = state.get("script_md", "")
         scan_findings = run_all_scans(script, state.get("outline", []))
         system, user, loaded = prompts.build_n5_three_gate_audit(state, scan_findings, mounted_skills=_mounted_skills(node))
-        report = _llm_json(node, system, user)
+        report = _llm_json(node, system, user, expect=list)
         report["确定性扫描"] = scan_findings
         hard = has_hard_violations(scan_findings)
         passed = bool(report.get("passed")) and not hard
@@ -362,7 +379,7 @@ def n6_storyboard_translation(state):
         system, user, loaded = prompts.build_n6_storyboard_translation(
             state, _pronunciation_dict(), feedback=fb, prev=prev,
             mounted_skills=_mounted_skills(node))
-        result = _llm_json(node, system, user)
+        result = _llm_json(node, system, user, expect=list)
         pages = result.get("画本", [])
         artifacts.save_artifact(state["project_id"], state["run_id"], node,
                                 "storyboard", result, origin="rework" if fb else "ai")

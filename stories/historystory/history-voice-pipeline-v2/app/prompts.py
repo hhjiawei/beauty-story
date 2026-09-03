@@ -425,6 +425,7 @@ def build_n5_three_gate_audit(state, scan_findings: dict,
 ## 任务
 过三道门禁，逐项举证（过/不过+具体位置+判罚依据），输出按主技能 Output Schema 的 JSON 对象。
 确定性扫描有硬伤的项直接判不过；你发现的扫描漏网问题追加进对应门禁。
+最后使用humanizer-zh-next技能把文章润色一遍，去掉AI味。
 """
     return system, user, loaded
 

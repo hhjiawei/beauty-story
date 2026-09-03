@@ -12,11 +12,10 @@ CONTENT_NODES = [
 
 # 执行方案 §5.1 节点技能挂载表（默认种子，前端可逐节点调整）
 DEFAULT_SKILL_MOUNTS: dict[str, list[str]] = {
-    "n1_event_card_mining": ["historical-event-cards"],
+    "n1_event_card_mining": ["historical-event-cards", "ammo-depot"],
     "n2_style_robe_selection": ["style-library", "persona-writer"],
     "n3_outline_blueprinting": ["outline-architect", "persona-writer", "ammo-depot"],
-    "n4_narration_construction": ["narration-writer", "persona-writer",
-                                  "style-library", "ammo-depot"],
-    "n5_draft_three_gate_audit": ["narration-auditor", "persona-writer", "narration-writer"],
+    "n4_narration_construction": ["narration-writer", "ammo-depot"],
+    "n5_draft_three_gate_audit": ["humanizer-zh-next"],
     "n6_storyboard_translation": ["tts-script-doctor"],
 }

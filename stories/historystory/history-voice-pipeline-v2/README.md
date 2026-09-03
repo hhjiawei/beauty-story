@@ -7,15 +7,15 @@
 
 ## 一、相对执行方案的深化点
 
-| 深化项 | 说明 |
-| ------ | ---- |
-| **节点命名含义化** | 全部节点以职责命名（见下表），无 N1-N8 这类代号进入代码 |
-| **每节点一个 deepagents 实例** | 六个内容节点各自是独立的 deep agent（`app/agents/factory.py` 按节点装配）：独立模型档案 + 独立 skills 目录（复制进节点工作区 `data/agent_workspaces/<节点>/skills/`，deepagents 渐进加载）+ 可选 MCP 工具；外层 LangGraph 主图负责编排与人工闸门 |
-| **技能/MCP 前端可配** | 设置页可逐节点勾选挂载哪些 skills、哪些 MCP 服务器；默认按执行方案 §5.1 挂载表播种；MCP 服务器支持 http/sse/stdio/websocket 四种 transport，可在线测试连接列出工具 |
-| **闸门架构修订** | 每个 AI 环节拆成「产出节点 → 闸门节点」两个图节点：interrupt 只放闸门里，resume 时闸门重跑零成本——**避免 resume 重复调 LLM 烧 token** |
+| 深化项 | 说明                                                                                                                                                                                                                                   |
+| ------ |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **节点命名含义化** | 全部节点以职责命名（见下表），无 N1-N8 这类代号进入代码                                                                                                                                                                                                      |
+| **每节点一个 deepagents 实例** | 六个内容节点各自是独立的 deep agent（`app/agents/factory.py` 按节点装配）：独立模型档案 + 独立 skills 目录（复制进节点工作区 `data/agent_workspaces/<节点>/skills/`，deepagents 渐进加载）+ 可选 MCP 工具；外层 LangGraph 主图负责编排与人工闸门                                                      |
+| **技能/MCP 前端可配** | 设置页可逐节点勾选挂载哪些 skills、哪些 MCP 服务器；默认按执行方案 §5.1 挂载表播种；MCP 服务器支持 http/sse/stdio/websocket 四种 transport，可在线测试连接列出工具                                                                                                                       |
+| **闸门架构修订** | 每个 AI 环节拆成「产出节点 → 闸门节点」两个图节点：interrupt 只放闸门里，resume 时闸门重跑零成本——**避免 resume 重复调 LLM 烧 token**                                                                                                                                          |
 | **Prompt 集中管理** | 全部节点 prompt 收在 `app/prompts.py` 一个文件：人格 L1 常驻前缀在此统一注入，每个 builder 返回 (system, user) 作为该节点 deep agent 的 system_prompt + 任务消息；system 首行带 `<!-- NODE:节点id -->` 标记（MockLLM 路由 + 日志审计两用）；技能不再全文塞进 prompt，改为「挂载清单」引导 agent 用 read_file 渐进读取 |
-| **六份文档转 skill** | 六份方法论原样转 `skills/*/SKILL.md`（只加 frontmatter 不改正文），另按 §4.1/§4.6 新建 `historical-event-cards`、`narration-auditor` 两个技能 |
-| **零依赖降级通道** | `mock_tts`（正弦音合成）+ mock 模型档案（LangChain 路由式假模型）：不配任何 Key、不装 IndexTTS2 也能全链路演示与测试 |
+| **六份文档转 skill** | 六份方法论原样转 `skills/*/SKILL.md`（只加 frontmatter 不改正文），另按 §4.1/§4.6 新建 `historical-event-cards`、`humanizer-zh-next` 两个技能                                                                                                                  |
+| **零依赖降级通道** | `mock_tts`（正弦音合成）+ mock 模型档案（LangChain 路由式假模型）：不配任何 Key、不装 IndexTTS2 也能全链路演示与测试                                                                                                                                                      |
 
 ## 二、节点命名一览（命名即含义）
 

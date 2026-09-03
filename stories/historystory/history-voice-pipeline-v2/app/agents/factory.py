@@ -232,10 +232,14 @@ def run_node_agent(node_id: str, system: str, user: str) -> str:
     # 节点函数运行在外层流水线图的上下文里，若不切斷，内层 agent 会继承外层的
     # thread_id，resume/重试时 LangGraph 会把首次执行的结果「确定性重放」回来，
     # 模型根本不会被重新调用（已用最小复现验证）。
-    result = agent.invoke(
+    fresh_cfg = {"configurable": {"thread_id": f"{node_id}-{uuid.uuid4().hex}"}}
+    # 必须用 ainvoke：MCP 工具全是异步 StructuredTool（只有 coroutine），
+    # 同步 invoke 会在模型调用 MCP 工具时抛
+    # "StructuredTool does not support sync invocation"。
+    result = asyncio.run(agent.ainvoke(
         {"messages": [{"role": "user", "content": user}]},
-        config={"configurable": {"thread_id": f"{node_id}-{uuid.uuid4().hex}"}},
-    )
+        config=fresh_cfg,
+    ))
     messages = result.get("messages") or []
     if not messages:
         raise RuntimeError(f"[{node_id}] agent 未返回任何消息")
