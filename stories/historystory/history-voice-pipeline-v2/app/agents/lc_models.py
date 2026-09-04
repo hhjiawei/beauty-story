@@ -72,6 +72,10 @@ def chat_model_for_profile(profile: ModelProfile) -> BaseChatModel:
     if profile.provider == "openai":
         from langchain_openai import ChatOpenAI
 
+        # 不显式给 max_tokens 时，DeepSeek 等 OpenAI 兼容端点默认只有 4096 输出
+        # token——长章节写文件时必在工具参数 JSON 中途截断，造成悬空 tool_call
+        # 的 400 事故。默认 8192（DeepSeek-chat 上限），可用环境变量覆盖。
+        import os
         return ChatOpenAI(
             model=profile.model,
             api_key=profile.api_key,
@@ -79,6 +83,7 @@ def chat_model_for_profile(profile: ModelProfile) -> BaseChatModel:
             temperature=profile.temperature,
             timeout=300,
             max_retries=2,
+            max_tokens=int(os.getenv("HVP_MODEL_MAX_TOKENS", "32768")),
         )
     # 其他厂商：走 langchain 统一初始化（需自行安装对应集成包）
     from langchain.chat_models import init_chat_model

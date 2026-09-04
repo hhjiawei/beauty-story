@@ -22,8 +22,8 @@
   N1 build_n1_event_card_mining      史料分析 · 事件卡选矿   → historical-event-cards
   N2 build_n2_style_robe_selection   风格选定 · 本期外衣     → duruhui-style
   N3 build_n3_outline_blueprinting   大纲生成 · 蓝图绘制     → history-outline-planner
-  N4 build_n4_chapter_construction   旁白写作 · 逐章施工     → viral-history-narration
-     build_n4_full_script_stitch     旁白写作 · 全稿缝合     → viral-history-narration
+  N4 build_n4_chapter_construction   旁白写作 · 逐章施工     → narration-writer
+     build_n4_full_script_stitch     旁白写作 · 全稿缝合     → narration-writer
   N5 build_n5_three_gate_audit       成稿审核 · 三道门禁
   N6 build_n6_storyboard_translation 画本加工 · 声音翻译
 
@@ -339,7 +339,7 @@ def build_n4_chapter_construction(state, chapter_segments: list[dict],
 ## 输入：前一章末段（保持连贯，接口要焊住）
 {prev_chapter_tail or "（本章是全篇开头，无前一章）"}
 
-## 任务：按主技能（viral-history-narration）逐段施工
+## 任务：按主技能（narration-writer）逐段施工
 - **本章含第 1 段时**：先过阶段零（读料取证——不确定的年份/人名/官职先联网核实，取证在动笔前；按施工包「叙事路由」定调；对施工卡弹药清单逐条斟酌，不准确的宁可弃用）与阶段一（声音卡以施工包「签名声音系统」定稿：朝代称呼随语境自然换用——禁用全篇统一的"我X"领属词自称、绰号—特征—事迹对照、称呼降格规则；钩子卡按「开场钩子术」施工，≤300 字、最后一句落在正题入口）；
 - **后续章节**：沿用既有声音卡，与前一章末段声口对齐，不另起炉灶、不中途改称呼策略；
 - **每段过四道引擎**：①心理OS与场景脑补（只填史书留白，不改史实骨架，必挂声明牌"或许/可以想象/估计"）→ ②弹药投放（按选配五问复核施工卡弹药：功能定位→题材适配→史料锚点→密度轮换→兑现能力，答不上就撤弹）→ ③反讽结构（材料有真实"自信→翻车"弧线才用，亮锤 ≤ 搭靶段 1/5）→ ④因果链校验三问（因从哪来／果落在哪／与下段怎么咬合——照施工卡「因果接口」焊死）；
@@ -379,7 +379,7 @@ def build_n4_full_script_stitch(state, chapter_drafts: list[str],
 ## 输入：全篇大纲包（核对伏笔埋收、呼应归位、悲悯段禁区、因果接口）
 {_j(state.get("outline", []))}
 
-## 任务：按主技能（viral-history-narration）阶段三收尾
+## 任务：按主技能（narration-writer）阶段三收尾
 1. **缝合**：逐接口检查——主线按篇型缝合（{"命运感缝合" if state["source_type"] == "person" else "因果缝合"}，用上一段的余震引出下一段的地震），插件进出用挂接句，禁用过渡套话；绰号全篇统一（以声音卡为准），朝代称呼按施工包策略自然多样；
 2. **朗读测试**：拆读不顺的句子、断一口气读不完的句子；每 60 秒查信息/情绪增量；
 3. **史料双保险复核**：每个新时间点年号+公元双标无遗漏；每处原文引用配白话翻译；每个宏大判断有数字/原文托底；反常处证据链 ≥2 条、声明等级到位、孤证只写"存疑"；
@@ -390,7 +390,7 @@ def build_n4_full_script_stitch(state, chapter_drafts: list[str],
 ## 出口硬闸门（必过）
 成稿与大纲分别写入文件后运行检查脚本，FAIL 项回到对应段落重写后复检，全绿才可交付：
 
-python3 /skills/viral-history-narration/scripts/check_output.py <成稿.txt> --outline <大纲.txt>
+python3 /skills/narration-writer/scripts/check_output.py <成稿.txt> --outline <大纲.txt>
 
 ## 输出 Schema（只输出 JSON 对象）
 {{

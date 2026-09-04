@@ -212,3 +212,37 @@ def delete_mcp_server(sid: int):
 def test_mcp_server(sid: int):
     """连通性测试：列出该服务器暴露的工具名。"""
     return factory.test_mcp_server(sid)
+
+# ---------------------------------------------------------------- agent 运行轨迹回看
+
+@router.get("/agent-traces")
+def list_agent_traces(node_id: str | None = None, limit: int = 50):
+    """列出最近的 agent 运行轨迹文件（新的在前），可按节点过滤。"""
+    from .. import config
+    d = config.DATA_DIR / "agent_traces"
+    if not d.exists():
+        return []
+    files = sorted(d.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)
+    out = []
+    for p in files:
+        nid = p.stem.split("_", 1)[1] if "_" in p.stem else ""
+        if node_id and nid != node_id:
+            continue
+        out.append({"file": p.name, "node_id": nid,
+                    "size": p.stat().st_size,
+                    "mtime": datetime.fromtimestamp(p.stat().st_mtime, UTC).isoformat()})
+        if len(out) >= limit:
+            break
+    return out
+
+
+@router.get("/agent-traces/{fname}")
+def read_agent_trace(fname: str):
+    """读取单个轨迹文件全文。"""
+    from .. import config
+    if "/" in fname or "\\" in fname or ".." in fname:
+        raise HTTPException(400, "非法文件名")
+    p = config.DATA_DIR / "agent_traces" / fname
+    if not p.exists() or p.suffix != ".md":
+        raise HTTPException(404, "轨迹文件不存在")
+    return {"file": fname, "content": p.read_text(encoding="utf-8")}

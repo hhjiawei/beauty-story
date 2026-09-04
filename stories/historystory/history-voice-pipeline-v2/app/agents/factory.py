@@ -28,6 +28,7 @@ from ..llm import get_profile_for_node
 from ..models import McpServer, NodeAgentConfig
 from ..skills_loader import skill_exists
 from .lc_models import _content_text, chat_model_for_profile
+from .middleware_repair import DanglingToolCallRepairMiddleware
 from .node_registry import CONTENT_NODES, DEFAULT_SKILL_MOUNTS
 
 __all__ = ["CONTENT_NODES", "DEFAULT_SKILL_MOUNTS"]
@@ -209,6 +210,7 @@ def build_node_agent(node_id: str, system_prompt: str):
         model=chat_model_for_profile(profile),
         system_prompt=system_prompt,
         tools=tools,
+        middleware=[DanglingToolCallRepairMiddleware()],  # 悬空 tool_call 修复（官方中间件只管开头，管不到循环中段）
         backend=FilesystemBackend(root_dir=str(ws), virtual_mode=True),
         skills=["/skills/"] if skills else None,
         name=f"hvp_{node_id}",
@@ -226,14 +228,16 @@ def run_node_agent(node_id: str, system: str, user: str) -> str:
     import uuid
 
     from ..logging_setup import get_logger
+    from .tracing import NodeTraceHandler, save_trace
 
     agent = build_node_agent(node_id, system)
     # 必须显式给一个全新的独立 config：
     # 节点函数运行在外层流水线图的上下文里，若不切斷，内层 agent 会继承外层的
     # thread_id，resume/重试时 LangGraph 会把首次执行的结果「确定性重放」回来，
     # 模型根本不会被重新调用（已用最小复现验证）。
-    fresh_cfg = {"configurable": {"thread_id": f"{node_id}-{uuid.uuid4().hex}"}}
-    # 必须用 ainvoke：MCP 工具全是异步 StructuredTool（只有 coroutine），
+    # callbacks 挂上追踪器：模型往返/工具调用实时进 pipeline.log
+    fresh_cfg = {"configurable": {"thread_id": f"{node_id}-{uuid.uuid4().hex}"},
+                 "callbacks": [NodeTraceHandler(node_id)]}    # 必须用 ainvoke：MCP 工具全是异步 StructuredTool（只有 coroutine），
     # 同步 invoke 会在模型调用 MCP 工具时抛
     # "StructuredTool does not support sync invocation"。
     result = asyncio.run(agent.ainvoke(
@@ -244,7 +248,9 @@ def run_node_agent(node_id: str, system: str, user: str) -> str:
     if not messages:
         raise RuntimeError(f"[{node_id}] agent 未返回任何消息")
     text = _content_text(messages[-1].content)
-    get_logger().info("%s agent 完成，消息数=%d，终稿 %d 字", node_id, len(messages), len(text))
+    trace_path = save_trace(node_id, messages)
+    get_logger().info("%s agent 完成，消息数=%d，终稿 %d 字（轨迹文件：%s）",
+                      node_id, len(messages), len(text), trace_path.name)
     return text
 
 

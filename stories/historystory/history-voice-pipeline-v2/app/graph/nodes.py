@@ -94,6 +94,11 @@ def _llm_json(node_id: str, system: str, user: str, retries: int = 1, expect: ty
         log.info("%s LLM 返回 %d 字（第 %d 次）", node_id, len(raw or ""), attempt + 1)
         try:
             obj = extract_json(raw)
+            # 容错：模型常把对象包成单元素数组 [{...}]，自动拆包（记日志可审计）
+            if expect is dict and isinstance(obj, list) \
+                    and len(obj) == 1 and isinstance(obj[0], dict):
+                log.warning("%s 输出为单元素数组包对象，已自动拆包", node_id)
+                obj = obj[0]
             if expect is not None and not isinstance(obj, expect):
                 want = "JSON 对象 {...}" if expect is dict else "JSON 数组 [...]"
                 got = "数组" if isinstance(obj, list) else ("对象" if isinstance(obj, dict) else type(obj).__name__)
@@ -191,8 +196,11 @@ def n2_style_robe_selection(state):
     def work():
         prev = json.dumps(state.get("style_candidates"), ensure_ascii=False) if fb else None
         system, user, loaded = prompts.build_n2_style_robe_selection(state, feedback=fb, prev=prev, mounted_skills=_mounted_skills(node))
-        result = _llm_json(node, system, user, expect=list)
-        candidates = result.get("候选风格", [])
+        result = _llm_json(node, system, user, expect=dict)
+
+        # 键名兼容：旧版出「候选风格」数组；新方法论直接定案唯一风格，取「风格定案」单件
+        candidates = result.get("候选风格") or ([result["风格定案"]] if result.get("风格定案") else [])
+
         a = artifacts.save_artifact(state["project_id"], state["run_id"], node,
                                     "style_candidates", result, origin="rework" if fb else "ai")
         return candidates, result, loaded, a
@@ -219,9 +227,11 @@ def gate_n2_style_card(state):
     _record_review(state, "n2_style_robe_selection", None, "approve")
     # 声口样句入库（人格 L2）
     from .. import memory_store
-    if card.get("本期语气示例"):
+    yj = card.get("本期语气示例") or (card.get("风格定案") or {}).get("本期语气示例")
+    if yj:
+        fname = card.get("风格名") or (card.get("风格定案") or {}).get("风格名", "?")
         memory_store.append_memory(memory_store.VOICE_SAMPLES,
-                                   f"外衣「{card.get('风格名', '?')}」语气示例：{card['本期语气示例']}")
+                                   f"外衣「{fname}」语气示例：{yj}")
     return {"gate_decision": review, "style_card": card}
 
 
@@ -235,10 +245,18 @@ def n3_outline_blueprinting(state):
         prev = json.dumps({"主题卡": state.get("theme_card"), "大纲": state.get("outline")},
                           ensure_ascii=False) if fb else None
         system, user, loaded = prompts.build_n3_outline_blueprinting(state, feedback=fb, prev=prev, mounted_skills=_mounted_skills(node))
-        result = _llm_json(node, system, user, expect=list)
-        outline = result.get("单集大纲文件", [])
-        theme = result.get("主题卡", {})
+        result = _llm_json(node, system, user, expect=dict)
+
+        # 大纲包键名兼容：新方法论「段级施工卡 / 篇级总卡」，旧版「单集大纲文件 / 主题卡」
+        outline = result.get("段级施工卡") or result.get("单集大纲文件") or []
+        theme = result.get("篇级总卡") or result.get("主题卡") or {}
         checklist = result.get("签发清单", [])
+
+        if not outline:
+            raise RuntimeError(
+                f"[{node}] 大纲包里没有可用的段落清单（段级施工卡/单集大纲文件均为空）。"
+                f"实际返回的顶层键：{list(result.keys())}"
+                "——请核对 prompts.py 的 N3 输出 Schema 键名是否与此处提取键一致。")
         artifacts.save_artifact(state["project_id"], state["run_id"], node,
                                 "outline", result, origin="rework" if fb else "ai")
         artifacts.save_artifact(state["project_id"], state["run_id"], node, "theme_card", theme)
@@ -268,7 +286,10 @@ def _group_chapters(outline: list[dict]) -> list[list[dict]]:
     chapters: dict[str, list[dict]] = {}
     order: list[str] = []
     for seg in outline:
-        title = seg.get("章节标题") or f"章{seg.get('段号')}"
+
+        # 分章键名兼容：旧版「章节标题」，新方法论段级施工卡用「模块归属」（①钩子…⑥尾声）
+        title = seg.get("章节标题") or seg.get("模块归属") or f"章{seg.get('段号')}"
+
         if title not in chapters:
             chapters[title] = []
             order.append(title)
@@ -282,18 +303,27 @@ def n4_narration_construction(state):
 
     def work():
         outline = state.get("outline", [])
+        if not outline:
+            raise RuntimeError(
+                f"[{node}] 收到空大纲（state['outline'] 为空），拒绝空跑模型浪费 token。"
+                "请回退到 G1 闸门检查 N3 产物：大纲包里是否真有段级施工卡，"
+                "以及 N3 输出键名是否与提取键一致。")
         chapters = _group_chapters(outline)
+
         drafts, prev_tail, switches = [], None, []
         for ch in chapters:
             system, user, _ = prompts.build_n4_chapter_construction(
                 state, ch, prev_tail, feedback=fb if not drafts else None,
                 mounted_skills=_mounted_skills(node))
-            r = _llm_json(node, system, user, expect=list)
+            r = _llm_json(node, system, user, expect=dict)
             drafts.append(r.get("本章正文", ""))
             prev_tail = r.get("本章正文", "")[-300:]
-            switches += r.get("技法切换声明", [])
+
+            # 键名兼容：新方法论「技法弹药调整声明」，旧版「技法切换声明」
+            switches += r.get("技法弹药调整声明") or r.get("技法切换声明") or []
+
         system, user, _ = prompts.build_n4_full_script_stitch(state, drafts, mounted_skills=_mounted_skills(node))
-        final = _llm_json(node, system, user)
+        final = _llm_json(node, system, user, expect=dict)
         script = final.get("成稿", "")
         self_check = final.get("自查清单", []) + [{"item": "技法切换声明", "verdict": "过",
                                                   "location": "; ".join(switches) or "无"}]
@@ -330,7 +360,7 @@ def n5_draft_three_gate_audit(state):
         script = state.get("script_md", "")
         scan_findings = run_all_scans(script, state.get("outline", []))
         system, user, loaded = prompts.build_n5_three_gate_audit(state, scan_findings, mounted_skills=_mounted_skills(node))
-        report = _llm_json(node, system, user, expect=list)
+        report = _llm_json(node, system, user, expect=dict)
         report["确定性扫描"] = scan_findings
         hard = has_hard_violations(scan_findings)
         passed = bool(report.get("passed")) and not hard
@@ -379,7 +409,7 @@ def n6_storyboard_translation(state):
         system, user, loaded = prompts.build_n6_storyboard_translation(
             state, _pronunciation_dict(), feedback=fb, prev=prev,
             mounted_skills=_mounted_skills(node))
-        result = _llm_json(node, system, user, expect=list)
+        result = _llm_json(node, system, user, expect=dict)
         pages = result.get("画本", [])
         artifacts.save_artifact(state["project_id"], state["run_id"], node,
                                 "storyboard", result, origin="rework" if fb else "ai")
@@ -439,12 +469,12 @@ def _synth_all(state) -> list[dict]:
     # 章间静音：每章首单元标记
     titles = []
     for seg in state.get("outline", []):
-        t = seg.get("章节标题")
+        t = seg.get("章节标题") or seg.get("模块归属")
         if t and t not in titles:
             titles.append(t)
     chapter_first_seg = {}
     for seg in state.get("outline", []):
-        t = seg.get("章节标题")
+        t = seg.get("章节标题") or seg.get("模块归属")
         if t and t not in chapter_first_seg:
             chapter_first_seg[t] = seg.get("段号")
     first_segs = set(chapter_first_seg.values()) - {1}

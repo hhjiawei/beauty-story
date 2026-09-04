@@ -10,7 +10,7 @@
 
 1. `duruhui-genre-routing` —— 判断文章大类（人物/事件/朝代），选择叙事路由
 2. `duruhui-outline-planner` —— 生成大纲：事件顺序 + 弹药布点
-3. `duruhui-wojin-voice` —— 确立「我晋」领属视角与称呼系统
+3. `duruhui-wojin-voice` —— 称呼系统
 4. `duruhui-hook-openers` —— 写开头钩子
 5. `duruhui-question-engine` —— 用设问驱动叙事推进
 6. `duruhui-psych-os` —— 给历史人物写心理 OS（内心独白）
@@ -34,7 +34,7 @@
 
 | Skill | 一句话职责 |
 |---|---|
-| `duruhui-wojin-voice` | 「我晋」领属视角 + 判词式绰号系统（影帝/屠伯/飞豹/二凤） |
+| `duruhui-wojin-voice` | 判词式绰号系统（影帝/屠伯/飞豹/二凤） |
 | `duruhui-tone-tracks` | 戏谑/悲悯/热血三条语气轨道的识别与换挡 |
 
 ### 叙事引擎层
@@ -64,7 +64,7 @@ graph TD
     OP -->|composes-with| AMMO[duruhui-ammo 弹药]
     OP -->|composes-with| QE[duruhui-question-engine 设问]
 
-    WJ[duruhui-wojin-voice 我晋视角] -->|depends-on| TT[duruhui-tone-tracks 语气三轨]
+    WJ[duruhui-wojin-voice] -->|depends-on| TT[duruhui-tone-tracks 语气三轨]
     WJ -->|composes-with| AMMO
 
     AMMO -->|depends-on| TT
