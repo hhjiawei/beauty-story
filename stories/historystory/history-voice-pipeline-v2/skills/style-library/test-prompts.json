@@ -1,0 +1,90 @@
+{
+  "skill": "ammunition-lookup",
+  "version": "0.2.0",
+  "test_cases": [
+    {
+      "id": "should-trigger-01",
+      "type": "should_trigger",
+      "prompt": "这是我用 outline-builder 列好的'安史之乱'六模块大纲，弹药清单是空的，帮我配弹药",
+      "expected_behavior": "调用 ammunition-lookup：读懂大纲→扫描语义机会→查库→挂载→体检",
+      "notes": "正面：标准流水线场景"
+    },
+    {
+      "id": "should-trigger-02",
+      "type": "should_trigger",
+      "prompt": "这份淝水之战大纲写完感觉没杜味，帮我排查哪里缺梗",
+      "expected_behavior": "调用 ammunition-lookup：按内容语义查漏补挂",
+      "notes": "正面：体检式触发"
+    },
+    {
+      "id": "should-trigger-03",
+      "type": "should_trigger",
+      "prompt": "大纲已经定稿了，往里面塞点黑话和史料，改完交给写作",
+      "expected_behavior": "调用 ammunition-lookup：挂载+输出增强版大纲交接写作节点",
+      "notes": "正面：交接下游"
+    },
+    {
+      "id": "should-not-trigger-01",
+      "type": "should_not_trigger",
+      "prompt": "帮我从零规划'商鞅变法'的口播大纲",
+      "expected_behavior": "应触发 outline-builder 产大纲，而非本 skill",
+      "notes": "跨 skill 混淆：列大纲归上游"
+    },
+    {
+      "id": "should-not-trigger-02",
+      "type": "should_not_trigger",
+      "prompt": "根据这份大纲直接写出完整口播文案",
+      "expected_behavior": "应触发写作总控成稿，本 skill 只装弹不成稿",
+      "notes": "跨 skill 混淆：成稿归下游"
+    },
+    {
+      "id": "edge-01",
+      "type": "edge_case",
+      "prompt": "我的大纲是学术论文式的，没有钩子和反转模块，也要挂黑话吗",
+      "expected_behavior": "边界：纯学术大纲不挂弹药，提示改用学术文体",
+      "notes": "边界：文体不匹配"
+    },
+    {
+      "id": "edge-02",
+      "type": "edge_case",
+      "prompt": "写晚清的文案，弹药库里全是两晋的'我晋'怎么办",
+      "expected_behavior": "边界：按插槽原则换词，手法不变；库内晚清例句（千年变局）直接可用",
+      "notes": "边界：朝代插槽"
+    },
+    {
+      "id": "edge-03",
+      "type": "edge_case",
+      "prompt": "我大纲中间这几段全是制度考据，没有战争和权谋戏，是不是也得挂满弹药",
+      "expected_behavior": "边界：内容无对应语义机会就不挂，宁缺毋滥；可按气质挂现代制度嫁接类",
+      "notes": "边界：内容驱动，不按位置硬填"
+    },
+    {
+      "id": "edge-04",
+      "type": "edge_case",
+      "prompt": "这段大纲讲的是贾南风当街杀太子，帮我看看能挂什么",
+      "expected_behavior": "边界：先复述内容（伦理冲突+人物定性）再匹配：定性词（狠人）+心理代入+史料托底",
+      "notes": "边界：单段内容驱动的匹配示范"
+    },
+    {
+      "id": "edge-05",
+      "type": "edge_case",
+      "prompt": "我这份大纲读完很平，没什么特别的点，也要硬找爆炸点吗",
+      "expected_behavior": "边界：扫不出爆炸点就明说'大纲可能缺爆点'并给回 outline-builder 的调整建议，不硬装",
+      "notes": "边界：爆炸点识别为空时的诚实处理"
+    },
+    {
+      "id": "edge-06",
+      "type": "edge_case",
+      "prompt": "收尾这里我想用个歇后语和一句成语，再来个专属梗，会不会太满",
+      "expected_behavior": "边界：按修辞密度红线裁剪——歇后语≤2、成语≤4不连用、专属梗全篇1个，只留最贴合内容的一个",
+      "notes": "边界：修辞过量控制"
+    },
+    {
+      "id": "edge-07",
+      "type": "edge_case",
+      "prompt": "弹药库里没有我要的那种感觉的弹药，能自己造一个吗",
+      "expected_behavior": "边界：走三级来源：查库→制弹法（成语歇后语改造/梗移植/句式仿写）→现场生成；修辞可造，史料引文严禁编造",
+      "notes": "边界：制弹与真实性红线"
+    }
+  ]
+}

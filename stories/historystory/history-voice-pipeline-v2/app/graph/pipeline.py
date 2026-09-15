@@ -15,9 +15,9 @@ from . import nodes
 PIPELINE_SEQUENCE = [
     ("n1_event_card_mining", "史料选矿"),
     ("gate_n1_event_cards", "事件卡闸门"),
-    ("n2_style_robe_selection", "外衣选定"),
-    ("gate_n2_style_card", "风格拍板"),
     ("n3_outline_blueprinting", "大纲蓝图"),
+    ("n2_style_robe_selection", "弹药挂载"),
+    ("gate_n2_style_card", "弹药拍板"),
     ("gate_g1_theme_veto", "⛔主题否决关"),
     ("n4_narration_construction", "旁白施工"),
     ("gate_n4_script", "成稿闸门"),
@@ -39,8 +39,8 @@ def _decision(state: PipelineState) -> str:
 
 # 各闸门的路由表：action → 下一节点
 ROUTES = {
-    "gate_n1_event_cards": {"approve": "n2_style_robe_selection", "reject": "n1_event_card_mining"},
-    "gate_n2_style_card": {"approve": "n3_outline_blueprinting", "reject": "n2_style_robe_selection"},
+    "gate_n1_event_cards": {"approve": "n3_outline_blueprinting", "reject": "n1_event_card_mining"},
+    "gate_n2_style_card": {"approve": "gate_g1_theme_veto", "reject": "n2_style_robe_selection"},
     "gate_g1_theme_veto": {"approve": "n4_narration_construction", "reject": "n3_outline_blueprinting"},
     "gate_n4_script": {"approve": "n5_draft_three_gate_audit", "reject": "n4_narration_construction"},
     "gate_n5_audit_verdict": {"approve": "n6_storyboard_translation",
@@ -86,8 +86,8 @@ def build_graph(checkpointer=None):
 
     g.add_edge(START, "n1_event_card_mining")
     g.add_edge("n1_event_card_mining", "gate_n1_event_cards")
+    g.add_edge("n3_outline_blueprinting", "n2_style_robe_selection")
     g.add_edge("n2_style_robe_selection", "gate_n2_style_card")
-    g.add_edge("n3_outline_blueprinting", "gate_g1_theme_veto")
     g.add_edge("n4_narration_construction", "gate_n4_script")
     g.add_edge("n5_draft_three_gate_audit", "gate_n5_audit_verdict")
     g.add_edge("n6_storyboard_translation", "gate_n6_storyboard")
