@@ -1,11 +1,6 @@
 ---
 name: humanizer-zh-next
-version: 1.2.0
-description: |
-  去除中文文本中由人工智能生成的痕迹。在编辑或审阅文本时使用该功能，可使文本更自然、更像人工撰写的作品。
-  本技能基于 op7418/humanizer-zh 与 blader/humanizer，
-  吸收英文版中检测模式，并按中文写作习惯重写触发词、示例和修复策略。
-  遵循“改写而非删除、等量覆盖”原则，按初稿→自检→终稿的流程工作。
+description: 去除中文文本中由人工智能生成的痕迹。在编辑或审阅文本时使用该功能，可使文本更自然、更像人工撰写的作品。遵循“改写而非删除、等量覆盖”原则，按初稿→自检→终稿的流程工作。
 license: MIT
 compatibility: any-agent
 allowed-tools:
