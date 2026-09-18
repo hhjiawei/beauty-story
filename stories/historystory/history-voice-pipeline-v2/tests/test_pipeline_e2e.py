@@ -56,32 +56,36 @@ def test_full_pipeline(tmp_env):
     assert _wait_gate("testrun001") == "waiting_review"
     assert artifacts.latest_artifact("testrun001", "n1_event_card_mining", "event_cards").version == 2
 
-    # ── 闸门1：放行 → N2 ──
+    # ── 闸门1：放行 → N3 大纲 → ⛔G1 主题否决关（工序重排：N2 移至 N4 之后）──
     runner.resume_run("testrun001", {"action": "approve"})
     assert _wait_gate("testrun001") == "waiting_review"
-    assert _run_row("testrun001").current_node == "gate_n2_style_card"
-
-    # ── 闸门2：人工编辑外衣卡后放行（origin=human_edit）──
-    my_card = {"风格名": "当年明月式+昆汀式", "核心气质": "白话藏刀",
-               "本期语气示例": "他输得连命都没剩下。", "核心技巧": ["口语化叙事"]}
-    runner.resume_run("testrun001", {"action": "approve", "edited_content": my_card})
-    assert _wait_gate("testrun001") == "waiting_review"
     assert _run_row("testrun001").current_node == "gate_g1_theme_veto"
-    sc = artifacts.latest_artifact("testrun001", "n2_style_robe_selection", "style_card")
-    assert sc.origin == "human_edit"
+    assert artifacts.latest_artifact("testrun001", "n3_outline_blueprinting", "outline")
 
-    # ── ⛔G1 主题否决关：放行 → N4 旁白施工 ──
+    # ── ⛔G1 主题否决关：放行 → N4 旁白施工（裸稿）──
     runner.resume_run("testrun001", {"action": "approve"})
     assert _wait_gate("testrun001") == "waiting_review"
     assert _run_row("testrun001").current_node == "gate_n4_script"
     assert artifacts.latest_artifact("testrun001", "n4_narration_construction", "script")
 
-    # ── N4 放行 → N5 三道门禁（mock 全绿）──
+    # ── N4 裸稿放行 → N2 弹药装配成稿 ──
     runner.resume_run("testrun001", {"action": "approve"})
     assert _wait_gate("testrun001") == "waiting_review"
-    assert _run_row("testrun001").current_node == "gate_n5_audit_verdict"
+    assert _run_row("testrun001").current_node == "gate_n2_style_card"
+    assert artifacts.latest_artifact("testrun001", "n2_style_robe_selection", "script_md")
 
-    # ── N5 放行 → N6 画本 ──
+    # ── 闸门2：人工编辑挂弹稿后放行（origin=human_edit，声口样句入库）──
+    cur_a = artifacts.latest_artifact("testrun001", "n2_style_robe_selection", "script_md")
+    cur_script = artifacts.load_artifact_content(cur_a)
+    edited = {"挂弹后成稿": cur_script.replace("顶配装修队", "宇宙第一装修队", 1),
+              "弹药装配报告": {"本期语气示例": "他输得连命都没剩下。"}}
+    runner.resume_run("testrun001", {"action": "approve", "edited_content": edited})
+    assert _wait_gate("testrun001") == "waiting_review"
+    assert _run_row("testrun001").current_node == "gate_n5_audit_verdict"
+    sc = artifacts.latest_artifact("testrun001", "n2_style_robe_selection", "style_card")
+    assert sc.origin == "human_edit"
+
+    # ── N5 放行（mock 全绿）→ N6 画本 ──
     runner.resume_run("testrun001", {"action": "approve"})
     assert _wait_gate("testrun001") == "waiting_review"
     assert _run_row("testrun001").current_node == "gate_n6_storyboard"

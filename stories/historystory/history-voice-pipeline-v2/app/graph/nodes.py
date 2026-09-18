@@ -3,10 +3,10 @@
 命名即含义（执行方案 §4.0 深化）：
   产出节点                          闸门节点（人工）
   n1_event_card_mining     史料选矿  gate_n1_event_cards
-  n2_style_robe_selection  外衣选定  gate_n2_style_card
   n3_outline_blueprinting  大纲蓝图  gate_g1_theme_veto      ⛔主题否决关（强制）
-  n4_narration_construction 旁白施工 gate_n4_script
-  n5_draft_three_gate_audit 三道门禁 gate_n5_audit_verdict
+  n4_narration_construction 旁白施工 gate_n4_script          （裸稿闸门）
+  n2_style_robe_selection  弹药装配  gate_n2_style_card      （挂弹稿闸门，2026-09-18 移至写作后）
+  n5_draft_three_gate_audit 三道门禁 gate_n5_audit_verdict   （可打回 N4 写作 / N2 装配）
   n6_storyboard_translation 画本翻译 gate_n6_storyboard
   n7_unit_voice_synthesis  分段合成  gate_n7_unit_listening
   n7_failed_unit_regeneration 塌段定点重生
@@ -187,52 +187,77 @@ def gate_n1_event_cards(state):
     return {"gate_decision": review}
 
 
-# ---------------------------------------------------------------- N2 风格选定 · 本期外衣
+# ---------------------------------------------------------------- N2 弹药装配 · 成稿装弹（2026-09-18 重排：移至 N4 写作之后）
 
 def n2_style_robe_selection(state):
+    """弹药装配：消费 N4 裸稿，在成稿句子上装弹，产出挂弹稿。不再触碰大纲。"""
     node = "n2_style_robe_selection"
     fb = state.get("rework_feedback", {}).get(node)
 
     def work():
-        prev = json.dumps(state.get("style_candidates"), ensure_ascii=False) if fb else None
+        prev = state.get("script_md") if fb else None  # 上一版挂弹稿（打回重跑对照）
         system, user, loaded = prompts.build_n2_style_robe_selection(state, feedback=fb, prev=prev, mounted_skills=_mounted_skills(node))
         result = _llm_json(node, system, user, expect=dict)
 
-        # 键名兼容：旧版出「候选风格」数组；新方法论直接定案唯一风格，取「风格定案」单件
-        candidates = result.get("候选风格") or ([result["风格定案"]] if result.get("风格定案") else [])
+        # 装配版输出 {挂弹后成稿, 弹药装配报告}；成稿必须是非空字符串
+        mounted = result.get("挂弹后成稿") or ""
+        if not isinstance(mounted, str) or not mounted.strip():
+            raise RuntimeError(
+                f"[{node}] 弹药装配结果为空（挂弹后成稿缺失或非字符串）。"
+                f"实际返回的顶层键：{list(result.keys())}"
+                "——请核对 prompts.py 的 N2 输出 Schema 键名是否与此处提取键一致。")
 
-        a = artifacts.save_artifact(state["project_id"], state["run_id"], node,
-                                    "style_candidates", result, origin="rework" if fb else "ai")
-        return candidates, result, loaded, a
-    candidates, result, loaded, a = _node_log(state["run_id"], node, work)
-    return {"style_candidates": candidates, "current_node": node,
+        artifacts.save_artifact(state["project_id"], state["run_id"], node,
+                                "script_md", mounted, origin="rework" if fb else "ai")
+        artifacts.save_artifact(state["project_id"], state["run_id"], node,
+                                "style_candidates", result, origin="rework" if fb else "ai")
+        return mounted, result, loaded
+    mounted, result, loaded = _node_log(state["run_id"], node, work)
+    return {"script_md": mounted, "style_candidates": result, "current_node": node,
             "memories_loaded": state.get("memories_loaded", []) + loaded}
 
 
 def gate_n2_style_card(state):
-    """人工拍板（必选动作）：确认或改选风格 → 写入 style_card。"""
+    """人工拍板（必选动作）：确认或修订挂弹稿 → 挂弹后成稿生效。"""
     review = _gate(state, gate_node="gate_n2_style_card",
-                   artifact_node="n2_style_robe_selection", kinds=["style_candidates"])
+                   artifact_node="n2_style_robe_selection", kinds=["style_candidates", "script_md"])
     if review.get("action") == "reject":
         _record_review(state, "n2_style_robe_selection", None, "reject", review.get("feedback"))
         fb = dict(state.get("rework_feedback", {}))
         fb["n2_style_robe_selection"] = review.get("feedback", "")
         return {"gate_decision": review, "rework_feedback": fb,
                 "rework_count": _bump_rework(state, "n2_style_robe_selection")}
-    # 拍板：edited_content 为最终外衣卡；未改则默认取第一个候选
-    card = review.get("edited_content")
-    if card is None:
-        card = (state.get("style_candidates") or [{}])[0]
-    _save_human_edit(state, "gate_n2_style_card", "n2_style_robe_selection", "style_card", card)
+    # 拍板：edited_content 可为 ①挂弹稿全文（str）②{挂弹后成稿: "...", ...} 包裹（dict）
+    # ③旧式风格卡 dict（无挂弹后成稿键，仅存档不动成稿）；未编辑则沿用 N2 产物（已在 state["script_md"]）
+    edited = review.get("edited_content")
+    if edited is None:
+        sc = state.get("style_candidates")
+        # 旧版候选风格为 list；新版装配报告为 dict（无单件拍板对象，沿用 script_md）
+        edited = sc[0] if isinstance(sc, list) and sc else None
+    if edited is not None:
+        script_new = None
+        if isinstance(edited, str) and edited.strip():
+            script_new = edited
+        elif isinstance(edited, dict):
+            script_new = edited.get("挂弹后成稿")
+        _save_human_edit(state, "gate_n2_style_card", "n2_style_robe_selection",
+                         "style_card", edited)
+        # 声口样句入库（人格 L2）：优先装配报告的「本期语气示例」；兼容旧式风格卡字段
+        if isinstance(edited, dict):
+            from .. import memory_store
+            yj = edited.get("本期语气示例") or (edited.get("弹药装配报告") or {}).get("本期语气示例") \
+                 or (edited.get("风格定案") or {}).get("本期语气示例")
+            if yj:
+                fname = edited.get("风格名") or (edited.get("风格定案") or {}).get("风格名", "?")
+                memory_store.append_memory(memory_store.VOICE_SAMPLES,
+                                           f"外衣「{fname}」语气示例：{yj}")
+        if script_new is not None:
+            _save_human_edit(state, "gate_n2_style_card", "n2_style_robe_selection",
+                             "script_md", script_new)
+            return {"gate_decision": review, "script_md": script_new}
+        return {"gate_decision": review}
     _record_review(state, "n2_style_robe_selection", None, "approve")
-    # 声口样句入库（人格 L2）
-    from .. import memory_store
-    yj = card.get("本期语气示例") or (card.get("风格定案") or {}).get("本期语气示例")
-    if yj:
-        fname = card.get("风格名") or (card.get("风格定案") or {}).get("风格名", "?")
-        memory_store.append_memory(memory_store.VOICE_SAMPLES,
-                                   f"外衣「{fname}」语气示例：{yj}")
-    return {"gate_decision": review, "style_card": card}
+    return {"gate_decision": review}
 
 
 # ---------------------------------------------------------------- N3 大纲生成 · 蓝图绘制
@@ -247,14 +272,14 @@ def n3_outline_blueprinting(state):
         system, user, loaded = prompts.build_n3_outline_blueprinting(state, feedback=fb, prev=prev, mounted_skills=_mounted_skills(node))
         result = _llm_json(node, system, user, expect=dict)
 
-        # 大纲包键名兼容：新方法论「段级施工卡 / 篇级总卡」，旧版「单集大纲文件 / 主题卡」
-        outline = result.get("段级施工卡") or result.get("单集大纲文件") or []
+        # 大纲包键名兼容：现行段落表制「段落表 / 篇级总卡」，旧版「段级施工卡 / 单集大纲文件 / 主题卡」
+        outline = result.get("段落表") or result.get("段级施工卡") or result.get("单集大纲文件") or []
         theme = result.get("篇级总卡") or result.get("主题卡") or {}
         checklist = result.get("签发清单", [])
 
         if not outline:
             raise RuntimeError(
-                f"[{node}] 大纲包里没有可用的段落清单（段级施工卡/单集大纲文件均为空）。"
+                f"[{node}] 大纲包里没有可用的段落清单（段落表/段级施工卡/单集大纲文件均为空）。"
                 f"实际返回的顶层键：{list(result.keys())}"
                 "——请核对 prompts.py 的 N3 输出 Schema 键名是否与此处提取键一致。")
         artifacts.save_artifact(state["project_id"], state["run_id"], node,
@@ -287,8 +312,8 @@ def _group_chapters(outline: list[dict]) -> list[list[dict]]:
     order: list[str] = []
     for seg in outline:
 
-        # 分章键名兼容：旧版「章节标题」，新方法论段级施工卡用「模块归属」（①钩子…⑥尾声）
-        title = seg.get("章节标题") or seg.get("模块归属") or f"章{seg.get('段号')}"
+        # 分章键名兼容：现行段落表用「相位」（起/承/转/合），旧版「章节标题 / 模块归属」
+        title = seg.get("相位") or seg.get("章节标题") or seg.get("模块归属") or f"章{seg.get('段号')}"
 
         if title not in chapters:
             chapters[title] = []
@@ -376,19 +401,24 @@ def n5_draft_three_gate_audit(state):
 
 
 def gate_n5_audit_verdict(state):
-    """全绿放行 / 按条目打回 N4（send_back_to_n4 或 reject 同义）。"""
+    """全绿放行 / 按条目打回：send_back_to_n4 打回写作层，send_back_to_n2 打回装配层。"""
     review = _gate(state, gate_node="gate_n5_audit_verdict",
                    artifact_node="n5_draft_three_gate_audit", kinds=["audit_report"])
-    if review.get("action") in ("reject", "send_back_to_n4"):
+    action = review.get("action")
+    if action in ("reject", "send_back_to_n4", "send_back_to_n2"):
         items = state.get("audit_report", {}).get("打回条目", [])
         composed = "审核打回条目：\n" + "\n".join(f"- {x}" for x in items)
         if review.get("feedback"):
             composed += "\n人工补充意见：\n" + review["feedback"]
+        # 打回目标：写作层问题（结构/事实/声口）→ N4；装配层问题（弹药尬/漏装/越界）→ N2
+        target_node = ("n2_style_robe_selection" if action == "send_back_to_n2"
+                       else "n4_narration_construction")
+        audit_action = "send_back_to_n2" if action == "send_back_to_n2" else "send_back_to_n4"
         _record_review(state, "n5_draft_three_gate_audit", None, "reject", composed)
         fb = dict(state.get("rework_feedback", {}))
-        fb["n4_narration_construction"] = composed
-        return {"gate_decision": {"action": "send_back_to_n4"}, "rework_feedback": fb,
-                "rework_count": _bump_rework(state, "n4_narration_construction")}
+        fb[target_node] = composed
+        return {"gate_decision": {"action": audit_action}, "rework_feedback": fb,
+                "rework_count": _bump_rework(state, target_node)}
     _record_review(state, "n5_draft_three_gate_audit", None, "approve")
     return {"gate_decision": review}
 
@@ -466,15 +496,15 @@ def _synth_all(state) -> list[dict]:
                 "后停顿_ms": page.get("后停顿_ms", 0) if i == len(page.get("拆分", [])) - 1 else 0,
                 "chapter_break": False,
             })
-    # 章间静音：每章首单元标记
+    # 章间静音：每章首单元标记（章标题键与 _group_chapters 同源：相位 → 模块归属 → 章节标题）
     titles = []
     for seg in state.get("outline", []):
-        t = seg.get("章节标题") or seg.get("模块归属")
+        t = seg.get("相位") or seg.get("模块归属") or seg.get("章节标题")
         if t and t not in titles:
             titles.append(t)
     chapter_first_seg = {}
     for seg in state.get("outline", []):
-        t = seg.get("章节标题") or seg.get("模块归属")
+        t = seg.get("相位") or seg.get("模块归属") or seg.get("章节标题")
         if t and t not in chapter_first_seg:
             chapter_first_seg[t] = seg.get("段号")
     first_segs = set(chapter_first_seg.values()) - {1}

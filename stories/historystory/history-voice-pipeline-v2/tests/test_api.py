@@ -41,7 +41,7 @@ def test_api_flow(tmp_env):
         if snap["status"] == "waiting_review" and snap["pending_gate"] and            snap["pending_gate"]["gate"] != "gate_n1_event_cards":
             break
         time.sleep(1)
-    assert snap["pending_gate"]["gate"] == "gate_n2_style_card"
+    assert snap["pending_gate"]["gate"] == "gate_g1_theme_veto"  # 工序重排：N1→N3→G1（N2 移至 N4 之后）
 
     # 打回必须带意见
     r = client.post(f"/api/runs/{run_id}/reject", json={"action": "reject"})

@@ -65,14 +65,19 @@ def split_segments(script: str) -> dict[int, str]:
     return {k: "\n".join(v).strip() for k, v in segs.items()}
 
 
-def _tolerance_of(func_type: str) -> tuple[float | None, float | None]:
-    """按功能类型返回 (下浮容差, 上浮容差)。过渡段不设下限只设上限。"""
-    ft = func_type or ""
-    if any(k in ft for k in ("钩子", "收尾")):
+def _tolerance_of(seg: dict) -> tuple[float | None, float | None]:
+    """按段落功能返回 (下浮容差, 上浮容差)。
+
+    现行大纲为段落表制（相位 起/承/转/合）；兼容旧版「功能类型」字段。
+    起/合是钩子与收束段，容差宽；转是论证主体，容差紧；过渡不设下限。
+    """
+    phase = str(seg.get("相位") or "")
+    ft = str(seg.get("功能类型") or "")
+    if any(k in phase for k in ("起", "合")) or any(k in ft for k in ("钩子", "收尾")):
         return 0.4, 0.4
-    if any(k in ft for k in ("主线", "插件", "高潮", "锚定")):
+    if "转" in phase or any(k in ft for k in ("主线", "插件", "高潮", "锚定")):
         return 0.2, 0.2
-    return None, 0.4  # 过渡/衔接：不设下限，上限 40%
+    return None, 0.4  # 承及过渡/衔接：不设下限，上限 40%
 
 
 def _count_chars(text: str) -> int:
@@ -98,7 +103,7 @@ def check_word_count_tolerance(script: str, outline: list[dict]) -> list[dict]:
             continue
         planned = int(m.group(1))
         actual = _count_chars(segs[no])
-        down, up = _tolerance_of(seg.get("功能类型", ""))
+        down, up = _tolerance_of(seg)
         lo = planned * (1 - down) if down is not None else 0
         hi = planned * (1 + (up if up is not None else 0.4))
         if actual < lo or actual > hi:

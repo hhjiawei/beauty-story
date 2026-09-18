@@ -12,15 +12,18 @@ from ..state import PipelineState
 from . import nodes
 
 # 流水线节点顺序（前端状态条用）
+# 工序链（2026-09-18 重排）：N1 资料卡 → N3 大纲（含情绪坐标）→ G1 主题否决
+#   → N4 写作裸稿 → gate_n4 看骨架 → N2 弹药装配成稿 → gate_n2 看挂弹稿
+#   → N5 三道门禁审核（含去AI味）→ N6 画本 → N7 合成 → N8 后期 → 归档
 PIPELINE_SEQUENCE = [
     ("n1_event_card_mining", "史料选矿"),
     ("gate_n1_event_cards", "事件卡闸门"),
     ("n3_outline_blueprinting", "大纲蓝图"),
-    ("n2_style_robe_selection", "弹药挂载"),
-    ("gate_n2_style_card", "弹药拍板"),
     ("gate_g1_theme_veto", "⛔主题否决关"),
     ("n4_narration_construction", "旁白施工"),
-    ("gate_n4_script", "成稿闸门"),
+    ("gate_n4_script", "裸稿闸门"),
+    ("n2_style_robe_selection", "弹药装配"),
+    ("gate_n2_style_card", "弹药拍板"),
     ("n5_draft_three_gate_audit", "三道门禁"),
     ("gate_n5_audit_verdict", "审核裁决"),
     ("n6_storyboard_translation", "画本翻译"),
@@ -40,11 +43,12 @@ def _decision(state: PipelineState) -> str:
 # 各闸门的路由表：action → 下一节点
 ROUTES = {
     "gate_n1_event_cards": {"approve": "n3_outline_blueprinting", "reject": "n1_event_card_mining"},
-    "gate_n2_style_card": {"approve": "gate_g1_theme_veto", "reject": "n2_style_robe_selection"},
     "gate_g1_theme_veto": {"approve": "n4_narration_construction", "reject": "n3_outline_blueprinting"},
-    "gate_n4_script": {"approve": "n5_draft_three_gate_audit", "reject": "n4_narration_construction"},
+    "gate_n4_script": {"approve": "n2_style_robe_selection", "reject": "n4_narration_construction"},
+    "gate_n2_style_card": {"approve": "n5_draft_three_gate_audit", "reject": "n2_style_robe_selection"},
     "gate_n5_audit_verdict": {"approve": "n6_storyboard_translation",
                               "send_back_to_n4": "n4_narration_construction",
+                              "send_back_to_n2": "n2_style_robe_selection",
                               "reject": "n4_narration_construction"},
     "gate_n6_storyboard": {"approve": "n7_unit_voice_synthesis", "reject": "n6_storyboard_translation"},
     "gate_n7_unit_listening": {"approve": "n8_audio_mastering",
@@ -86,9 +90,9 @@ def build_graph(checkpointer=None):
 
     g.add_edge(START, "n1_event_card_mining")
     g.add_edge("n1_event_card_mining", "gate_n1_event_cards")
-    g.add_edge("n3_outline_blueprinting", "n2_style_robe_selection")
-    g.add_edge("n2_style_robe_selection", "gate_n2_style_card")
+    g.add_edge("n3_outline_blueprinting", "gate_g1_theme_veto")
     g.add_edge("n4_narration_construction", "gate_n4_script")
+    g.add_edge("n2_style_robe_selection", "gate_n2_style_card")
     g.add_edge("n5_draft_three_gate_audit", "gate_n5_audit_verdict")
     g.add_edge("n6_storyboard_translation", "gate_n6_storyboard")
     g.add_edge("n7_unit_voice_synthesis", "gate_n7_unit_listening")
